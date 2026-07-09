@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #fff9ef;
+  --color-sun: #ffd93d;
+  --color-sunsoft: #fff1c1;
+  --color-sky: #6ec6ff;
+  --color-skysoft: #e3f4ff;
+  --color-mint: #7ddfa8;
+  --color-mintsoft: #e4f9ed;
+  --color-coral: #ff8a80;
+  --color-coralsoft: #ffe4e1;
+  --color-berry: #b388ff;
+  --color-ink: #3b3355;
+
+  --font-sans: var(--font-baloo), "Comic Sans MS", system-ui, sans-serif;
+
+  --animate-pop: pop 0.35s ease-out;
+  --animate-shake: shake 0.4s ease-in-out;
+  --animate-float: float 2.5s ease-in-out infinite;
+  --animate-wiggle: wiggle 0.8s ease-in-out infinite;
+  --animate-fall: fall 1.4s ease-in forwards;
+  --animate-fade-up: fade-up 0.4s ease-out;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.8);
+  }
+  55% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(70vh) rotate(320deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+html,
+body {
+  height: 100%;
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+button {
+  font-family: inherit;
+}
