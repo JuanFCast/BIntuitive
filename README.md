@@ -1,4 +1,4 @@
-# 🐝 Avíspate Kids
+# 🐝 BeeSmart
 
 Juego educativo táctil para niños de 4 a 8 años: escuchan o leen una instrucción corta y tocan la tarjeta correcta. Pensado para iPad primero, responsive para celular y web.
 
@@ -20,7 +20,7 @@ Para probarlo en un iPad en la misma red WiFi: `npm run dev` y abrir `http://<IP
 - **Dificultad suave**: sube tras 2 aciertos seguidos, baja si falla (2 → 3 → 4 opciones).
 - **Voz** con Web Speech API (botón 🔊 para repetir; si el navegador no la soporta, solo se muestra el texto).
 - **Feedback positivo**: "¡Muy bien!", "Casi... ¡intenta otra vez!", nunca regaños.
-- **Mascota Chispa** (abejita SVG) que celebra y da pistas.
+- **Mascota Bee** (abejita SVG) que celebra y da pistas.
 - **Progreso local** en `localStorage`: estrellas totales, sesiones y nivel por categoría.
 - **Salida protegida** para adultos (suma sencilla) y botón para silenciar sonidos.
 - Sin login, sin anuncios, sin pagos, sin internet.

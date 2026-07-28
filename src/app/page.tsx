@@ -19,7 +19,7 @@ export default function HomePage() {
       </div>
 
       <h1 className="text-5xl font-extrabold tracking-tight text-ink sm:text-7xl">
-        Avíspate <span className="text-sun drop-shadow-[0_2px_0_rgba(59,51,85,0.3)]">Kids</span>
+        Bee <span className="text-sun drop-shadow-[0_2px_0_rgba(59,51,85,0.3)]">Smart</span>
       </h1>
       <p className="max-w-md text-xl font-semibold text-ink/70 sm:text-2xl">
         Escucha, piensa y ¡toca la respuesta correcta!

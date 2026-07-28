@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import GameClient from "./GameClient";
 
 export const metadata = {
-  title: "¡A jugar! · Avíspate Kids",
+  title: "¡A jugar! · BeeSmart",
 };
 
 export default function GamePage() {

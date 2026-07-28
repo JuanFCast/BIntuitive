@@ -4,7 +4,7 @@ import CategoryCard from "@/components/CategoryCard";
 import { categories } from "@/data/categories";
 
 export const metadata = {
-  title: "Elige tu mundo · Avíspate Kids",
+  title: "Elige tu mundo · BeeSmart",
 };
 
 export default function CategoriasPage() {

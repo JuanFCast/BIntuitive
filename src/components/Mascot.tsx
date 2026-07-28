@@ -7,7 +7,7 @@ type MascotProps = {
 };
 
 /**
- * Abejita guía "Chispa": redonda, tierna y con ojos grandes.
+ * Abejita guía "Bee": redonda, tierna y con ojos grandes.
  * Cambia la boca y las alas según la expresión.
  */
 export default function Mascot({

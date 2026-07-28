@@ -1,7 +1,7 @@
 import type { CategoryId } from "@/data/questions";
 
-const PROGRESS_KEY = "avispate-kids-progress";
-const MUTE_KEY = "avispate-kids-muted";
+const PROGRESS_KEY = "beesmart-progress";
+const MUTE_KEY = "beesmart-muted";
 
 export type SessionSummary = {
   date: string;

@@ -9,7 +9,7 @@ const baloo = Baloo_2({
 });
 
 export const metadata: Metadata = {
-  title: "Avíspate Kids",
+  title: "BeeSmart",
   description:
     "Juego educativo táctil para niños: toca la respuesta correcta y aprende jugando.",
 };

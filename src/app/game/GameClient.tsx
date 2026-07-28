@@ -203,7 +203,7 @@ export default function GameClient() {
         <div className="flex items-center gap-2">
           <Mascot expression={mascotExpression} size={56} />
           <span className="hidden text-xl font-extrabold text-ink sm:block">
-            Avíspate Kids
+            BeeSmart
           </span>
         </div>
         <div
