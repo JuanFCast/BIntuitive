@@ -4,7 +4,7 @@ import Link from "next/link";
 import Mascot from "@/components/Mascot";
 import CategoryCard from "@/components/CategoryCard";
 import LanguageToggle from "@/components/LanguageToggle";
-import { categories } from "@/data/categories";
+import { worlds } from "@/data/categories";
 import { useLanguage } from "@/lib/i18n";
 
 export default function CategoriesClient() {
@@ -23,8 +23,8 @@ export default function CategoriesClient() {
         </h1>
       </header>
 
-      <div className="grid w-full max-w-3xl flex-1 grid-cols-1 content-center gap-5 sm:grid-cols-3">
-        {categories.map((category) => (
+      <div className="grid w-full max-w-5xl flex-1 grid-cols-1 content-center gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {worlds.map((category) => (
           <CategoryCard
             key={category.id}
             category={category}

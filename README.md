@@ -8,9 +8,11 @@ BeeSmart is a touch-friendly educational game for curious learners. Players list
 
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
-- **3 learning worlds:** Places, Numbers, and Colors, with 10 questions in each world.
+- **5 learning worlds:** Places, Numbers, Colors, Visual Agility, and Type Rush.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
+- **Visual Agility:** a local, touch-first matching challenge where two cards share exactly one symbol and mistakes add a one-second penalty.
+- **Type Rush:** a responsive 30-second typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish.
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **Bee mascot:** a custom SVG character that celebrates correct answers and presents hints.
@@ -56,9 +58,10 @@ The production build validates TypeScript, generates the application routes, and
 
 ```text
 src/
-  app/                  # Home, category selection, game, metadata, and favicon
+  app/                  # Home, world selection, games, metadata, and favicon
     categorias/         # Bilingual category selection screen
     game/               # Game route and client-side session state
+    games/              # Visual Agility and Type Rush routes
   components/           # Mascot, answer cards, feedback, results, language switch...
   data/
     categories.ts       # Base category definitions
@@ -71,7 +74,15 @@ src/
     speech.ts           # English and Spanish speech synthesis
     sounds.ts           # Generated interaction and celebration sounds
     storage.ts          # Progress and mute persistence
+    typingGame.ts       # Local typing passages and statistics
+    visualGame.ts       # Visual cards, symbols, and matching logic
 ```
+
+The Visual Agility and Type Rush worlds adapt the core game mechanics from
+[Avíspate](https://github.com/JuanFCast/avispate-visual) and
+[TypeRush](https://github.com/JuanFCast/TypeRush). BeeSmart includes only their
+local educational gameplay: no wallets, payments, rankings, accounts, blockchain,
+or remote backend services are included.
 
 ## Localization
 

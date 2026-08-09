@@ -1,10 +1,10 @@
-import type { Category } from "./categories";
+import type { World } from "./categories";
 import type { CategoryId, Question, QuestionOption } from "./questions";
 import type { Language } from "@/lib/language";
 
 const englishCategories: Record<
-  CategoryId,
-  Pick<Category, "name" | "description">
+  World["id"],
+  Pick<World, "name" | "description">
 > = {
   lugares: {
     name: "Places",
@@ -17,6 +17,14 @@ const englishCategories: Record<
   colores: {
     name: "Colors",
     description: "Red, blue, yellow...",
+  },
+  visual: {
+    name: "Visual Agility",
+    description: "Find the matching symbol",
+  },
+  typing: {
+    name: "Type Rush",
+    description: "Type quickly and accurately",
   },
 };
 
@@ -206,9 +214,9 @@ const englishOptions: Record<string, OptionCopy> = {
 };
 
 export function localizeCategory(
-  category: Category,
+  category: World,
   language: Language,
-): Category {
+): World {
   if (language === "es") return category;
   return { ...category, ...englishCategories[category.id] };
 }
