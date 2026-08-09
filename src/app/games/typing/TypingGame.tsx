@@ -27,6 +27,8 @@ export default function TypingGame() {
   const [mistakeIndices, setMistakeIndices] = useState<Set<number>>(new Set());
   const [result, setResult] = useState<TypingStats | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const passageContainerRef = useRef<HTMLDivElement>(null);
+  const activeCharacterRef = useRef<HTMLSpanElement>(null);
   const phaseRef = useRef<Phase>(phase);
   const passageRef = useRef("");
   const typedRef = useRef("");
@@ -38,8 +40,33 @@ export default function TypingGame() {
   }, [phase]);
 
   useEffect(() => {
-    if (phase === "ready") inputRef.current?.focus();
+    if (phase === "ready") inputRef.current?.focus({ preventScroll: true });
   }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "ready" && phase !== "playing") return;
+
+    const container = passageContainerRef.current;
+    const activeCharacter = activeCharacterRef.current;
+    if (!container || !activeCharacter) return;
+
+    const padding = 16;
+    const containerRect = container.getBoundingClientRect();
+    const characterRect = activeCharacter.getBoundingClientRect();
+    const characterTop =
+      characterRect.top - containerRect.top + container.scrollTop;
+    const characterBottom = characterTop + characterRect.height;
+    const visibleTop = container.scrollTop + padding;
+    const visibleBottom =
+      container.scrollTop + container.clientHeight - padding;
+
+    if (characterTop < visibleTop || characterBottom > visibleBottom) {
+      container.scrollTo({
+        top: Math.max(0, characterTop - container.clientHeight / 2),
+        behavior: "smooth",
+      });
+    }
+  }, [phase, typed.length]);
 
   const finishRound = useCallback(() => {
     if (phaseRef.current !== "playing") return;
@@ -191,14 +218,14 @@ export default function TypingGame() {
       )}
 
       {(phase === "ready" || phase === "playing") && (
-        <section className="mx-auto flex w-full max-w-4xl flex-col gap-3 pb-5 pt-3 sm:gap-4 sm:pt-5">
-          <div className="flex items-end justify-between gap-4 rounded-2xl bg-white px-4 py-3 shadow-sm">
+        <section className="mx-auto flex w-full max-w-4xl flex-col gap-2 pb-3 pt-2 sm:gap-4 sm:pb-5 sm:pt-5">
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm sm:items-end sm:gap-4 sm:px-4 sm:py-3">
             <div>
-              <p className="text-sm font-bold uppercase tracking-wider text-ink/45">
+              <p className="text-xs font-bold uppercase tracking-wider text-ink/55 sm:text-sm">
                 {t("typingTime")}
               </p>
               <p
-                className={`font-mono text-3xl font-extrabold tabular-nums ${
+                className={`font-mono text-2xl font-extrabold tabular-nums sm:text-3xl ${
                   remaining <= 10 ? "text-coral" : "text-ink"
                 }`}
               >
@@ -225,13 +252,16 @@ export default function TypingGame() {
             />
           </div>
 
-          <div className="max-h-[42dvh] overflow-y-auto rounded-3xl border-4 border-berry bg-white p-4 shadow-xl sm:max-h-[48dvh] sm:p-6">
+          <div
+            ref={passageContainerRef}
+            className="max-h-[min(28dvh,12rem)] overflow-y-auto scroll-smooth rounded-2xl border-[3px] border-berry bg-white p-3 shadow-xl sm:max-h-[48dvh] sm:rounded-3xl sm:border-4 sm:p-6"
+          >
             <p
               translate="no"
-              className="notranslate whitespace-pre-wrap break-words font-mono text-lg font-semibold leading-8 sm:text-2xl sm:leading-10"
+              className="notranslate whitespace-pre-wrap break-words font-mono text-base font-semibold leading-6 sm:text-2xl sm:leading-10"
             >
               {[...passage].map((character, index) => {
-                let className = "text-ink/35";
+                let className = "text-ink/75";
                 if (index < typed.length) {
                   className =
                     typed[index] === character
@@ -243,7 +273,11 @@ export default function TypingGame() {
                   className = "rounded bg-sunsoft text-ink animate-pulse";
                 }
                 return (
-                  <span key={index} className={className}>
+                  <span
+                    key={index}
+                    ref={index === typed.length ? activeCharacterRef : undefined}
+                    className={className}
+                  >
                     {character}
                   </span>
                 );
@@ -253,7 +287,7 @@ export default function TypingGame() {
 
           <div>
             {phase === "ready" && (
-              <p className="mb-2 text-center text-sm font-bold text-berry sm:text-base">
+              <p className="mb-1 text-center text-sm font-bold text-berry sm:mb-2 sm:text-base">
                 {t("typingStartHint")}
               </p>
             )}
@@ -266,14 +300,14 @@ export default function TypingGame() {
               value={typed}
               onChange={(event) => handleInput(event.target.value)}
               onPaste={(event) => event.preventDefault()}
-              rows={3}
+              rows={1}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
               enterKeyHint="done"
               placeholder={t("typingInputPlaceholder")}
-              className="w-full resize-none rounded-2xl border-4 border-berry bg-berrysoft p-4 font-mono text-lg font-semibold text-ink shadow-lg outline-none placeholder:text-ink/35 focus:ring-4 focus:ring-berry/25 sm:text-xl"
+              className="h-14 w-full resize-none overflow-y-auto rounded-2xl border-[3px] border-berry bg-berrysoft px-3 py-3 font-mono text-base font-semibold text-ink shadow-lg outline-none placeholder:text-ink/50 focus:ring-4 focus:ring-berry/25 sm:h-28 sm:border-4 sm:p-4 sm:text-xl"
             />
           </div>
         </section>
