@@ -38,7 +38,7 @@ export function pickNextQuestion(
 
 /**
  * Dificultad suave: sube tras 2 aciertos seguidos al primer intento,
- * baja si el niño falla la pregunta completa.
+ * baja si el jugador falla la pregunta completa.
  */
 export function nextLevel(
   level: number,

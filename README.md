@@ -1,6 +1,6 @@
 # 🐝 BeeSmart
 
-BeeSmart is a touch-friendly educational game for children ages 4 to 8. Players listen to or read a short instruction and tap the correct answer. The experience is designed for iPad first and adapts to phones and desktop browsers.
+BeeSmart is a touch-friendly educational game for curious learners. Players listen to or read a short instruction and tap the correct answer. The experience is designed for iPad first and adapts to phones and desktop browsers.
 
 **Live app:** [beesmart.aumcrsp.com](https://beesmart.aumcrsp.com)
 
@@ -15,7 +15,7 @@ BeeSmart is a touch-friendly educational game for children ages 4 to 8. Players 
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **Bee mascot:** a custom SVG character that celebrates correct answers and presents hints.
 - **Local progress:** total stars, recent sessions, per-category levels, language preference, and mute preference are stored in `localStorage`.
-- **Adult exit gate:** a simple math challenge helps prevent accidental exits during a session.
+- **Exit confirmation:** a simple confirmation helps prevent accidental exits during a lesson.
 - **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
 
 ## Tech stack

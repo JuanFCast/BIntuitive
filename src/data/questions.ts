@@ -100,7 +100,7 @@ export const questions: Question[] = [
     id: "lugares-escuela-07",
     category: "lugares",
     level: 2,
-    instruction: "Toca el lugar donde los niños aprenden.",
+    instruction: "Toca el lugar donde las personas aprenden.",
     answerId: "escuela",
     options: [
       { id: "escuela", label: "Escuela", emoji: "🏫", alt: "Escuela con bandera" },

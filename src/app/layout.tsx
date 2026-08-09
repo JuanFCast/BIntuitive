@@ -12,7 +12,7 @@ const baloo = Baloo_2({
 export const metadata: Metadata = {
   title: "BeeSmart",
   description:
-    "A touch-friendly educational game for children: tap the correct answer and learn through play.",
+    "A touch-friendly educational game: tap the correct answer and learn through play.",
 };
 
 export const viewport: Viewport = {
