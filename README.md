@@ -11,7 +11,7 @@ BeeSmart is a touch-friendly educational game for curious learners. Players list
 - **5 learning worlds:** Places, Numbers, Colors, Visual Agility, and Type Rush.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
-- **Visual Agility:** a local, touch-first matching challenge where two cards share exactly one symbol and mistakes add a one-second penalty.
+- **Visual Agility:** a local, touch-first matching challenge where two nine-symbol cards share exactly one symbol and mistakes add a one-second penalty.
 - **Type Rush:** a responsive 30-second typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish.
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.

@@ -160,9 +160,9 @@ export default function VisualGame() {
       )}
 
       {phase === "playing" && baseCard && playerCard && (
-        <section className="mx-auto flex w-full max-w-4xl flex-col items-center gap-3 pb-4 pt-3 text-center sm:gap-5 sm:pt-5">
-          <div className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-2 shadow-sm">
-            <span className="font-extrabold text-ink/65">
+        <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 pb-4 pt-3 text-center sm:gap-4 sm:pt-5">
+          <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-sm sm:px-4">
+            <span className="text-left text-xs font-extrabold text-ink/65 sm:text-base">
               {t("visualProgress", {
                 current: Math.min(completed + 1, VISUAL_ROUNDS),
                 total: VISUAL_ROUNDS,
@@ -171,13 +171,19 @@ export default function VisualGame() {
             <span className="font-mono text-xl font-extrabold tabular-nums text-ink">
               ⏱️ {formatVisualTime(elapsedTime)}
             </span>
+            <span
+              className="text-right text-xs font-extrabold text-ink/65 sm:text-base"
+              aria-label={`${t("visualMistakes")}: ${errors}`}
+            >
+              <span aria-hidden="true">❌</span> {errors}
+            </span>
           </div>
 
-          <h1 className="text-2xl font-extrabold text-ink sm:text-4xl">
+          <h1 className="text-xl font-extrabold text-ink sm:text-3xl">
             {t("visualInstruction")}
           </h1>
 
-          <div className="grid w-full max-w-3xl grid-cols-2 gap-2 sm:gap-6">
+          <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
             <VisualCardView
               card={baseCard}
               label={t("visualReference")}
@@ -196,11 +202,6 @@ export default function VisualGame() {
               locked={locked}
               onTap={handleTap}
             />
-          </div>
-
-          <div className="grid w-full max-w-md grid-cols-2 gap-3">
-            <Stat label={t("visualMistakes")} value={errors} />
-            <Stat label={t("visualPenalty")} value={`+${errors}s`} />
           </div>
         </section>
       )}
@@ -259,15 +260,20 @@ function VisualCardView({
   locked: boolean;
   onTap: (symbolId: string) => void;
 }) {
+  const borderClass = interactive ? "border-sky" : "border-[#e0a800]";
+  const labelClass = interactive
+    ? "border-sky bg-skysoft"
+    : "border-[#e0a800] bg-sun";
+
   return (
-    <div>
-      <p className="mb-2 text-sm font-extrabold uppercase tracking-wider text-ink/55 sm:text-base">
+    <div className="relative mx-auto w-full max-w-[42rem] pt-3">
+      <p
+        className={`absolute left-1/2 top-0 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border-2 px-5 py-1 text-sm font-extrabold uppercase tracking-wider text-ink shadow-sm sm:px-7 sm:text-base ${labelClass}`}
+      >
         {label}
       </p>
       <div
-        className={`relative mx-auto aspect-square w-full max-w-[19rem] overflow-hidden rounded-full border-4 bg-white shadow-xl sm:border-[6px] ${
-          interactive ? "border-coral" : "border-sky"
-        }`}
+        className={`relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] border-4 bg-white shadow-xl sm:border-[6px] ${borderClass}`}
       >
         {card.symbols.map((symbol) => {
           const isFlashing = flash?.id === symbol.id;
@@ -277,7 +283,7 @@ function VisualCardView({
               : "animate-shake bg-coralsoft ring-4 ring-coral"
             : "";
           const sharedClass =
-            "absolute flex h-[clamp(2.3rem,10vw,4.25rem)] w-[clamp(2.3rem,10vw,4.25rem)] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[clamp(1.55rem,7vw,3.3rem)] leading-none transition-transform";
+            "absolute flex h-[clamp(3rem,16vw,5.5rem)] w-[clamp(3rem,16vw,5.5rem)] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl text-[clamp(2.15rem,11vw,4.25rem)] leading-none transition-transform";
           const style = {
             left: `${symbol.x}%`,
             top: `${symbol.y}%`,

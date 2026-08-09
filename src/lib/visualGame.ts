@@ -1,7 +1,7 @@
 import type { Language } from "./language";
 
 export const VISUAL_ROUNDS = 10;
-export const VISUAL_SYMBOLS_PER_CARD = 6;
+export const VISUAL_SYMBOLS_PER_CARD = 9;
 export const VISUAL_ERROR_PENALTY_MS = 1000;
 
 export type VisualSymbol = {
@@ -68,12 +68,15 @@ export const VISUAL_SYMBOLS: VisualSymbol[] = [
 ];
 
 const POSITIONS = [
-  { x: 50, y: 23 },
-  { x: 76, y: 38 },
-  { x: 72, y: 70 },
+  { x: 18, y: 20 },
+  { x: 50, y: 20 },
+  { x: 82, y: 20 },
+  { x: 18, y: 50 },
+  { x: 50, y: 50 },
+  { x: 82, y: 50 },
+  { x: 18, y: 80 },
   { x: 50, y: 80 },
-  { x: 27, y: 69 },
-  { x: 24, y: 38 },
+  { x: 82, y: 80 },
 ];
 
 export function shuffleVisualItems<T>(items: readonly T[]): T[] {
@@ -88,10 +91,10 @@ export function shuffleVisualItems<T>(items: readonly T[]): T[] {
 function placeSymbols(symbols: VisualSymbol[]): PlacedVisualSymbol[] {
   return shuffleVisualItems(symbols).map((symbol, index) => ({
     ...symbol,
-    x: POSITIONS[index].x + Math.round(Math.random() * 4 - 2),
-    y: POSITIONS[index].y + Math.round(Math.random() * 4 - 2),
-    rotation: Math.round(Math.random() * 50 - 25),
-    scale: 0.9 + Math.random() * 0.2,
+    x: POSITIONS[index].x + Math.round(Math.random() * 2 - 1),
+    y: POSITIONS[index].y + Math.round(Math.random() * 2 - 1),
+    rotation: Math.round(Math.random() * 16 - 8),
+    scale: 0.94 + Math.random() * 0.12,
   }));
 }
 
