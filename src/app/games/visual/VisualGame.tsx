@@ -160,48 +160,60 @@ export default function VisualGame() {
       )}
 
       {phase === "playing" && baseCard && playerCard && (
-        <section className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 pb-4 pt-3 text-center sm:gap-4 sm:pt-5">
-          <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-sm sm:px-4">
-            <span className="text-left text-xs font-extrabold text-ink/65 sm:text-base">
-              {t("visualProgress", {
-                current: Math.min(completed + 1, VISUAL_ROUNDS),
-                total: VISUAL_ROUNDS,
-              })}
-            </span>
-            <span className="font-mono text-xl font-extrabold tabular-nums text-ink">
-              ⏱️ {formatVisualTime(elapsedTime)}
-            </span>
-            <span
-              className="text-right text-xs font-extrabold text-ink/65 sm:text-base"
-              aria-label={`${t("visualMistakes")}: ${errors}`}
-            >
-              <span aria-hidden="true">❌</span> {errors}
-            </span>
-          </div>
+        <section className="mx-auto w-full max-w-6xl pb-2 pt-2 text-center sm:pt-4">
+          <div className="grid w-full grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] gap-1.5 sm:grid-cols-[3.5rem_minmax(0,1fr)_3.5rem] sm:gap-3">
+            <aside className="flex flex-col justify-between py-10 sm:py-12">
+              <SideMetric
+                icon="🃏"
+                label={t("visualCards")}
+                value={`${Math.min(completed + 1, VISUAL_ROUNDS)}/${VISUAL_ROUNDS}`}
+              />
+              <SideMetric
+                icon="⏱️"
+                label={t("visualTime")}
+                value={formatVisualTime(elapsedTime)}
+              />
+            </aside>
 
-          <h1 className="text-xl font-extrabold text-ink sm:text-3xl">
-            {t("visualInstruction")}
-          </h1>
+            <div className="flex min-w-0 flex-col gap-2 sm:gap-3">
+              <h1 className="text-base font-extrabold text-ink sm:text-2xl">
+                {t("visualInstruction")}
+              </h1>
 
-          <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-            <VisualCardView
-              card={baseCard}
-              label={t("visualReference")}
-              language={language}
-              interactive={false}
-              flash={null}
-              locked
-              onTap={() => {}}
-            />
-            <VisualCardView
-              card={playerCard}
-              label={t("visualYourCard")}
-              language={language}
-              interactive
-              flash={flash}
-              locked={locked}
-              onTap={handleTap}
-            />
+              <div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-5">
+                <VisualCardView
+                  card={baseCard}
+                  label={t("visualReference")}
+                  language={language}
+                  interactive={false}
+                  flash={null}
+                  locked
+                  onTap={() => {}}
+                />
+                <VisualCardView
+                  card={playerCard}
+                  label={t("visualYourCard")}
+                  language={language}
+                  interactive
+                  flash={flash}
+                  locked={locked}
+                  onTap={handleTap}
+                />
+              </div>
+            </div>
+
+            <aside className="flex flex-col justify-between py-10 sm:py-12">
+              <SideMetric
+                icon="❌"
+                label={t("visualMistakes")}
+                value={errors}
+              />
+              <SideMetric
+                icon="🎯"
+                label={t("visualAccuracy")}
+                value={`${accuracy}%`}
+              />
+            </aside>
           </div>
         </section>
       )}
@@ -328,6 +340,33 @@ function VisualCardView({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function SideMetric({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div
+      className="flex min-h-16 w-full flex-col items-center justify-center rounded-xl border-2 border-ink/10 bg-white px-0.5 py-1.5 text-center shadow-sm sm:min-h-20 sm:rounded-2xl"
+      aria-label={`${label}: ${value}`}
+    >
+      <span className="text-base leading-none sm:text-xl" aria-hidden="true">
+        {icon}
+      </span>
+      <p className="mt-1 font-mono text-[0.68rem] font-extrabold tabular-nums text-ink sm:text-sm">
+        {value}
+      </p>
+      <p className="mt-0.5 max-w-full overflow-hidden text-[0.42rem] font-extrabold uppercase leading-none tracking-[-0.04em] text-ink/50 sm:text-[0.55rem]">
+        {label}
+      </p>
     </div>
   );
 }
