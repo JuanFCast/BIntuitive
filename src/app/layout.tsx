@@ -9,10 +9,27 @@ const baloo = Baloo_2({
   weight: ["400", "600", "700", "800"],
 });
 
+const title = "BeeSmart";
+const description =
+  "A touch-friendly educational game: tap the correct answer and learn through play.";
+
 export const metadata: Metadata = {
-  title: "BeeSmart",
-  description:
-    "A touch-friendly educational game: tap the correct answer and learn through play.",
+  metadataBase: new URL("https://beesmart.aumcrsp.com"),
+  title,
+  description,
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "BeeSmart",
+    locale: "en_US",
+    title,
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export const viewport: Viewport = {

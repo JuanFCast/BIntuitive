@@ -2,6 +2,7 @@ import type { CategoryId } from "./questions";
 
 export type Category = {
   id: CategoryId;
+  slug: "places" | "numbers" | "colors";
   name: string;
   emoji: string;
   description: string;
@@ -22,6 +23,7 @@ export type World = Category | GameWorld;
 export const categories: Category[] = [
   {
     id: "lugares",
+    slug: "places",
     name: "Lugares",
     emoji: "🏝️",
     description: "Playas, montañas y más",
@@ -29,6 +31,7 @@ export const categories: Category[] = [
   },
   {
     id: "numeros",
+    slug: "numbers",
     name: "Números",
     emoji: "🔢",
     description: "Contar y comparar",
@@ -36,6 +39,7 @@ export const categories: Category[] = [
   },
   {
     id: "colores",
+    slug: "colors",
     name: "Colores",
     emoji: "🎨",
     description: "Rojo, azul, amarillo...",
@@ -66,4 +70,8 @@ export const worlds: World[] = [...categories, ...gameWorlds];
 
 export function getCategory(id: string): Category | undefined {
   return categories.find((c) => c.id === id);
+}
+
+export function getCategoryBySlug(slug: string): Category | undefined {
+  return categories.find((category) => category.slug === slug);
 }

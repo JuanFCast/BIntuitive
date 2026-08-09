@@ -16,6 +16,7 @@ BeeSmart is a touch-friendly educational game for curious learners. Players list
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **Bee mascot:** a custom SVG character that celebrates correct answers and presents hints.
+- **Social sharing:** Open Graph and Twitter cards use an official BeeSmart mascot image, with favicon and Apple touch icon support.
 - **Local progress:** total stars, recent sessions, per-category levels, language preference, and mute preference are stored in `localStorage`.
 - **Exit confirmation:** a simple confirmation helps prevent accidental exits during a lesson.
 - **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
@@ -58,8 +59,8 @@ The production build validates TypeScript, generates the application routes, and
 
 ```text
 src/
-  app/                  # Home, world selection, games, metadata, and favicon
-    categorias/         # Bilingual category selection screen
+  app/                  # Home, world selection, games, metadata, social cards, and icons
+    worlds/             # Bilingual world selection screen
     game/               # Game route and client-side session state
     games/              # Visual Agility and Type Rush routes
   components/           # Mascot, answer cards, feedback, results, language switch...

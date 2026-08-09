@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CategoryId, Question } from "@/data/questions";
-import { getCategory } from "@/data/categories";
+import { getCategory, getCategoryBySlug } from "@/data/categories";
 import { localizeQuestion } from "@/data/localization";
 import {
   MAX_ATTEMPTS,
@@ -37,8 +37,10 @@ export default function GameClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { language, t } = useLanguage();
-  const categoryParam = searchParams.get("categoria") ?? "";
-  const category = getCategory(categoryParam);
+  const legacyCategoryParam = searchParams.get("categoria");
+  const worldParam =
+    searchParams.get("world") ?? legacyCategoryParam ?? "";
+  const category = getCategoryBySlug(worldParam) ?? getCategory(worldParam);
 
   const [phase, setPhase] = useState<Phase>("playing");
   const [question, setQuestion] = useState<Question | null>(null);
@@ -57,6 +59,12 @@ export default function GameClient() {
   const later = useCallback((fn: () => void, ms: number) => {
     timersRef.current.push(setTimeout(fn, ms));
   }, []);
+
+  useEffect(() => {
+    if (!searchParams.get("world") && legacyCategoryParam && category) {
+      router.replace(`/game?world=${category.slug}`);
+    }
+  }, [category, legacyCategoryParam, router, searchParams]);
 
   const loadQuestion = useCallback((categoryId: CategoryId) => {
     const next = pickNextQuestion(
@@ -88,7 +96,7 @@ export default function GameClient() {
 
   useEffect(() => {
     if (!category) {
-      router.replace("/categorias");
+      router.replace("/worlds");
       return;
     }
     startSession();

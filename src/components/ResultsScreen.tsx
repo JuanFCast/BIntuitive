@@ -84,7 +84,7 @@ export default function ResultsScreen({
           {t("playAgain")}
         </button>
         <Link
-          href="/categorias"
+          href="/worlds"
           className="flex min-h-16 items-center justify-center rounded-full border-b-8 border-sky bg-skysoft px-10 py-4 text-2xl font-extrabold text-ink shadow-lg transition-transform active:scale-95 active:border-b-4 sm:text-3xl"
         >
           {t("anotherWorld")}

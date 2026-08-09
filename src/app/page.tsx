@@ -40,7 +40,7 @@ export default function HomePage() {
       )}
 
       <Link
-        href="/categorias"
+        href="/worlds"
         className="mt-4 flex min-h-20 items-center justify-center rounded-full border-b-8 border-[#e0a800] bg-sun px-16 py-5 text-4xl font-extrabold text-ink shadow-xl transition-transform active:scale-95 active:border-b-4 sm:text-5xl"
       >
         ▶️ {t("play")}

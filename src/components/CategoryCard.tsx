@@ -10,7 +10,7 @@ type CategoryCardProps = {
 
 export default function CategoryCard({ category, language }: CategoryCardProps) {
   const localizedCategory = localizeCategory(category, language);
-  const href = "href" in category ? category.href : `/game?categoria=${category.id}`;
+  const href = "href" in category ? category.href : `/game?world=${category.slug}`;
 
   return (
     <Link

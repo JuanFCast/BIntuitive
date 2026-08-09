@@ -7,7 +7,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { worlds } from "@/data/categories";
 import { useLanguage } from "@/lib/i18n";
 
-export default function CategoriesClient() {
+export default function WorldsClient() {
   const { language, t } = useLanguage();
 
   return (
@@ -24,10 +24,10 @@ export default function CategoriesClient() {
       </header>
 
       <div className="grid w-full max-w-5xl flex-1 grid-cols-1 content-center gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {worlds.map((category) => (
+        {worlds.map((world) => (
           <CategoryCard
-            key={category.id}
-            category={category}
+            key={world.id}
+            category={world}
             language={language}
           />
         ))}
