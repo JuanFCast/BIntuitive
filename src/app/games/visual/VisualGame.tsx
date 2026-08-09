@@ -164,14 +164,14 @@ export default function VisualGame() {
           <div className="grid w-full grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] gap-1.5 sm:grid-cols-[3.5rem_minmax(0,1fr)_3.5rem] sm:gap-3">
             <aside className="flex flex-col justify-between py-10 sm:py-12">
               <SideMetric
-                icon="🃏"
-                label={t("visualCards")}
-                value={`${Math.min(completed + 1, VISUAL_ROUNDS)}/${VISUAL_ROUNDS}`}
-              />
-              <SideMetric
                 icon="⏱️"
                 label={t("visualTime")}
                 value={formatVisualTime(elapsedTime)}
+              />
+              <SideMetric
+                icon="🃏"
+                label={t("visualCards")}
+                value={`${Math.min(completed + 1, VISUAL_ROUNDS)}/${VISUAL_ROUNDS}`}
               />
             </aside>
 
@@ -204,14 +204,14 @@ export default function VisualGame() {
 
             <aside className="flex flex-col justify-between py-10 sm:py-12">
               <SideMetric
-                icon="❌"
-                label={t("visualMistakes")}
-                value={errors}
-              />
-              <SideMetric
                 icon="🎯"
                 label={t("visualAccuracy")}
                 value={`${accuracy}%`}
+              />
+              <SideMetric
+                icon="❌"
+                label={t("visualMistakes")}
+                value={errors}
               />
             </aside>
           </div>
