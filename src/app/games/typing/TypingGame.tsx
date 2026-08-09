@@ -155,6 +155,18 @@ export default function TypingGame() {
     }
   };
 
+  const keepInputCursorAtEnd = () => {
+    const input = inputRef.current;
+    if (!input) return;
+    const end = input.value.length;
+    input.setSelectionRange(end, end);
+  };
+
+  const focusTypingInput = () => {
+    inputRef.current?.focus({ preventScroll: true });
+    keepInputCursorAtEnd();
+  };
+
   const elapsed =
     phase === "playing" ? Math.max(0, now - startedAt) : finalElapsed;
   const remaining =
@@ -253,52 +265,53 @@ export default function TypingGame() {
           </div>
 
           <div
-            ref={passageContainerRef}
-            className="max-h-[min(28dvh,12rem)] overflow-y-auto scroll-smooth rounded-2xl border-[3px] border-berry bg-white p-3 shadow-xl sm:max-h-[48dvh] sm:rounded-3xl sm:border-4 sm:p-6"
+            onClick={focusTypingInput}
+            className="relative cursor-text overflow-hidden rounded-2xl border-[3px] border-berry bg-white shadow-xl focus-within:ring-4 focus-within:ring-berry/25 sm:rounded-3xl sm:border-4"
           >
-            <p
-              translate="no"
-              className="notranslate whitespace-pre-wrap break-words font-mono text-base font-semibold leading-6 sm:text-2xl sm:leading-10"
+            <div
+              ref={passageContainerRef}
+              className="max-h-[min(34dvh,15rem)] overflow-y-auto scroll-smooth p-3 sm:max-h-[48dvh] sm:p-6"
             >
-              {[...passage].map((character, index) => {
-                let className = "text-ink/75";
-                if (index < typed.length) {
-                  className =
-                    typed[index] === character
-                      ? mistakeIndices.has(index)
-                        ? "bg-sunsoft text-ink"
-                        : "text-[#27885a]"
-                      : "rounded bg-coralsoft text-[#c9433b] underline decoration-2";
-                } else if (index === typed.length) {
-                  className = "rounded bg-sunsoft text-ink animate-pulse";
-                }
-                return (
-                  <span
-                    key={index}
-                    ref={index === typed.length ? activeCharacterRef : undefined}
-                    className={className}
-                  >
-                    {character}
-                  </span>
-                );
-              })}
-            </p>
-          </div>
-
-          <div>
-            {phase === "ready" && (
-              <p className="mb-1 text-center text-sm font-bold text-berry sm:mb-2 sm:text-base">
-                {t("typingStartHint")}
+              <p
+                id="typing-passage"
+                translate="no"
+                className="notranslate pointer-events-none whitespace-pre-wrap break-words font-mono text-base font-semibold leading-6 sm:text-2xl sm:leading-10"
+              >
+                {[...passage].map((character, index) => {
+                  let className = "text-ink/75";
+                  if (index < typed.length) {
+                    className =
+                      typed[index] === character
+                        ? mistakeIndices.has(index)
+                          ? "bg-sunsoft text-ink"
+                          : "text-[#27885a]"
+                        : "rounded bg-coralsoft text-[#c9433b] underline decoration-2";
+                  } else if (index === typed.length) {
+                    className = "rounded bg-sunsoft text-ink animate-pulse";
+                  }
+                  return (
+                    <span
+                      key={index}
+                      ref={index === typed.length ? activeCharacterRef : undefined}
+                      className={className}
+                    >
+                      {character}
+                    </span>
+                  );
+                })}
               </p>
-            )}
+            </div>
             <label className="sr-only" htmlFor="typing-input">
               {t("typingInputLabel")}
             </label>
             <textarea
               id="typing-input"
               ref={inputRef}
+              aria-describedby="typing-passage"
               value={typed}
               onChange={(event) => handleInput(event.target.value)}
+              onClick={keepInputCursorAtEnd}
+              onFocus={keepInputCursorAtEnd}
               onPaste={(event) => event.preventDefault()}
               rows={1}
               autoComplete="off"
@@ -306,8 +319,7 @@ export default function TypingGame() {
               autoCapitalize="off"
               spellCheck={false}
               enterKeyHint="done"
-              placeholder={t("typingInputPlaceholder")}
-              className="h-14 w-full resize-none overflow-y-auto rounded-2xl border-[3px] border-berry bg-berrysoft px-3 py-3 font-mono text-base font-semibold text-ink shadow-lg outline-none placeholder:text-ink/50 focus:ring-4 focus:ring-berry/25 sm:h-28 sm:border-4 sm:p-4 sm:text-xl"
+              className="pointer-events-none absolute inset-0 z-10 h-full w-full resize-none overflow-hidden rounded-[inherit] bg-transparent opacity-0 outline-none"
             />
           </div>
         </section>
