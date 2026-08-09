@@ -1,3 +1,7 @@
+"use client";
+
+import { useLanguage } from "@/lib/i18n";
+
 type MascotExpression = "normal" | "feliz" | "pista";
 
 type MascotProps = {
@@ -15,6 +19,7 @@ export default function Mascot({
   size = 120,
   className = "",
 }: MascotProps) {
+  const { t } = useLanguage();
   const happy = expression === "feliz";
   const hint = expression === "pista";
 
@@ -26,10 +31,10 @@ export default function Mascot({
       role="img"
       aria-label={
         happy
-          ? "Abejita feliz celebrando"
+          ? t("mascotHappyAria")
           : hint
-            ? "Abejita dando una pista"
-            : "Abejita amigable"
+            ? t("mascotHintAria")
+            : t("mascotNormalAria")
       }
       className={className}
     >

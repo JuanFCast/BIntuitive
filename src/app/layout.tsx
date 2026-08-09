@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Baloo_2 } from "next/font/google";
+import { LanguageProvider } from "@/lib/i18n";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -11,7 +12,7 @@ const baloo = Baloo_2({
 export const metadata: Metadata = {
   title: "BeeSmart",
   description:
-    "Juego educativo táctil para niños: toca la respuesta correcta y aprende jugando.",
+    "A touch-friendly educational game for children: tap the correct answer and learn through play.",
 };
 
 export const viewport: Viewport = {
@@ -24,8 +25,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={baloo.variable}>
-      <body className="font-sans antialiased">{children}</body>
+    <html lang="en" className={baloo.variable}>
+      <body className="font-sans antialiased">
+        <LanguageProvider>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

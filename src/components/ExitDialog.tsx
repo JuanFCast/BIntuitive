@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { shuffle } from "@/lib/gameEngine";
+import { useLanguage } from "@/lib/i18n";
 
 type ExitDialogProps = {
   open: boolean;
@@ -15,6 +16,7 @@ type ExitDialogProps = {
  */
 export default function ExitDialog({ open, onClose }: ExitDialogProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [failed, setFailed] = useState(false);
 
   const challenge = useMemo(() => {
@@ -34,19 +36,19 @@ export default function ExitDialog({ open, onClose }: ExitDialogProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-6"
       role="dialog"
       aria-modal="true"
-      aria-label="Confirmación para salir del juego"
+      aria-label={t("exitDialogAria")}
     >
       <div className="animate-pop w-full max-w-sm rounded-3xl border-4 border-sky bg-white p-6 text-center shadow-2xl">
-        <p className="text-2xl font-extrabold text-ink">¿Salir del juego?</p>
+        <p className="text-2xl font-extrabold text-ink">{t("exitTitle")}</p>
         <p className="mt-2 text-lg font-semibold text-ink/70">
-          Pregunta para un adulto:
+          {t("adultQuestion")}
         </p>
         <p className="mt-1 text-3xl font-extrabold text-ink">
           {challenge.a} + {challenge.b} = ?
         </p>
         {failed && (
           <p className="mt-2 text-base font-bold text-coral">
-            Pídele ayuda a un adulto 😊
+            {t("askAdult")}
           </p>
         )}
         <div className="mt-4 flex justify-center gap-3">
@@ -75,7 +77,7 @@ export default function ExitDialog({ open, onClose }: ExitDialogProps) {
           }}
           className="mt-5 min-h-14 w-full rounded-full border-b-8 border-mint bg-mintsoft px-6 py-2 text-xl font-extrabold text-ink transition-transform active:scale-95 active:border-b-4"
         >
-          ⬅️ Seguir jugando
+          ⬅️ {t("continuePlaying")}
         </button>
       </div>
     </div>

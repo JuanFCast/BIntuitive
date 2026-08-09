@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CategoryId, Question } from "@/data/questions";
 import { getCategory } from "@/data/categories";
+import { localizeQuestion } from "@/data/localization";
 import {
   MAX_ATTEMPTS,
   ROUNDS_PER_SESSION,
@@ -27,12 +28,15 @@ import ProgressDots from "@/components/ProgressDots";
 import FeedbackOverlay, { type FeedbackType } from "@/components/FeedbackOverlay";
 import ResultsScreen from "@/components/ResultsScreen";
 import ExitDialog from "@/components/ExitDialog";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useLanguage } from "@/lib/i18n";
 
 type Phase = "playing" | "results";
 
 export default function GameClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { language, t } = useLanguage();
   const categoryParam = searchParams.get("categoria") ?? "";
   const category = getCategory(categoryParam);
 
@@ -181,6 +185,8 @@ export default function GameClient() {
 
   if (!question) return null;
 
+  const displayedQuestion = localizeQuestion(question, language);
+
   const getState = (optionId: string): OptionState => {
     if (
       (feedback === "correct" || feedback === "reveal") &&
@@ -208,21 +214,27 @@ export default function GameClient() {
         </div>
         <div
           className="rounded-full border-2 border-sun bg-sunsoft px-4 py-1 text-xl font-extrabold text-ink"
-          aria-label={`Llevas ${stars} estrellas de ${ROUNDS_PER_SESSION}`}
+          aria-label={t("starsProgressAria", {
+            stars,
+            total: ROUNDS_PER_SESSION,
+          })}
         >
           ⭐ {stars}/{ROUNDS_PER_SESSION}
         </div>
-        <MuteButton />
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <MuteButton />
+        </div>
       </header>
 
       {/* Instrucción */}
       <section className="flex items-center justify-center gap-4 px-4 py-2 sm:px-8">
         <h1 className="max-w-xl text-center text-2xl font-extrabold leading-snug text-ink sm:text-4xl">
-          {question.instruction}
+          {displayedQuestion.instruction}
         </h1>
         <AudioButton
-          key={question.id}
-          text={question.instruction}
+          key={`${question.id}-${language}`}
+          text={displayedQuestion.instruction}
           autoPlay
         />
       </section>
@@ -233,7 +245,7 @@ export default function GameClient() {
         onPointerDown={() => playTapSound()}
       >
         <AnswerGrid
-          options={question.options}
+          options={displayedQuestion.options}
           getState={getState}
           onSelect={handleSelect}
         />
@@ -249,14 +261,14 @@ export default function GameClient() {
         <button
           type="button"
           onClick={() => setExitOpen(true)}
-          aria-label="Salir del juego (requiere un adulto)"
+          aria-label={t("exitGameAria")}
           className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink/20 bg-white text-2xl shadow-sm transition-transform active:scale-90"
         >
           🚪
         </button>
       </footer>
 
-      <FeedbackOverlay type={feedback} hint={question.hint} />
+      <FeedbackOverlay type={feedback} hint={displayedQuestion.hint} />
       <ExitDialog open={exitOpen} onClose={() => setExitOpen(false)} />
     </main>
   );

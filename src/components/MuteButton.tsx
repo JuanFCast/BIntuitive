@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { isMuted, setMuted } from "@/lib/storage";
 import { cancelSpeech } from "@/lib/speech";
+import { useLanguage } from "@/lib/i18n";
 
 export default function MuteButton() {
+  const { t } = useLanguage();
   const [muted, setMutedState] = useState(false);
 
   useEffect(() => {
@@ -14,7 +16,7 @@ export default function MuteButton() {
   return (
     <button
       type="button"
-      aria-label={muted ? "Activar sonidos" : "Silenciar sonidos"}
+      aria-label={muted ? t("enableSounds") : t("muteSounds")}
       onClick={() => {
         const next = !muted;
         setMuted(next);

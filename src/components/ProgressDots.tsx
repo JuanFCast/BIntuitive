@@ -1,3 +1,7 @@
+"use client";
+
+import { useLanguage } from "@/lib/i18n";
+
 type ProgressDotsProps = {
   total: number;
   current: number;
@@ -9,11 +13,16 @@ export default function ProgressDots({
   current,
   starsByRound,
 }: ProgressDotsProps) {
+  const { t } = useLanguage();
+
   return (
     <div
       className="flex items-center gap-2"
       role="img"
-      aria-label={`Pregunta ${Math.min(current + 1, total)} de ${total}`}
+      aria-label={t("progressQuestion", {
+        current: Math.min(current + 1, total),
+        total,
+      })}
     >
       {Array.from({ length: total }, (_, i) => {
         const done = i < starsByRound.length;

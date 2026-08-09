@@ -6,6 +6,8 @@ import Mascot from "./Mascot";
 import { playCelebrationSound } from "@/lib/sounds";
 import { speak } from "@/lib/speech";
 import { isMuted } from "@/lib/storage";
+import { useLanguage } from "@/lib/i18n";
+import LanguageToggle from "./LanguageToggle";
 
 type ResultsScreenProps = {
   stars: number;
@@ -13,29 +15,35 @@ type ResultsScreenProps = {
   onPlayAgain: () => void;
 };
 
-function message(stars: number, total: number): string {
-  if (stars === total) return "¡Increíble! ¡Lo lograste todo!";
-  if (stars >= total - 1) return "¡Súper! ¡Casi perfecto!";
-  if (stars >= Math.ceil(total / 2)) return "¡Muy bien! ¡Sigue así!";
-  return "¡Buen intento! ¡Cada vez lo haces mejor!";
-}
-
 export default function ResultsScreen({
   stars,
   total,
   onPlayAgain,
 }: ResultsScreenProps) {
-  const text = message(stars, total);
+  const { language, t } = useLanguage();
+  const text =
+    stars === total
+      ? t("resultsPerfect")
+      : stars >= total - 1
+        ? t("resultsAlmostPerfect")
+        : stars >= Math.ceil(total / 2)
+          ? t("resultsGood")
+          : t("resultsTryAgain");
 
   useEffect(() => {
     playCelebrationSound();
+  }, []);
+
+  useEffect(() => {
     if (!isMuted()) {
-      speak(text);
+      speak(text, language);
     }
-  }, [text]);
+  }, [language, text]);
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-cream px-6 py-10 text-center">
+      <LanguageToggle className="fixed right-4 top-4 z-10 sm:right-8 sm:top-6" />
+
       <div className="animate-float">
         <Mascot expression="feliz" size={150} />
       </div>
@@ -47,7 +55,7 @@ export default function ResultsScreen({
       <div
         className="flex gap-2 text-5xl sm:text-6xl"
         role="img"
-        aria-label={`Ganaste ${stars} de ${total} estrellas`}
+        aria-label={t("resultsStarsAria", { stars, total })}
       >
         {Array.from({ length: total }, (_, i) => (
           <span
@@ -63,7 +71,7 @@ export default function ResultsScreen({
 
       {stars === total && (
         <p className="animate-pop rounded-full border-4 border-sun bg-sunsoft px-6 py-2 text-2xl font-extrabold">
-          🏅 ¡Medalla de oro!
+          {t("goldMedal")}
         </p>
       )}
 
@@ -73,13 +81,13 @@ export default function ResultsScreen({
           onClick={onPlayAgain}
           className="min-h-16 rounded-full border-b-8 border-mint bg-mintsoft px-10 py-4 text-2xl font-extrabold text-ink shadow-lg transition-transform active:scale-95 active:border-b-4 sm:text-3xl"
         >
-          🔁 Jugar otra vez
+          {t("playAgain")}
         </button>
         <Link
           href="/categorias"
           className="flex min-h-16 items-center justify-center rounded-full border-b-8 border-sky bg-skysoft px-10 py-4 text-2xl font-extrabold text-ink shadow-lg transition-transform active:scale-95 active:border-b-4 sm:text-3xl"
         >
-          🌍 Otro mundo
+          {t("anotherWorld")}
         </Link>
       </div>
     </main>

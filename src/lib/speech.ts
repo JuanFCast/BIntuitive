@@ -1,32 +1,47 @@
-let cachedVoice: SpeechSynthesisVoice | null = null;
+import type { Language } from "./language";
+
+const cachedVoices: Partial<Record<Language, SpeechSynthesisVoice>> = {};
 
 export function isSpeechAvailable(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
-function pickSpanishVoice(): SpeechSynthesisVoice | null {
+function pickVoice(language: Language): SpeechSynthesisVoice | null {
+  const cachedVoice = cachedVoices[language];
   if (cachedVoice) return cachedVoice;
+
   const voices = window.speechSynthesis.getVoices();
-  cachedVoice =
-    voices.find((v) => v.lang.startsWith("es-CO")) ??
-    voices.find((v) => v.lang.startsWith("es-419")) ??
-    voices.find((v) => v.lang.startsWith("es-MX")) ??
-    voices.find((v) => v.lang.startsWith("es")) ??
-    null;
-  return cachedVoice;
+  const preferences =
+    language === "en"
+      ? ["en-US", "en-GB", "en"]
+      : ["es-CO", "es-419", "es-MX", "es-ES", "es"];
+
+  const voice =
+    preferences
+      .map((locale) =>
+        voices.find((candidate) => candidate.lang.startsWith(locale)),
+      )
+      .find(Boolean) ?? null;
+
+  if (voice) cachedVoices[language] = voice;
+  return voice;
 }
 
-export function speak(text: string, onEnd?: () => void): void {
+export function speak(
+  text: string,
+  language: Language,
+  onEnd?: () => void,
+): void {
   if (!isSpeechAvailable()) {
     onEnd?.();
     return;
   }
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "es-ES";
+  utterance.lang = language === "en" ? "en-US" : "es-ES";
   utterance.rate = 0.85;
   utterance.pitch = 1.1;
-  const voice = pickSpanishVoice();
+  const voice = pickVoice(language);
   if (voice) {
     utterance.voice = voice;
     utterance.lang = voice.lang;
@@ -49,7 +64,9 @@ export function warmUpVoices(): void {
   if (!isSpeechAvailable()) return;
   window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = () => {
-    cachedVoice = null;
-    pickSpanishVoice();
+    delete cachedVoices.en;
+    delete cachedVoices.es;
+    pickVoice("en");
+    pickVoice("es");
   };
 }

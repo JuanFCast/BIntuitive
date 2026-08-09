@@ -1,6 +1,7 @@
 "use client";
 
 import Mascot from "./Mascot";
+import { useLanguage } from "@/lib/i18n";
 
 export type FeedbackType = "correct" | "almost" | "reveal" | null;
 
@@ -12,6 +13,8 @@ type FeedbackOverlayProps = {
 const CONFETTI = ["⭐", "🌟", "✨", "🎉", "💛", "⭐", "✨", "🌟", "🎉", "💛", "⭐", "✨"];
 
 export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
+  const { t } = useLanguage();
+
   if (!type) return null;
 
   if (type === "correct") {
@@ -37,7 +40,7 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
         <div className="animate-pop flex items-center gap-4 rounded-3xl border-4 border-mint bg-white px-8 py-5 shadow-xl">
           <Mascot expression="feliz" size={80} />
           <p className="text-3xl font-extrabold text-ink sm:text-4xl">
-            ¡Muy bien! 🎉
+            {t("feedbackCorrect")}
           </p>
         </div>
       </div>
@@ -55,11 +58,11 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
           <Mascot expression="pista" size={64} />
           <div>
             <p className="text-xl font-extrabold text-ink sm:text-2xl">
-              Casi... ¡intenta otra vez!
+              {t("feedbackAlmost")}
             </p>
             {hint && (
               <p className="text-base font-semibold text-ink/70 sm:text-lg">
-                Pista: {hint}
+                {t("hintLabel", { hint })}
               </p>
             )}
           </div>
@@ -78,7 +81,7 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
       <div className="flex items-center gap-3 rounded-3xl border-4 border-sky bg-white px-6 py-4 shadow-xl">
         <Mascot expression="normal" size={64} />
         <p className="text-xl font-extrabold text-ink sm:text-2xl">
-          ¡Mira, esta era! La próxima la logras 💪
+          {t("feedbackReveal")}
         </p>
       </div>
     </div>
