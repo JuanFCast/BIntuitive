@@ -41,7 +41,7 @@ export const VISUAL_SYMBOLS: VisualSymbol[] = [
   { id: "grapes", emoji: "🍇", label: { en: "Grapes", es: "Uvas" } },
   { id: "crab", emoji: "🦀", label: { en: "Crab", es: "Cangrejo" } },
   { id: "cat", emoji: "🐱", label: { en: "Cat", es: "Gato" } },
-  { id: "bee", emoji: "🐝", label: { en: "Bee", es: "Abeja" } },
+  { id: "ladybug", emoji: "🐞", label: { en: "Ladybug", es: "Mariquita" } },
   { id: "frog", emoji: "🐸", label: { en: "Frog", es: "Rana" } },
   { id: "turtle", emoji: "🐢", label: { en: "Turtle", es: "Tortuga" } },
   { id: "butterfly", emoji: "🦋", label: { en: "Butterfly", es: "Mariposa" } },

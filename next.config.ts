@@ -5,7 +5,12 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/categorias",
-        destination: "/worlds",
+        destination: "/hexagons",
+        permanent: true,
+      },
+      {
+        source: "/worlds",
+        destination: "/hexagons",
         permanent: true,
       },
     ];

@@ -19,7 +19,7 @@ import {
   playTapSound,
   playWrongSound,
 } from "@/lib/sounds";
-import Mascot from "@/components/Mascot";
+import BrandMark from "@/components/BrandMark";
 import AudioButton from "@/components/AudioButton";
 import MuteButton from "@/components/MuteButton";
 import AnswerGrid from "@/components/AnswerGrid";
@@ -37,10 +37,14 @@ export default function GameClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { language, t } = useLanguage();
+  const legacyWorldParam = searchParams.get("world");
   const legacyCategoryParam = searchParams.get("categoria");
-  const worldParam =
-    searchParams.get("world") ?? legacyCategoryParam ?? "";
-  const category = getCategoryBySlug(worldParam) ?? getCategory(worldParam);
+  const hexagonParam =
+    searchParams.get("hexagon") ??
+    legacyWorldParam ??
+    legacyCategoryParam ??
+    "";
+  const category = getCategoryBySlug(hexagonParam) ?? getCategory(hexagonParam);
 
   const [phase, setPhase] = useState<Phase>("playing");
   const [question, setQuestion] = useState<Question | null>(null);
@@ -61,10 +65,10 @@ export default function GameClient() {
   }, []);
 
   useEffect(() => {
-    if (!searchParams.get("world") && legacyCategoryParam && category) {
-      router.replace(`/game?world=${category.slug}`);
+    if (!searchParams.get("hexagon") && category) {
+      router.replace(`/game?hexagon=${category.slug}`);
     }
-  }, [category, legacyCategoryParam, router, searchParams]);
+  }, [category, legacyCategoryParam, legacyWorldParam, router, searchParams]);
 
   const loadQuestion = useCallback((categoryId: CategoryId) => {
     const next = pickNextQuestion(
@@ -96,7 +100,7 @@ export default function GameClient() {
 
   useEffect(() => {
     if (!category) {
-      router.replace("/worlds");
+      router.replace("/hexagons");
       return;
     }
     startSession();
@@ -207,21 +211,18 @@ export default function GameClient() {
     return "idle";
   };
 
-  const mascotExpression =
-    feedback === "correct" ? "feliz" : feedback === "almost" ? "pista" : "normal";
-
   return (
     <main className="flex min-h-dvh flex-col bg-cream">
       {/* Encabezado */}
-      <header className="flex items-center justify-between gap-3 px-4 py-3 sm:px-8">
+      <header className="flex items-center justify-between gap-3 border-b-2 border-black/10 bg-[#111111] px-4 py-3 text-white sm:px-8">
         <div className="flex items-center gap-2">
-          <Mascot expression={mascotExpression} size={56} />
-          <span className="hidden text-xl font-extrabold text-ink sm:block">
+          <BrandMark size={48} />
+          <span className="hidden text-xl font-extrabold text-white sm:block">
             BeeSmart
           </span>
         </div>
         <div
-          className="rounded-full border-2 border-sun bg-sunsoft px-4 py-1 text-xl font-extrabold text-ink"
+          className="rounded-full border-2 border-sun bg-sun px-4 py-1 text-xl font-extrabold text-black"
           aria-label={t("starsProgressAria", {
             stars,
             total: ROUNDS_PER_SESSION,

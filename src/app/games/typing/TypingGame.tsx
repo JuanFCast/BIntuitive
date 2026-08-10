@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import BrandMark from "@/components/BrandMark";
 import LanguageToggle from "@/components/LanguageToggle";
-import Mascot from "@/components/Mascot";
 import MuteButton from "@/components/MuteButton";
 import { useLanguage } from "@/lib/i18n";
 import { playCelebrationSound } from "@/lib/sounds";
@@ -193,10 +193,10 @@ export default function TypingGame() {
     <main className="min-h-dvh overflow-y-auto bg-cream px-3 py-3 sm:px-6 sm:py-5">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
         <Link
-          href="/worlds"
+          href="/hexagons"
           className="flex min-h-12 items-center rounded-full border-2 border-ink/15 bg-white px-4 text-base font-extrabold text-ink shadow-sm active:scale-95"
         >
-          ← <span className="hidden sm:inline">{t("backToWorlds")}</span>
+          ← <span className="hidden sm:inline">{t("backToHexagons")}</span>
         </Link>
         <div className="flex items-center gap-2">
           <LanguageToggle />
@@ -206,7 +206,10 @@ export default function TypingGame() {
 
       {phase === "intro" && (
         <section className="mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-xl flex-col items-center justify-center gap-5 text-center">
-          <Mascot expression="normal" size={130} className="animate-float" />
+          <BrandMark
+            size={130}
+            className="shadow-[0_14px_40px_rgba(255,196,0,0.2)]"
+          />
           <div>
             <p className="text-5xl" aria-hidden="true">⌨️</p>
             <h1 className="mt-2 text-4xl font-extrabold text-ink sm:text-5xl">
@@ -222,7 +225,7 @@ export default function TypingGame() {
           <button
             type="button"
             onClick={prepareRound}
-            className="min-h-16 rounded-full border-b-8 border-[#8b63df] bg-berrysoft px-10 py-3 text-2xl font-extrabold text-ink shadow-xl transition-transform active:scale-95 active:border-b-4"
+            className="min-h-16 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-10 py-3 text-2xl font-extrabold text-black shadow-xl transition-transform active:scale-95 active:border-b-4"
           >
             {t("typingStart")}
           </button>
@@ -327,7 +330,10 @@ export default function TypingGame() {
 
       {phase === "results" && result && (
         <section className="mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-xl flex-col items-center justify-center gap-5 text-center">
-          <Mascot expression="feliz" size={140} className="animate-float" />
+          <BrandMark
+            size={140}
+            className="shadow-[0_14px_40px_rgba(255,196,0,0.2)]"
+          />
           <div>
             <h1 className="text-4xl font-extrabold text-ink sm:text-5xl">
               {t("typingResultsTitle")}
@@ -348,15 +354,15 @@ export default function TypingGame() {
             <button
               type="button"
               onClick={prepareRound}
-              className="min-h-14 flex-1 rounded-full border-b-8 border-[#8b63df] bg-berrysoft px-6 py-3 text-xl font-extrabold text-ink shadow-lg active:scale-95 active:border-b-4"
+              className="min-h-14 flex-1 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-6 py-3 text-xl font-extrabold text-black shadow-lg active:scale-95 active:border-b-4"
             >
               {t("typingPlayAgain")}
             </button>
             <Link
-              href="/worlds"
-              className="flex min-h-14 flex-1 items-center justify-center rounded-full border-b-8 border-sky bg-skysoft px-6 py-3 text-xl font-extrabold text-ink shadow-lg active:scale-95 active:border-b-4"
+              href="/hexagons"
+              className="flex min-h-14 flex-1 items-center justify-center rounded-2xl border-b-8 border-black/30 bg-black px-6 py-3 text-xl font-extrabold text-white shadow-lg active:scale-95 active:border-b-4"
             >
-              {t("backToWorlds")}
+              {t("backToHexagons")}
             </Link>
           </div>
         </section>

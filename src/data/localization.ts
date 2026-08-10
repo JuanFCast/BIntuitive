@@ -1,10 +1,10 @@
-import type { World } from "./categories";
+import type { Hexagon } from "./categories";
 import type { CategoryId, Question, QuestionOption } from "./questions";
 import type { Language } from "@/lib/language";
 
-const englishCategories: Record<
-  World["id"],
-  Pick<World, "name" | "description">
+const englishHexagons: Record<
+  Hexagon["id"],
+  Pick<Hexagon, "name" | "description">
 > = {
   lugares: {
     name: "Places",
@@ -213,12 +213,12 @@ const englishOptions: Record<string, OptionCopy> = {
   "cuadrado-verde": { label: "Green", alt: "Green square" },
 };
 
-export function localizeCategory(
-  category: World,
+export function localizeHexagon(
+  hexagon: Hexagon,
   language: Language,
-): World {
-  if (language === "es") return category;
-  return { ...category, ...englishCategories[category.id] };
+): Hexagon {
+  if (language === "es") return hexagon;
+  return { ...hexagon, ...englishHexagons[hexagon.id] };
 }
 
 export function localizeQuestion(

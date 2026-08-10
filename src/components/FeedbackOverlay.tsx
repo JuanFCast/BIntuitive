@@ -1,6 +1,5 @@
 "use client";
 
-import Mascot from "./Mascot";
 import { useLanguage } from "@/lib/i18n";
 
 export type FeedbackType = "correct" | "almost" | "reveal" | null;
@@ -37,8 +36,13 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
             {piece}
           </span>
         ))}
-        <div className="animate-pop flex items-center gap-4 rounded-3xl border-4 border-mint bg-white px-8 py-5 shadow-xl">
-          <Mascot expression="feliz" size={80} />
+        <div className="animate-pop flex items-center gap-4 rounded-3xl border-4 border-black bg-white px-8 py-5 shadow-xl">
+          <span
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sun text-4xl font-black text-black"
+            aria-hidden="true"
+          >
+            ✓
+          </span>
           <p className="text-3xl font-extrabold text-ink sm:text-4xl">
             {t("feedbackCorrect")}
           </p>
@@ -55,7 +59,12 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
         aria-live="polite"
       >
         <div className="flex items-center gap-3 rounded-3xl border-4 border-sun bg-white px-6 py-4 shadow-xl">
-          <Mascot expression="pista" size={64} />
+          <span
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-sun text-3xl font-black text-black"
+            aria-hidden="true"
+          >
+            !
+          </span>
           <div>
             <p className="text-xl font-extrabold text-ink sm:text-2xl">
               {t("feedbackAlmost")}
@@ -78,8 +87,13 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
       role="status"
       aria-live="polite"
     >
-      <div className="flex items-center gap-3 rounded-3xl border-4 border-sky bg-white px-6 py-4 shadow-xl">
-        <Mascot expression="normal" size={64} />
+      <div className="flex items-center gap-3 rounded-3xl border-4 border-black bg-white px-6 py-4 shadow-xl">
+        <span
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black text-2xl font-black text-sun"
+          aria-hidden="true"
+        >
+          →
+        </span>
         <p className="text-xl font-extrabold text-ink sm:text-2xl">
           {t("feedbackReveal")}
         </p>
