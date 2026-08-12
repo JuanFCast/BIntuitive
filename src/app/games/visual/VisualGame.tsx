@@ -164,59 +164,54 @@ export default function VisualGame() {
 
       {phase === "playing" && baseCard && playerCard && (
         <section className="mx-auto w-full max-w-6xl pb-2 pt-2 text-center sm:pt-4">
-          <div className="grid w-full grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] gap-1.5 sm:grid-cols-[3.5rem_minmax(0,1fr)_3.5rem] sm:gap-3">
-            <aside className="flex flex-col justify-between py-10 sm:py-12">
+          <div className="flex min-w-0 flex-col gap-2 sm:gap-3">
+            <h1 className="text-base font-extrabold text-ink sm:text-2xl">
+              {t("visualInstruction")}
+            </h1>
+
+            <div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-5">
+              <VisualCardView
+                card={baseCard}
+                label={t("visualReference")}
+                language={language}
+                interactive={false}
+                flash={null}
+                locked
+                onTap={() => {}}
+              />
+              <VisualCardView
+                card={playerCard}
+                label={t("visualYourCard")}
+                language={language}
+                interactive
+                flash={flash}
+                locked={locked}
+                onTap={handleTap}
+              />
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
               <SideMetric
                 icon="⏱️"
                 label={t("visualTime")}
                 value={formatVisualTime(elapsedTime)}
               />
               <SideMetric
-                icon="🃏"
-                label={t("visualCards")}
-                value={`${Math.min(completed + 1, VISUAL_ROUNDS)}/${VISUAL_ROUNDS}`}
-              />
-            </aside>
-
-            <div className="flex min-w-0 flex-col gap-2 sm:gap-3">
-              <h1 className="text-base font-extrabold text-ink sm:text-2xl">
-                {t("visualInstruction")}
-              </h1>
-
-              <div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-5">
-                <VisualCardView
-                  card={baseCard}
-                  label={t("visualReference")}
-                  language={language}
-                  interactive={false}
-                  flash={null}
-                  locked
-                  onTap={() => {}}
-                />
-                <VisualCardView
-                  card={playerCard}
-                  label={t("visualYourCard")}
-                  language={language}
-                  interactive
-                  flash={flash}
-                  locked={locked}
-                  onTap={handleTap}
-                />
-              </div>
-            </div>
-
-            <aside className="flex flex-col justify-between py-10 sm:py-12">
-              <SideMetric
                 icon="🎯"
                 label={t("visualAccuracy")}
                 value={`${accuracy}%`}
+              />
+              <SideMetric
+                icon="🃏"
+                label={t("visualCards")}
+                value={`${Math.min(completed + 1, VISUAL_ROUNDS)}/${VISUAL_ROUNDS}`}
               />
               <SideMetric
                 icon="❌"
                 label={t("visualMistakes")}
                 value={errors}
               />
-            </aside>
+            </div>
           </div>
         </section>
       )}
@@ -284,14 +279,14 @@ function VisualCardView({
     : "border-[#e0a800] bg-sun";
 
   return (
-    <div className="relative mx-auto w-full max-w-[42rem] pt-3">
+    <div className="relative mx-auto w-full max-w-[18rem] pt-3 md:max-w-[42rem]">
       <p
         className={`absolute left-1/2 top-0 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border-2 px-5 py-1 text-sm font-extrabold uppercase tracking-wider text-ink shadow-sm sm:px-7 sm:text-base ${labelClass}`}
       >
         {label}
       </p>
       <div
-        className={`relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] border-4 bg-white shadow-xl sm:border-[6px] ${borderClass}`}
+        className={`relative aspect-[3/2] w-full overflow-hidden rounded-[2rem] border-4 bg-white shadow-xl sm:border-[6px] md:aspect-[4/3] ${borderClass}`}
       >
         {card.symbols.map((symbol) => {
           const isFlashing = flash?.id === symbol.id;
@@ -301,7 +296,7 @@ function VisualCardView({
               : "animate-shake bg-coralsoft ring-4 ring-coral"
             : "";
           const sharedClass =
-            "absolute flex h-[clamp(3rem,16vw,5.5rem)] w-[clamp(3rem,16vw,5.5rem)] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl text-[clamp(2.15rem,11vw,4.25rem)] leading-none transition-transform";
+            "absolute flex h-[clamp(2.75rem,14vw,5.5rem)] w-[clamp(2.75rem,14vw,5.5rem)] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl text-[clamp(2rem,10vw,4.25rem)] leading-none transition-transform md:h-[clamp(3rem,8vw,5.5rem)] md:w-[clamp(3rem,8vw,5.5rem)] md:text-[clamp(2.15rem,6vw,4.25rem)]";
           const style = {
             left: `${symbol.x}%`,
             top: `${symbol.y}%`,
@@ -361,7 +356,7 @@ function SideMetric({
 }) {
   return (
     <div
-      className="flex min-h-16 w-full flex-col items-center justify-center rounded-xl border-2 border-ink/10 bg-white px-0.5 py-1.5 text-center shadow-sm sm:min-h-20 sm:rounded-2xl"
+      className="flex min-h-12 w-full flex-col items-center justify-center rounded-xl border-2 border-ink/10 bg-white px-0.5 py-1 text-center shadow-sm sm:min-h-16 sm:rounded-2xl"
       aria-label={`${label}: ${value}`}
     >
       <span className="text-base leading-none sm:text-xl" aria-hidden="true">
