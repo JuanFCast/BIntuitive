@@ -5,7 +5,11 @@ import { isMuted, setMuted } from "@/lib/storage";
 import { cancelSpeech } from "@/lib/speech";
 import { useLanguage } from "@/lib/i18n";
 
-export default function MuteButton() {
+type MuteButtonProps = {
+  className?: string;
+};
+
+export default function MuteButton({ className = "" }: MuteButtonProps) {
   const { t } = useLanguage();
   const [muted, setMutedState] = useState(false);
 
@@ -23,7 +27,7 @@ export default function MuteButton() {
         setMutedState(next);
         if (next) cancelSpeech();
       }}
-      className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-ink/20 bg-white text-xl shadow-sm transition-transform active:scale-90"
+      className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-ink/20 bg-white text-xl shadow-sm transition-transform active:scale-90 ${className}`}
     >
       <span aria-hidden="true">{muted ? "🔇" : "🔉"}</span>
     </button>

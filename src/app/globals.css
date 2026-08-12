@@ -111,6 +111,95 @@ button {
   font-family: inherit;
 }
 
+.game-header-control {
+  height: 2.75rem;
+  border-color: rgb(23 23 23 / 0.11);
+  background: rgb(255 255 255 / 0.88);
+  box-shadow: 0 2px 8px rgb(74 56 0 / 0.07);
+}
+
+.game-header-language {
+  min-width: 3.75rem;
+  padding-inline: 0.625rem;
+}
+
+.game-header-sound {
+  width: 2.75rem;
+}
+
+.game-header-hive {
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  width: 7.5rem;
+  height: 4.5rem;
+  opacity: 0.42;
+  transform: translateY(-50%);
+}
+
+.game-header-hive-left {
+  left: -2rem;
+}
+
+.game-header-hive-right {
+  right: -2rem;
+  transform: translateY(-50%) scaleX(-1);
+}
+
+.game-header-hex {
+  position: absolute;
+  width: 2.75rem;
+  aspect-ratio: 0.8660254;
+  background: rgb(255 196 0 / 0.13);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.game-header-hex::after {
+  position: absolute;
+  inset: 1px;
+  background: var(--color-cream);
+  clip-path: inherit;
+  content: "";
+}
+
+.game-header-hex-one {
+  left: 0;
+  top: 0;
+}
+
+.game-header-hex-two {
+  left: 2.25rem;
+  top: 1.6875rem;
+}
+
+.game-header-hex-three {
+  left: 0;
+  top: 3.375rem;
+}
+
+@media (min-width: 640px) {
+  .game-header-control {
+    height: 3rem;
+  }
+
+  .game-header-sound {
+    width: 3rem;
+  }
+
+  .game-header-hive {
+    width: 10rem;
+    opacity: 0.55;
+  }
+
+  .game-header-hive-left {
+    left: 1.5rem;
+  }
+
+  .game-header-hive-right {
+    right: 1.5rem;
+  }
+}
+
 @media (max-width: 767px) and (max-height: 719px) {
   .visual-card-board {
     aspect-ratio: auto;
