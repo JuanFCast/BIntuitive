@@ -11,11 +11,11 @@ export default function HexagonsClient() {
   const { language, t } = useLanguage();
 
   return (
-    <main className="flex min-h-dvh flex-col items-center bg-[#080808] px-4 py-4 text-white sm:px-6 sm:py-6">
+    <main className="flex min-h-dvh flex-col items-center bg-cream px-4 py-4 text-ink sm:px-6 sm:py-6">
       <div className="flex w-full max-w-5xl items-center justify-between">
         <Link
           href="/"
-          className="flex h-12 min-w-12 items-center justify-center rounded-full border-2 border-white/15 bg-white/10 px-4 font-extrabold text-white shadow-sm transition-transform active:scale-90"
+          className="flex h-12 min-w-12 items-center justify-center rounded-full border-2 border-ink/20 bg-white px-4 font-extrabold text-ink shadow-sm transition-transform active:scale-90"
           aria-label={t("back")}
         >
           ← <span className="hidden sm:inline">{t("back")}</span>

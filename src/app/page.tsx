@@ -16,15 +16,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#080808] px-6 py-10 text-center text-white">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-50"
-        aria-hidden="true"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 35%, rgba(255,196,0,0.18), transparent 38%)",
-        }}
-      />
+    <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-cream px-6 py-10 text-center text-ink">
       <LanguageToggle className="fixed right-4 top-4 z-10 sm:right-8 sm:top-6" />
 
       <BrandMark
@@ -36,13 +28,13 @@ export default function HomePage() {
       <h1 className="relative z-[1] mt-5 text-5xl font-extrabold tracking-tight sm:text-7xl">
         B<span className="text-sun">Intuitive</span>
       </h1>
-      <p className="relative z-[1] mt-3 max-w-md text-lg font-semibold text-white/65 sm:text-2xl">
+      <p className="relative z-[1] mt-3 max-w-md text-lg font-semibold text-ink/65 sm:text-2xl">
         {t("homeTagline")}
       </p>
 
       {totalStars > 0 && (
         <p
-          className="relative z-[1] mt-4 rounded-full border-2 border-sun/60 bg-sun/10 px-5 py-2 text-lg font-bold text-sun"
+          className="relative z-[1] mt-4 rounded-full border-2 border-sun bg-sunsoft px-5 py-2 text-lg font-bold text-ink"
           aria-label={t("totalStarsAria", { count: totalStars })}
         >
           ⭐ {t("starsEarned", { count: totalStars })}
@@ -56,7 +48,7 @@ export default function HomePage() {
         {t("play")} <span aria-hidden="true" className="ml-3">→</span>
       </Link>
 
-      <p className="relative z-[1] mt-7 text-sm font-semibold text-white/35">
+      <p className="relative z-[1] mt-7 text-sm font-semibold text-ink/40">
         {t("homeFooter")}
       </p>
     </main>
