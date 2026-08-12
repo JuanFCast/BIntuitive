@@ -122,34 +122,73 @@ button {
   }
 }
 
+.hive-ambient {
+  position: absolute;
+  aspect-ratio: 1.1547;
+  background: rgb(255 196 0 / 0.13);
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+.hive-ambient::after {
+  position: absolute;
+  inset: 2px;
+  background: var(--color-cream);
+  clip-path: inherit;
+  content: "";
+}
+
+.hive-ambient-one {
+  left: -2.75rem;
+  top: 34%;
+  width: clamp(5.5rem, 18vw, 9rem);
+}
+
+.hive-ambient-two {
+  left: 2%;
+  top: 53%;
+  width: clamp(3.5rem, 11vw, 5.5rem);
+}
+
+.hive-ambient-three {
+  right: -2.5rem;
+  top: 39%;
+  width: clamp(5rem, 16vw, 8rem);
+}
+
+.hive-ambient-four {
+  right: 4%;
+  top: 64%;
+  width: clamp(3rem, 10vw, 5rem);
+}
+
 .hexagon-card:nth-child(1) {
   left: 0;
   top: 0;
 }
 
 .hexagon-card:nth-child(2) {
-  left: 33.333%;
+  left: 30%;
   top: 0;
 }
 
 .hexagon-card:nth-child(3) {
-  left: 66.666%;
+  left: 60%;
   top: 0;
 }
 
 .hexagon-card:nth-child(4) {
-  left: 16.666%;
+  left: 15%;
   top: 42.857%;
 }
 
 .hexagon-card:nth-child(5) {
-  left: 50%;
+  left: 45%;
   top: 42.857%;
 }
 
 @media (min-width: 640px) {
   .hexagons-grid {
-    width: min(100%, calc((100dvh - 14.5rem) * 1.98));
+    width: min(100%, calc((100dvh - 13.5rem) * 1.65));
   }
 }
 

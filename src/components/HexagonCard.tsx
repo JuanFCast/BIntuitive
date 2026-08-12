@@ -22,7 +22,7 @@ export default function HexagonCard({
   return (
     <Link
       href={href}
-      className="hexagon-card group absolute aspect-[1.1547] w-1/3 scale-[0.975] drop-shadow-[0_7px_10px_rgba(255,196,0,0.2)] transition duration-200 hover:z-10 hover:scale-[1.015] focus-visible:z-10 focus-visible:scale-[1.015] focus-visible:outline-none active:scale-[0.94]"
+      className="hexagon-card group absolute aspect-[1.1547] w-2/5 bg-cream transition-[filter,transform] duration-200 hover:z-10 hover:brightness-[1.04] focus-visible:z-10 focus-visible:brightness-[1.04] focus-visible:outline-none active:scale-[0.98]"
       style={{ clipPath: HEXAGON_CLIP }}
       aria-label={
         language === "en"
@@ -31,13 +31,13 @@ export default function HexagonCard({
       }
     >
       <span
-        className="absolute inset-0 flex flex-col items-center justify-center bg-sun px-2 text-center text-ink transition-colors group-hover:bg-[#ffd229] group-focus-visible:bg-[#ffd229] sm:px-5"
+        className="absolute inset-[1.5px] flex flex-col items-center justify-center bg-sun px-2 text-center text-ink transition-colors group-hover:bg-[#ffd229] group-focus-visible:bg-[#ffd229] sm:px-5"
         style={{ clipPath: HEXAGON_CLIP }}
       >
-        <span className="hexagon-emoji text-[clamp(2rem,9vw,4.5rem)] leading-none" aria-hidden="true">
+        <span className="hexagon-emoji text-[clamp(2.15rem,10vw,4.75rem)] leading-none" aria-hidden="true">
           {localizedHexagon.emoji}
         </span>
-        <span className="hexagon-name mt-1 text-[clamp(0.9rem,4.25vw,1.5rem)] font-extrabold leading-[1.05]">
+        <span className="hexagon-name mt-1 text-[clamp(0.9rem,4.15vw,1.55rem)] font-extrabold leading-[1.05]">
           {localizedHexagon.name}
         </span>
       </span>

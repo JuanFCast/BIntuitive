@@ -11,8 +11,15 @@ export default function HexagonsClient() {
   const { language, t } = useLanguage();
 
   return (
-    <main className="flex min-h-dvh flex-col items-center bg-cream px-4 py-4 text-ink sm:h-dvh sm:overflow-hidden sm:px-6 sm:py-6">
-      <div className="flex w-full max-w-5xl items-center justify-between">
+    <main className="relative flex min-h-dvh flex-col items-center overflow-hidden bg-cream px-4 py-4 text-ink sm:h-dvh sm:px-6 sm:py-6">
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <span className="hive-ambient hive-ambient-one" />
+        <span className="hive-ambient hive-ambient-two" />
+        <span className="hive-ambient hive-ambient-three" />
+        <span className="hive-ambient hive-ambient-four" />
+      </div>
+
+      <div className="relative z-10 flex w-full max-w-5xl items-center justify-between">
         <Link
           href="/"
           className="flex h-12 min-w-12 items-center justify-center rounded-full border-2 border-ink/20 bg-white px-4 font-extrabold text-ink shadow-sm transition-transform active:scale-90"
@@ -23,20 +30,20 @@ export default function HexagonsClient() {
         <LanguageToggle />
       </div>
 
-      <header className="hexagons-header mt-3 flex flex-col items-center gap-2 text-center sm:mt-5 sm:flex-row sm:gap-4">
-        <BrandMark size={76} className="shadow-[0_8px_24px_rgba(255,196,0,0.25)]" />
+      <header className="hexagons-header relative z-10 mt-2 flex flex-col items-center gap-1 text-center sm:mt-4 sm:flex-row sm:gap-3">
+        <BrandMark size={68} className="shadow-[0_6px_18px_rgba(255,196,0,0.18)]" />
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-sun sm:text-sm">
             BIntuitive
           </p>
-          <h1 className="mt-1 text-3xl font-extrabold sm:text-5xl">
+          <h1 className="mt-0.5 text-3xl font-extrabold leading-tight sm:text-5xl">
             {t("hexagonsHeading")}
           </h1>
         </div>
       </header>
 
       <section
-        className="hexagons-grid relative mt-10 aspect-[1.98] w-full max-w-2xl shrink-0 sm:mt-8"
+        className="hexagons-grid relative z-10 mt-5 aspect-[1.65] w-full max-w-3xl shrink-0 drop-shadow-[0_8px_14px_rgba(120,88,0,0.1)] sm:mt-6"
         aria-label={t("hexagonsHeading")}
       >
         {hexagons.map((hexagon) => (
