@@ -27,7 +27,7 @@ export default function HexagonsClient() {
         <BrandMark size={76} className="shadow-[0_8px_24px_rgba(255,196,0,0.25)]" />
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-sun sm:text-sm">
-            BeeSmart
+            BIntuitive
           </p>
           <h1 className="mt-1 text-3xl font-extrabold sm:text-5xl">
             {t("hexagonsHeading")}

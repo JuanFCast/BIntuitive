@@ -14,7 +14,7 @@ export default function BrandMark({
   return (
     <Image
       src="/brand-mark.png"
-      alt="BeeSmart"
+      alt="BIntuitive"
       width={size}
       height={size}
       priority={priority}

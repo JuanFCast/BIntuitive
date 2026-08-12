@@ -1,7 +1,7 @@
 import VisualGame from "./VisualGame";
 
 export const metadata = {
-  title: "Visual Agility · BeeSmart",
+  title: "Visual Agility · BIntuitive",
   description: "Train visual focus by finding the symbol shared by two cards.",
 };
 

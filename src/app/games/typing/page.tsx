@@ -1,7 +1,7 @@
 import TypingGame from "./TypingGame";
 
 export const metadata = {
-  title: "Type Rush · BeeSmart",
+  title: "Type Rush · BIntuitive",
   description: "Practice typing speed and accuracy in a short local challenge.",
 };
 

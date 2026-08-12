@@ -1,7 +1,7 @@
 import type { CategoryId } from "@/data/questions";
 
-const PROGRESS_KEY = "beesmart-progress";
-const MUTE_KEY = "beesmart-muted";
+const PROGRESS_KEY = "bintuitive-progress";
+const MUTE_KEY = "bintuitive-muted";
 
 export type SessionSummary = {
   date: string;

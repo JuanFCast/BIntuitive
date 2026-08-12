@@ -34,7 +34,7 @@ export default function HomePage() {
       />
 
       <h1 className="relative z-[1] mt-5 text-5xl font-extrabold tracking-tight sm:text-7xl">
-        Bee<span className="text-sun">Smart</span>
+        B<span className="text-sun">Intuitive</span>
       </h1>
       <p className="relative z-[1] mt-3 max-w-md text-lg font-semibold text-white/65 sm:text-2xl">
         {t("homeTagline")}

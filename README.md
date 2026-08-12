@@ -1,8 +1,8 @@
-# BeeSmart
+# BIntuitive
 
-BeeSmart is a touch-friendly educational game for curious learners. Players listen to or read a short instruction and tap the correct answer. The experience is designed for iPad first and adapts to phones and desktop browsers.
+BIntuitive is a touch-friendly educational game for curious learners. Players listen to or read a short instruction and tap the correct answer. The experience is designed for iPad first and adapts to phones and desktop browsers.
 
-**Live app:** [beesmart.aumcrsp.com](https://beesmart.aumcrsp.com)
+**Live app:** [bintuitive.aumcrsp.com](https://bintuitive.aumcrsp.com)
 
 ## Features
 
@@ -15,8 +15,8 @@ BeeSmart is a touch-friendly educational game for curious learners. Players list
 - **Type Rush:** a responsive 30-second typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish.
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
-- **New BeeSmart identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
-- **Social sharing:** Open Graph and Twitter cards use the official BeeSmart brand mark, with favicon and Apple touch icon support.
+- **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
+- **Social sharing:** Open Graph and Twitter cards use the official BIntuitive brand mark, with favicon and Apple touch icon support.
 - **Local progress:** total stars, recent sessions, per-category levels, language preference, and mute preference are stored in `localStorage`.
 - **Exit confirmation:** a simple confirmation helps prevent accidental exits during a lesson.
 - **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
@@ -81,13 +81,13 @@ src/
 
 The Visual Agility and Type Rush hexagons adapt the core game mechanics from
 [Avíspate](https://github.com/JuanFCast/avispate-visual) and
-[TypeRush](https://github.com/JuanFCast/TypeRush). BeeSmart includes only their
+[TypeRush](https://github.com/JuanFCast/TypeRush). BIntuitive includes only their
 local educational gameplay: no wallets, payments, rankings, accounts, blockchain,
 or remote backend services are included.
 
 ## Localization
 
-The application uses English by default and stores the selected language under `beesmart-language` in `localStorage`.
+The application uses English by default and stores the selected language under `bintuitive-language` in `localStorage`.
 
 Interface translations live in `src/lib/i18n.tsx`. Question and category translations live in `src/data/localization.ts`. The original Spanish question bank remains in `src/data/questions.ts`.
 
@@ -112,7 +112,7 @@ When adding a question:
 Pushes to the `main` branch trigger the connected Vercel production deployment. The public custom domain is served through AWS CloudFront:
 
 ```text
-GitHub main → Vercel → AWS CloudFront → beesmart.aumcrsp.com
+GitHub main → Vercel → AWS CloudFront → bintuitive.aumcrsp.com
 ```
 
 No manual AWS action is normally required for application updates.

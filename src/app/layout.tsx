@@ -9,18 +9,18 @@ const baloo = Baloo_2({
   weight: ["400", "600", "700", "800"],
 });
 
-const title = "BeeSmart";
+const title = "BIntuitive";
 const description =
   "A touch-friendly educational game: tap the correct answer and learn through play.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://beesmart.aumcrsp.com"),
+  metadataBase: new URL("https://bintuitive.aumcrsp.com"),
   title,
   description,
   openGraph: {
     type: "website",
     url: "/",
-    siteName: "BeeSmart",
+    siteName: "BIntuitive",
     locale: "en_US",
     title,
     description,

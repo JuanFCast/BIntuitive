@@ -11,7 +11,7 @@ import {
 } from "react";
 import type { Language } from "./language";
 
-const LANGUAGE_KEY = "beesmart-language";
+const LANGUAGE_KEY = "bintuitive-language";
 
 const messages = {
   en: {

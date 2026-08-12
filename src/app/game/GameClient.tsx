@@ -218,7 +218,7 @@ export default function GameClient() {
         <div className="flex items-center gap-2">
           <BrandMark size={48} />
           <span className="hidden text-xl font-extrabold text-white sm:block">
-            BeeSmart
+            BIntuitive
           </span>
         </div>
         <div
