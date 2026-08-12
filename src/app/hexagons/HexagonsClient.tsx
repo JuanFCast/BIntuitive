@@ -13,10 +13,16 @@ export default function HexagonsClient() {
   return (
     <main className="relative flex min-h-dvh flex-col items-center overflow-hidden bg-cream px-4 py-4 text-ink sm:h-dvh sm:px-6 sm:py-6">
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <span className="hive-ambient hive-ambient-one" />
-        <span className="hive-ambient hive-ambient-two" />
-        <span className="hive-ambient hive-ambient-three" />
-        <span className="hive-ambient hive-ambient-four" />
+        <div className="hive-ambient-cluster hive-ambient-cluster-left">
+          <span className="hive-ambient hive-ambient-one" />
+          <span className="hive-ambient hive-ambient-two" />
+          <span className="hive-ambient hive-ambient-three" />
+        </div>
+        <div className="hive-ambient-cluster hive-ambient-cluster-right">
+          <span className="hive-ambient hive-ambient-one" />
+          <span className="hive-ambient hive-ambient-two" />
+          <span className="hive-ambient hive-ambient-three" />
+        </div>
       </div>
 
       <div className="relative z-10 flex w-full max-w-5xl items-center justify-between">
@@ -43,7 +49,7 @@ export default function HexagonsClient() {
       </header>
 
       <section
-        className="hexagons-grid relative z-10 mt-5 aspect-[1.65] w-full max-w-3xl shrink-0 drop-shadow-[0_8px_14px_rgba(120,88,0,0.1)] sm:mt-6"
+        className="hexagons-grid relative z-10 mt-4 w-full shrink-0 sm:mt-5"
         aria-label={t("hexagonsHeading")}
       >
         {hexagons.map((hexagon) => (

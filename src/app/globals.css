@@ -122,73 +122,124 @@ button {
   }
 }
 
+.hive-ambient-cluster {
+  position: absolute;
+  top: 43%;
+  width: clamp(7rem, 12vw, 11rem);
+  aspect-ratio: 1;
+  opacity: 0.7;
+}
+
+.hive-ambient-cluster-left {
+  left: -3.5rem;
+}
+
+.hive-ambient-cluster-right {
+  right: -3.5rem;
+  transform: scaleX(-1);
+}
+
 .hive-ambient {
   position: absolute;
-  aspect-ratio: 1.1547;
-  background: rgb(255 196 0 / 0.13);
-  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  width: 54%;
+  aspect-ratio: 0.8660254;
+  background: rgb(255 196 0 / 0.12);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
 }
 
 .hive-ambient::after {
   position: absolute;
-  inset: 2px;
+  inset: 1px;
   background: var(--color-cream);
   clip-path: inherit;
   content: "";
 }
 
 .hive-ambient-one {
-  left: -2.75rem;
-  top: 34%;
-  width: clamp(5.5rem, 18vw, 9rem);
-}
-
-.hive-ambient-two {
-  left: 2%;
-  top: 53%;
-  width: clamp(3.5rem, 11vw, 5.5rem);
-}
-
-.hive-ambient-three {
-  right: -2.5rem;
-  top: 39%;
-  width: clamp(5rem, 16vw, 8rem);
-}
-
-.hive-ambient-four {
-  right: 4%;
-  top: 64%;
-  width: clamp(3rem, 10vw, 5rem);
-}
-
-.hexagon-card:nth-child(1) {
   left: 0;
   top: 0;
 }
 
+.hive-ambient-two {
+  left: 46%;
+  top: 37.5%;
+}
+
+.hive-ambient-three {
+  left: 0;
+  top: 75%;
+}
+
+.hexagons-grid {
+  max-width: 24rem;
+  aspect-ratio: 0.8660254;
+  filter: drop-shadow(0 6px 10px rgb(120 88 0 / 0.08));
+}
+
+.hexagon-card {
+  width: 40%;
+  aspect-ratio: 0.8660254;
+}
+
+.hexagon-card:nth-child(1) {
+  left: 10%;
+  top: 0;
+}
+
 .hexagon-card:nth-child(2) {
-  left: 30%;
+  left: 50%;
   top: 0;
 }
 
 .hexagon-card:nth-child(3) {
-  left: 60%;
-  top: 0;
+  left: 30%;
+  top: 30%;
 }
 
 .hexagon-card:nth-child(4) {
-  left: 15%;
-  top: 42.857%;
+  left: 10%;
+  top: 60%;
 }
 
 .hexagon-card:nth-child(5) {
-  left: 45%;
-  top: 42.857%;
+  left: 50%;
+  top: 60%;
 }
 
 @media (min-width: 640px) {
   .hexagons-grid {
-    width: min(100%, calc((100dvh - 13.5rem) * 1.65));
+    width: min(100%, calc((100dvh - 13rem) * 1.4846));
+    max-width: 38rem;
+    aspect-ratio: 1.4846;
+  }
+
+  .hexagon-card {
+    width: 33.333%;
+  }
+
+  .hexagon-card:nth-child(1) {
+    left: 0;
+    top: 0;
+  }
+
+  .hexagon-card:nth-child(2) {
+    left: 33.333%;
+    top: 0;
+  }
+
+  .hexagon-card:nth-child(3) {
+    left: 66.666%;
+    top: 0;
+  }
+
+  .hexagon-card:nth-child(4) {
+    left: 16.666%;
+    top: 42.857%;
+  }
+
+  .hexagon-card:nth-child(5) {
+    left: 50%;
+    top: 42.857%;
   }
 }
 
