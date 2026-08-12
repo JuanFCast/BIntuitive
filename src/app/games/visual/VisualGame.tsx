@@ -279,14 +279,14 @@ function VisualCardView({
     : "border-[#e0a800] bg-sun";
 
   return (
-    <div className="relative mx-auto w-full max-w-[18rem] pt-3 md:max-w-[42rem]">
+    <div className="relative mx-auto w-full max-w-[42rem] pt-3">
       <p
         className={`absolute left-1/2 top-0 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border-2 px-5 py-1 text-sm font-extrabold uppercase tracking-wider text-ink shadow-sm sm:px-7 sm:text-base ${labelClass}`}
       >
         {label}
       </p>
       <div
-        className={`relative aspect-[3/2] w-full overflow-hidden rounded-[2rem] border-4 bg-white shadow-xl sm:border-[6px] md:aspect-[4/3] ${borderClass}`}
+        className={`visual-card-board relative aspect-[3/2] w-full overflow-hidden rounded-[2rem] border-4 bg-white shadow-xl sm:border-[6px] md:aspect-[4/3] ${borderClass}`}
       >
         {card.symbols.map((symbol) => {
           const isFlashing = flash?.id === symbol.id;

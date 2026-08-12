@@ -22,7 +22,7 @@ export default function HexagonCard({
   return (
     <Link
       href={href}
-      className="hexagon-card group relative aspect-[1.1] w-[calc(50%_-_0.375rem)] max-w-[19rem] drop-shadow-[0_10px_0_rgba(255,196,0,0.28)] transition-transform active:translate-y-1 active:scale-[0.98] sm:w-[calc(33.333%_-_1rem)]"
+      className="hexagon-card group absolute aspect-[1.1547] w-1/3 scale-[0.975] drop-shadow-[0_7px_10px_rgba(255,196,0,0.2)] transition duration-200 hover:z-10 hover:scale-[1.015] focus-visible:z-10 focus-visible:scale-[1.015] focus-visible:outline-none active:scale-[0.94]"
       style={{ clipPath: HEXAGON_CLIP }}
       aria-label={
         language === "en"
@@ -31,13 +31,13 @@ export default function HexagonCard({
       }
     >
       <span
-        className="absolute inset-0 flex flex-col items-center justify-center bg-sun px-3 text-center text-black sm:px-5"
+        className="absolute inset-0 flex flex-col items-center justify-center bg-sun px-2 text-center text-ink transition-colors group-hover:bg-[#ffd229] group-focus-visible:bg-[#ffd229] sm:px-5"
         style={{ clipPath: HEXAGON_CLIP }}
       >
-        <span className="hexagon-emoji text-[clamp(2.5rem,12vw,5.25rem)] leading-none" aria-hidden="true">
+        <span className="hexagon-emoji text-[clamp(2rem,9vw,4.5rem)] leading-none" aria-hidden="true">
           {localizedHexagon.emoji}
         </span>
-        <span className="hexagon-name mt-1 text-lg font-extrabold leading-tight sm:text-2xl">
+        <span className="hexagon-name mt-1 text-[clamp(0.9rem,4.25vw,1.5rem)] font-extrabold leading-[1.05]">
           {localizedHexagon.name}
         </span>
       </span>

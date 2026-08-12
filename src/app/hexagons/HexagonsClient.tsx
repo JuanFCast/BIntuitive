@@ -35,7 +35,10 @@ export default function HexagonsClient() {
         </div>
       </header>
 
-      <section className="hexagons-grid flex w-full max-w-5xl flex-1 flex-wrap content-center justify-center gap-x-3 gap-y-4 py-5 sm:min-h-0 sm:gap-x-5 sm:gap-y-6 sm:py-8">
+      <section
+        className="hexagons-grid relative mt-10 aspect-[1.98] w-full max-w-2xl shrink-0 sm:mt-8"
+        aria-label={t("hexagonsHeading")}
+      >
         {hexagons.map((hexagon) => (
           <HexagonCard
             key={hexagon.id}
