@@ -51,7 +51,7 @@ const englishQuestions: Record<string, QuestionCopy> = {
     hint: "Look for the white part on top. It's snow!",
   },
   "lugares-selva-05": {
-    instruction: "Touch the place with many trees and wild animals.",
+    instruction: "Tap the place with many trees and wild animals.",
     hint: "Look for the green place with trees.",
   },
   "lugares-granja-06": {

@@ -9,18 +9,15 @@ const HEXAGON_CLIP =
 type HexagonCardProps = {
   hexagon: Hexagon;
   language: Language;
-  index: number;
 };
 
 export default function HexagonCard({
   hexagon,
   language,
-  index,
 }: HexagonCardProps) {
   const localizedHexagon = localizeHexagon(hexagon, language);
   const href =
     "href" in hexagon ? hexagon.href : `/game?hexagon=${hexagon.slug}`;
-  const light = index % 2 === 0;
 
   return (
     <Link
@@ -34,13 +31,7 @@ export default function HexagonCard({
       }
     >
       <span
-        className={`absolute inset-0 ${light ? "bg-black" : "bg-sun"}`}
-        aria-hidden="true"
-      />
-      <span
-        className={`absolute inset-[4px] flex flex-col items-center justify-center px-3 text-center sm:inset-[6px] sm:px-5 ${
-          light ? "bg-sun text-black" : "bg-[#171717] text-white"
-        }`}
+        className="absolute inset-0 flex flex-col items-center justify-center bg-sun px-3 text-center text-black sm:px-5"
         style={{ clipPath: HEXAGON_CLIP }}
       >
         <span className="hexagon-emoji text-[clamp(2.5rem,12vw,5.25rem)] leading-none" aria-hidden="true">
@@ -48,13 +39,6 @@ export default function HexagonCard({
         </span>
         <span className="hexagon-name mt-1 text-lg font-extrabold leading-tight sm:text-2xl">
           {localizedHexagon.name}
-        </span>
-        <span
-          className={`hexagon-description mt-1 line-clamp-2 text-[0.68rem] font-bold leading-tight sm:text-sm ${
-            light ? "text-black/60" : "text-white/60"
-          }`}
-        >
-          {localizedHexagon.description}
         </span>
       </span>
     </Link>

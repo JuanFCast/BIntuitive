@@ -11,7 +11,7 @@ export default function HexagonsClient() {
   const { language, t } = useLanguage();
 
   return (
-    <main className="flex min-h-dvh flex-col items-center bg-cream px-4 py-4 text-ink sm:px-6 sm:py-6">
+    <main className="flex min-h-dvh flex-col items-center bg-cream px-4 py-4 text-ink sm:h-dvh sm:overflow-hidden sm:px-6 sm:py-6">
       <div className="flex w-full max-w-5xl items-center justify-between">
         <Link
           href="/"
@@ -35,13 +35,12 @@ export default function HexagonsClient() {
         </div>
       </header>
 
-      <section className="hexagons-grid flex w-full max-w-5xl flex-1 flex-wrap content-center justify-center gap-x-3 gap-y-4 py-5 sm:gap-x-5 sm:gap-y-6 sm:py-8">
-        {hexagons.map((hexagon, index) => (
+      <section className="hexagons-grid flex w-full max-w-5xl flex-1 flex-wrap content-center justify-center gap-x-3 gap-y-4 py-5 sm:min-h-0 sm:gap-x-5 sm:gap-y-6 sm:py-8">
+        {hexagons.map((hexagon) => (
           <HexagonCard
             key={hexagon.id}
             hexagon={hexagon}
             language={language}
-            index={index}
           />
         ))}
       </section>
