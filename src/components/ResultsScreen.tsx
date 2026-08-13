@@ -7,7 +7,6 @@ import { playCelebrationSound } from "@/lib/sounds";
 import { speak } from "@/lib/speech";
 import { isMuted } from "@/lib/storage";
 import { useLanguage } from "@/lib/i18n";
-import LanguageToggle from "./LanguageToggle";
 
 type ResultsScreenProps = {
   stars: number;
@@ -42,8 +41,6 @@ export default function ResultsScreen({
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-cream px-6 py-10 text-center text-ink">
-      <LanguageToggle className="fixed right-4 top-4 z-10 sm:right-8 sm:top-6" />
-
       <BrandMark
         size={150}
         className="animate-pop shadow-[0_18px_50px_rgba(255,196,0,0.2)]"

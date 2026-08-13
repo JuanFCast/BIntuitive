@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
-import LanguageToggle from "@/components/LanguageToggle";
 import MuteButton from "@/components/MuteButton";
 import { useLanguage } from "@/lib/i18n";
 import { playCelebrationSound } from "@/lib/sounds";
@@ -193,15 +192,13 @@ export default function TypingGame() {
     <main className="min-h-dvh overflow-y-auto bg-cream px-3 py-3 sm:px-6 sm:py-5">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
         <Link
-          href="/hexagons"
+          href="/games"
+          aria-label={t("backToGames")}
           className="flex min-h-12 items-center rounded-full border-2 border-ink/15 bg-white px-4 text-base font-extrabold text-ink shadow-sm active:scale-95"
         >
-          ← <span className="hidden sm:inline">{t("backToHexagons")}</span>
+          ← <span className="hidden sm:inline">{t("backToGames")}</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <LanguageToggle />
-          <MuteButton />
-        </div>
+        <MuteButton />
       </header>
 
       {phase === "intro" && (
@@ -359,10 +356,10 @@ export default function TypingGame() {
               {t("typingPlayAgain")}
             </button>
             <Link
-              href="/hexagons"
+              href="/games"
               className="flex min-h-14 flex-1 items-center justify-center rounded-2xl border-b-8 border-black/30 bg-black px-6 py-3 text-xl font-extrabold text-white shadow-lg active:scale-95 active:border-b-4"
             >
-              {t("backToHexagons")}
+              {t("backToGames")}
             </Link>
           </div>
         </section>

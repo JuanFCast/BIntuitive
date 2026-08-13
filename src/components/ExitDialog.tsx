@@ -28,7 +28,7 @@ export default function ExitDialog({ open, onClose }: ExitDialogProps) {
         </p>
         <button
           type="button"
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/hexagons")}
           className="mt-5 min-h-14 w-full rounded-full border-b-8 border-coral bg-coralsoft px-6 py-2 text-xl font-extrabold text-ink transition-transform active:scale-95 active:border-b-4"
         >
           {t("leaveLesson")}

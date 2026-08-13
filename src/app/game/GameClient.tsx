@@ -28,7 +28,6 @@ import ProgressDots from "@/components/ProgressDots";
 import FeedbackOverlay, { type FeedbackType } from "@/components/FeedbackOverlay";
 import ResultsScreen from "@/components/ResultsScreen";
 import ExitDialog from "@/components/ExitDialog";
-import LanguageToggle from "@/components/LanguageToggle";
 import { useLanguage } from "@/lib/i18n";
 
 type Phase = "playing" | "results";
@@ -249,7 +248,6 @@ export default function GameClient() {
           </div>
 
           <div className="flex items-center justify-self-end gap-1.5 sm:gap-2">
-            <LanguageToggle className="game-header-control game-header-language" />
             <MuteButton className="game-header-control game-header-sound" />
           </div>
         </div>

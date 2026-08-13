@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Baloo_2 } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n";
+import AppShell from "@/components/AppShell";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -47,6 +48,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   themeColor: "#ffc400",
 };
 
@@ -56,7 +58,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={baloo.variable}>
       <body className="font-sans antialiased">
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          <AppShell>{children}</AppShell>
+        </LanguageProvider>
       </body>
     </html>
   );
