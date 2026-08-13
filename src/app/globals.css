@@ -191,6 +191,11 @@ button {
   min-height: 100%;
 }
 
+.home-main {
+  height: 100%;
+  min-height: 0;
+}
+
 .bottom-navigation {
   position: fixed;
   z-index: 50;
@@ -356,6 +361,52 @@ button {
     margin-top: 0.65rem;
     font-size: 0.7rem;
     line-height: 1rem;
+  }
+}
+
+@media (min-width: 640px) and (max-height: 960px) {
+  .home-main {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .home-brand {
+    width: 14rem;
+    height: 14rem;
+  }
+
+  .home-title {
+    margin-top: 0.75rem;
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  .home-tagline {
+    margin-top: 0.5rem;
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+
+  .home-stars {
+    margin-top: 0.75rem;
+    padding: 0.35rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  .home-play {
+    min-height: 3.75rem;
+    margin-top: 1rem;
+    padding: 0.65rem 2.5rem;
+    border-bottom-width: 5px;
+    font-size: 2rem;
+    line-height: 2.25rem;
+  }
+
+  .home-footer {
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.1rem;
   }
 }
 
