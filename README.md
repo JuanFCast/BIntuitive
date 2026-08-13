@@ -109,10 +109,19 @@ When adding a question:
 
 ## Deployment
 
-Pushes to the `main` branch trigger the connected Vercel production deployment. The public custom domain is served through AWS CloudFront:
+The production application is available at
+[bintuitive.aumcrsp.com](https://bintuitive.aumcrsp.com). The public custom
+domain is delivered through AWS CloudFront. Vercel is not part of the current
+deployment architecture.
 
 ```text
-GitHub main → Vercel → AWS CloudFront → bintuitive.aumcrsp.com
+AWS deployment → AWS CloudFront → bintuitive.aumcrsp.com
 ```
 
-No manual AWS action is normally required for application updates.
+The AWS deployment workflow and infrastructure configuration are managed
+outside this repository; no deployment-as-code configuration is currently
+tracked here.
+
+CloudFront currently delivers the application, but BIntuitive does not yet
+have a remote application backend, user authentication, or database. Progress
+and preferences continue to be stored locally in the browser.
