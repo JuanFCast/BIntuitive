@@ -11,7 +11,12 @@ import {
   playTapSound,
   playWrongSound,
 } from "@/lib/sounds";
-import { getWordSearchProgress, saveWordSearchProgress } from "@/lib/storage";
+import { cancelSpeech, speak, warmUpVoices } from "@/lib/speech";
+import {
+  getWordSearchProgress,
+  isMuted,
+  saveWordSearchProgress,
+} from "@/lib/storage";
 import {
   buildLine,
   cellKey,
@@ -85,7 +90,19 @@ export default function WordSearchGame() {
     timersRef.current.push(setTimeout(fn, ms));
   }, []);
 
-  useEffect(() => clearTimers, [clearTimers]);
+  useEffect(
+    () => () => {
+      clearTimers();
+      cancelSpeech();
+    },
+    [clearTimers],
+  );
+
+  // En iOS las voces cargan de forma asíncrona: precalentar la lista para que
+  // la primera palabra encontrada ya suene con la voz del idioma correcto.
+  useEffect(() => {
+    warmUpVoices();
+  }, []);
 
   useEffect(() => {
     if (phase !== "playing") return;
@@ -159,6 +176,7 @@ export default function WordSearchGame() {
     if (sessionLanguageRef.current === language) return;
     sessionLanguageRef.current = language;
     clearTimers();
+    cancelSpeech();
     lockedRef.current = false;
     setPhase("intro");
   }, [clearTimers, language]);
@@ -242,9 +260,16 @@ export default function WordSearchGame() {
       setLastFound(match.word);
       playCorrectSound();
 
+      // Pronunciación de la palabra encontrada. Va dentro del mismo gesto que
+      // soltó la selección porque iOS solo permite hablar a SpeechSynthesis
+      // como consecuencia directa de un gesto. `speak` cancela lo anterior,
+      // así que dos hallazgos seguidos no se montan uno sobre otro. El mute se
+      // comprueba aquí, igual que hacen AudioButton y ResultsScreen.
+      if (!isMuted()) speak(match.word, language);
+
       if (nextFound.length >= current.placements.length) completeBoard();
     },
-    [clearSelection, completeBoard, later],
+    [clearSelection, completeBoard, language, later],
   );
 
   const cellFromPoint = (clientX: number, clientY: number): Cell | null => {

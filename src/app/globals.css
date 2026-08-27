@@ -560,19 +560,31 @@ button {
 }
 
 .hexagons-grid {
+  /*
+   * El panal movil es una columna alta: el ancho lo manda la altura de la
+   * ventana, no al reves, para que las cinco filas quepan enteras entre la
+   * cabecera y la barra inferior sin hacer scroll.
+   */
+  width: min(100%, calc((100dvh - 17rem) * 0.4075414));
   max-width: 24rem;
-  aspect-ratio: 1.0392305;
+  aspect-ratio: 0.4075414;
   filter: drop-shadow(0 6px 10px rgb(120 88 0 / 0.08));
 }
 
 .hexagon-card {
-  width: 33.3333%;
+  width: 50%;
   aspect-ratio: 0.8660254;
 }
 
-/* Panal de 7 hexagonos: roseta 2-3-2, filas desplazadas media ficha. */
+/*
+ * Panal vertical de 7 hexagonos en movil: filas 2-1-2-1-1.
+ * Las filas de una ficha van centradas respecto a las de dos, con el paso
+ * habitual de 3/4 de la altura de la ficha. Las dos ultimas comparten columna,
+ * asi que entre ellas el paso es de una altura completa: se tocan en el
+ * vertice, sin solaparse.
+ */
 .hexagon-card:nth-child(1) {
-  left: 16.6667%;
+  left: 0;
   top: 0;
 }
 
@@ -582,28 +594,28 @@ button {
 }
 
 .hexagon-card:nth-child(3) {
-  left: 0;
-  top: 30%;
+  left: 25%;
+  top: 17.6471%;
 }
 
 .hexagon-card:nth-child(4) {
-  left: 33.3333%;
-  top: 30%;
+  left: 0;
+  top: 35.2941%;
 }
 
 .hexagon-card:nth-child(5) {
-  left: 66.6667%;
-  top: 30%;
+  left: 50%;
+  top: 35.2941%;
 }
 
 .hexagon-card:nth-child(6) {
-  left: 16.6667%;
-  top: 60%;
+  left: 25%;
+  top: 52.9412%;
 }
 
 .hexagon-card:nth-child(7) {
-  left: 50%;
-  top: 60%;
+  left: 25%;
+  top: 76.4706%;
 }
 
 @media (min-width: 640px) {
@@ -673,6 +685,7 @@ button {
 
   .hexagons-grid {
     margin-top: 0.75rem;
+    width: min(100%, calc((100dvh - 14rem) * 0.4075414));
   }
 
   .hexagon-emoji {
