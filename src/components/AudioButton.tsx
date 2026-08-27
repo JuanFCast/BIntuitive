@@ -8,9 +8,15 @@ import { useLanguage } from "@/lib/i18n";
 type AudioButtonProps = {
   text: string;
   autoPlay?: boolean;
+  /** Etiqueta accesible alternativa; por defecto "escuchar otra vez". */
+  label?: string;
 };
 
-export default function AudioButton({ text, autoPlay = false }: AudioButtonProps) {
+export default function AudioButton({
+  text,
+  autoPlay = false,
+  label,
+}: AudioButtonProps) {
   const { language, t } = useLanguage();
   const [available, setAvailable] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -35,7 +41,7 @@ export default function AudioButton({ text, autoPlay = false }: AudioButtonProps
   return (
     <button
       type="button"
-      aria-label={t("listenAgain")}
+      aria-label={label ?? t("listenAgain")}
       onClick={() => {
         setSpeaking(true);
         speak(text, language, () => setSpeaking(false));

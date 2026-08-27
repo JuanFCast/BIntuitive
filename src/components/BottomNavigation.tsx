@@ -11,7 +11,6 @@ type IconProps = {
 const navItems = [
   { href: "/", labelKey: "navHome", icon: HomeIcon },
   { href: "/hexagons", labelKey: "navExplore", icon: ExploreIcon },
-  { href: "/games", labelKey: "navGames", icon: GamesIcon },
   { href: "/progress", labelKey: "navProgress", icon: ProgressIcon },
   { href: "/profile", labelKey: "navProfile", icon: ProfileIcon },
 ] as const;
@@ -80,27 +79,6 @@ function ExploreIcon({ active }: IconProps) {
         stroke="currentColor"
         strokeWidth="1.55"
         strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function GamesIcon({ active }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" role="presentation">
-      <path
-        d="M7.2 7.25h9.6a4.4 4.4 0 0 1 4.2 5.73l-1.38 4.34a2.25 2.25 0 0 1-3.72.93l-1.35-1.25h-5.1L8.1 18.25a2.25 2.25 0 0 1-3.72-.93L3 12.98a4.4 4.4 0 0 1 4.2-5.73Z"
-        fill={active ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.85"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7.25 10v4M5.25 12h4M15.5 11h.01M18 13h.01"
-        fill="none"
-        stroke={active ? "var(--color-sunsoft)" : "currentColor"}
-        strokeWidth="1.9"
-        strokeLinecap="round"
       />
     </svg>
   );

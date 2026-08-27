@@ -24,6 +24,18 @@ const nextConfig: NextConfig = {
         destination: "/hexagons",
         permanent: true,
       },
+      // La sección "games" se absorbió en Explore: el índice va al panal y
+      // cada juego conserva su enlace bajo la ruta de juego singular.
+      {
+        source: "/games",
+        destination: "/hexagons",
+        permanent: true,
+      },
+      {
+        source: "/games/:path+",
+        destination: "/game/:path+",
+        permanent: true,
+      },
     ];
   },
 };

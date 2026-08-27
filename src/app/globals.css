@@ -216,7 +216,8 @@ button {
   width: min(100%, 42rem);
   height: 100%;
   margin-inline: auto;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   align-items: center;
   gap: 0.1rem;
   padding: 0.25rem 0.35rem 0.2rem;
@@ -569,40 +570,47 @@ button {
   aspect-ratio: 0.8660254;
 }
 
+/* Panal de 6 hexágonos: filas de 2 desplazadas media ficha (2-2-2). */
 .hexagon-card:nth-child(1) {
-  left: 10%;
+  left: 0;
   top: 0;
 }
 
 .hexagon-card:nth-child(2) {
-  left: 50%;
+  left: 40%;
   top: 0;
 }
 
 .hexagon-card:nth-child(3) {
-  left: 30%;
+  left: 20%;
   top: 30%;
 }
 
 .hexagon-card:nth-child(4) {
-  left: 10%;
-  top: 60%;
+  left: 60%;
+  top: 30%;
 }
 
 .hexagon-card:nth-child(5) {
-  left: 50%;
+  left: 0;
+  top: 60%;
+}
+
+.hexagon-card:nth-child(6) {
+  left: 40%;
   top: 60%;
 }
 
 @media (min-width: 640px) {
+  /* Dos filas de 3 desplazadas media ficha: 3.5 fichas de ancho, √3 de proporción. */
   .hexagons-grid {
-    width: min(100%, calc((100dvh - 13rem) * 1.4846));
-    max-width: 38rem;
-    aspect-ratio: 1.4846;
+    width: min(100%, calc((100dvh - 13rem) * 1.7320508));
+    max-width: 42rem;
+    aspect-ratio: 1.7320508;
   }
 
   .hexagon-card {
-    width: 33.333%;
+    width: 28.5714%;
   }
 
   .hexagon-card:nth-child(1) {
@@ -611,22 +619,27 @@ button {
   }
 
   .hexagon-card:nth-child(2) {
-    left: 33.333%;
+    left: 28.5714%;
     top: 0;
   }
 
   .hexagon-card:nth-child(3) {
-    left: 66.666%;
+    left: 57.1428%;
     top: 0;
   }
 
   .hexagon-card:nth-child(4) {
-    left: 16.666%;
+    left: 14.2857%;
     top: 42.857%;
   }
 
   .hexagon-card:nth-child(5) {
-    left: 50%;
+    left: 42.8571%;
+    top: 42.857%;
+  }
+
+  .hexagon-card:nth-child(6) {
+    left: 71.4285%;
     top: 42.857%;
   }
 }

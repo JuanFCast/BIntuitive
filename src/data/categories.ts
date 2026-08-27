@@ -9,7 +9,7 @@ export type Category = {
 };
 
 export type GameHexagon = {
-  id: "visual" | "typing";
+  id: "visual" | "typing" | "word";
   name: string;
   emoji: string;
   description: string;
@@ -48,14 +48,21 @@ export const gameHexagons: GameHexagon[] = [
     name: "Agilidad visual",
     emoji: "👀",
     description: "Encuentra el símbolo en común",
-    href: "/games/visual",
+    href: "/game/visual",
   },
   {
     id: "typing",
     name: "Type Rush",
     emoji: "⌨️",
     description: "Escribe rápido y con precisión",
-    href: "/games/typing",
+    href: "/game/typing",
+  },
+  {
+    id: "word",
+    name: "Word Puzzle",
+    emoji: "🧩",
+    description: "Ordena las letras y forma la palabra",
+    href: "/game/word-puzzle",
   },
 ];
 
