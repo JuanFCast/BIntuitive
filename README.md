@@ -9,12 +9,13 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
 - **Explore as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the Explore honeycomb. There is no separate games section.
-- **6 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, and Word Scramble.
+- **7 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, and Word Search.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
 - **Visual Agility:** a local, touch-first matching challenge where two nine-symbol cards share exactly one symbol and mistakes add a one-second penalty.
 - **Type Rush:** a responsive 30-second typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish.
 - **Word Scramble:** a 10-word spelling challenge where players tap large letter tiles in order to build a word, with a picture clue, spoken word, undo and clear controls, and adaptive word length.
+- **Word Search:** a three-puzzle session where players trace hidden words with a finger across a generated letter grid, with words running across, down, diagonally, and backwards as the level rises.
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
@@ -68,6 +69,7 @@ src/
       visual/           #   Visual Agility
       typing/           #   Type Rush
       word-scramble/    #   Word Scramble
+      word-search/      #   Word Search
   components/           # Brand mark, hexagon cards, answers, feedback, results...
   data/
     categories.ts       # Base category definitions
@@ -77,12 +79,14 @@ src/
     gameEngine.ts       # Question selection and adaptive difficulty
     i18n.tsx            # Language provider and interface translations
     language.ts         # Shared language type
+    letters.ts          # Unicode-safe letter splitting shared by the word games
     speech.ts           # English and Spanish speech synthesis
     sounds.ts           # Generated interaction and celebration sounds
     storage.ts          # Progress and mute persistence
     typingGame.ts       # Local typing passages and statistics
     visualGame.ts       # Visual cards, symbols, and matching logic
-    wordScramble.ts       # Bilingual word bank, letter tiles, and difficulty
+    wordScramble.ts     # Bilingual word bank, letter tiles, and difficulty
+    wordSearch.ts       # Bilingual word bank, board generator, and selection
 ```
 
 The Visual Agility and Type Rush hexagons adapt the core game mechanics from
@@ -119,6 +123,21 @@ clues must be written in NFC (precomposed `Á`, not `A` plus a combining accent)
 `getWordLetters` normalizes to NFC before splitting, and it never strips
 diacritics.
 
+### Adding a Word Search word
+
+The Word Search bank is its own list in `WORD_SEARCH_BANK` inside
+`src/lib/wordSearch.ts`: it is neither the Word Scramble bank nor a
+translation of it. A new entry needs an `id`, the `word` in uppercase, an
+`emoji` for the word list, and a `level`: 1 for 3-5 letters, 2 for 5-7, 3 for
+6-8. A word never exceeds the grid size of its level.
+
+Spanish spelling rules are the same as in Word Scramble: `A-Z` plus
+`Á É Í Ó Ú Ñ Ü`, written in NFC, never simplified to dodge a character. Both
+games split words with `getWordLetters` from `src/lib/letters.ts`, so `Ñ` is
+one letter and never an `N`, and the board fills empty cells with an alphabet
+that includes the accented letters in play, so an accent never gives a word
+away.
+
 ## Gameplay model
 
 Each hexagon type runs its own session length, defined in one place per game.
@@ -143,7 +162,23 @@ Each hexagon type runs its own session length, defined in one place per game.
 - Three or more mistakes on a single word decrease the level, down to level 1.
 - The level and the best "perfect words" score are stored locally.
 
-Progress is stored locally in both cases, and the game keeps working if storage
+### Word Search
+
+`WORD_SEARCH_BOARDS_PER_SESSION` in `src/lib/wordSearch.ts`.
+
+- Each session contains 3 generated puzzles, and a word rarely repeats between
+  them: the words already used are excluded while the bank has alternatives.
+- Level 1 is a 7x7 grid with 4 words running only across and down. Level 2 is
+  9x9 with 6 words, diagonals, and some backwards directions. Level 3 is 10x10
+  with 7 words in all eight directions.
+- A wrong selection is never punished beyond a visual flash and the counter.
+  Re-selecting a word already found is ignored, not counted as a mistake.
+- Two puzzles solved with no wrong selections increase the level, up to 3.
+- Five or more wrong selections in a single puzzle decrease the level, down to 1.
+- The level and the best "words found" score are stored locally, in their own
+  `wordSearch` field: Word Scramble progress is never read or overwritten.
+
+Progress is stored locally in every case, and the games keep working if storage
 is unavailable.
 
 ## Deployment

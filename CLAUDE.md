@@ -24,7 +24,7 @@ Dos tipos de contenido conviven en ese panal, y ambos se abren bajo la ruta sing
 
 1. **Categorías de preguntas** (`lugares`, `numeros`, `colores`) → todas comparten UNA ruta,
    `/game?hexagon=<slug>`, y el motor genérico `src/lib/gameEngine.ts` + banco `src/data/questions.ts`.
-2. **Juegos independientes** (`visual`, `typing`, `word`) → cada uno con su propia ruta
+2. **Juegos independientes** (`visual`, `typing`, `scramble`, `search`) → cada uno con su propia ruta
    `/game/<id>`, su propio cliente y su propia lib de lógica pura en `src/lib/`.
 
 Un juego nuevo casi siempre es del tipo 2.
@@ -49,7 +49,9 @@ src/lib/
   gameEngine.ts         Selección de pregunta + dificultad adaptativa (categorías)
   visualGame.ts         Lógica pura de Agilidad visual
   typingGame.ts         Lógica pura de Type Rush
-  wordScramble.ts         Banco bilingüe de palabras, fichas y dificultad de Word Scramble
+  wordScramble.ts       Banco bilingüe, fichas y dificultad de Word Scramble
+  wordSearch.ts         Banco bilingüe, generador de tablero y selección de Word Search
+  letters.ts            getWordLetters: partir palabras en letras respetando Unicode/NFC
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
@@ -92,8 +94,8 @@ src/lib/
 6. `src/lib/i18n.tsx` — añadir todas las claves nuevas a `messages.en` **y** `messages.es`
    (el tipo `MessageKey` sale de `en`, así que faltar en `es` rompe el build).
 7. `src/app/globals.css` — **importante**: el panal de `/hexagons` posiciona cada hexágono con
-   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2 y ≥640px 3-3). Hoy está
-   cableado para 6 hexágonos; un séptimo exige rehacer esas posiciones en ambos breakpoints.
+   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-3-2 y ≥640px 4-3). Hoy está
+   cableado para 7 hexágonos; un octavo exige rehacer esas posiciones en ambos breakpoints.
    La geometría: hexágono pointy-top con `aspect-ratio` 0.8660254 (√3/2), las filas se
    solapan con paso vertical de 3/4 de la altura de la ficha y desplazamiento horizontal de
    media ficha. El `aspect-ratio` de `.hexagons-grid` debe recalcularse con el nuevo número
@@ -106,18 +108,24 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
 
 ## Cosas a tener en cuenta
 
-- `storage.ts` modela el progreso de **categorías** (`levelByCategory`) y el de Word Scramble
-  (`wordScramble`, opcional). `visual` y `typing` no persisten nada. Para añadir persistencia
-  a un juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hace
-  `normalizeWordScramble`: `getProgress` debe tolerar el campo ausente en datos ya guardados.
+- `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
+  (`wordScramble`) y el de Word Search (`wordSearch`), cada uno en su propio campo opcional y
+  sin compartir datos. `visual` y `typing` no persisten nada. Para añadir persistencia a un
+  juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hacen
+  `normalizeWordScramble` y `normalizeWordSearch`: `getProgress` debe tolerar el campo
+  ausente en datos ya guardados.
 - **Campo heredado**: `Progress.wordPuzzle` es el nombre que tenía Word Scramble antes de
   distinguirlo de la futura sopa de letras. `getWordScrambleProgress` lo lee como respaldo y
   las escrituras van solo a `wordScramble`; el campo antiguo se conserva por si se revierte
   el despliegue. No escribir en él desde código nuevo.
-- **Nombres de los juegos de palabras**: `scramble` es *ordenar las letras de una palabra*.
-  Una futura sopa de letras (`Word Search` / `Sopa de letras`) es un juego distinto y debe
-  usar su propio id (`search`), su propia ruta, su propia lib y su propio prefijo de claves
-  i18n. Nunca reutilizar el prefijo genérico `word*` para ninguno de los dos.
+- **Nombres de los juegos de palabras**: son dos juegos distintos y no deben mezclarse.
+  `scramble` (Word Scramble / Ordena la palabra) es *ordenar las letras de una palabra*;
+  `search` (Word Search / Sopa de letras) es *encontrar palabras en una cuadrícula*. Cada uno
+  tiene su id, su ruta (`/game/word-scramble` y `/game/word-search`), su lib, su banco de
+  palabras y su prefijo de claves i18n (`scramble*` y `search*`). Nunca reutilizar el prefijo
+  genérico `word*` para ninguno de los dos, ni compartir banco o progreso entre ellos.
+- Lo único compartido entre los dos juegos de palabras es `letters.ts` (`getWordLetters`) y
+  `nextLevel` de `gameEngine.ts`. Cualquier otra cosa en común es señal de acoplamiento.
 - Ningún juego independiente suma a `totalStars` ni a `sessions`: esas métricas son de las
   lecciones de preguntas y `/progress` solo muestra esas.
 - `speech.ts` (Web Speech API) se usa solo en la ruta `/game` de preguntas, no en los juegos.

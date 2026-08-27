@@ -16,11 +16,19 @@ export type WordScrambleProgress = {
   bestPerfectWords: number;
 };
 
+/** Progreso local de Word Search: nivel alcanzado y mejor marca de palabras. */
+export type WordSearchProgress = {
+  level: number;
+  bestWordsFound: number;
+};
+
 export type Progress = {
   sessions: SessionSummary[];
   totalStars: number;
   levelByCategory: Partial<Record<CategoryId, number>>;
   wordScramble?: WordScrambleProgress;
+  /** Sopa de letras. Campo propio: no comparte nada con `wordScramble`. */
+  wordSearch?: WordSearchProgress;
   /**
    * Nombre anterior del juego, cuando se llamaba "Word Puzzle". Se sigue
    * leyendo para no perder el progreso ya guardado, y se conserva al escribir
@@ -51,6 +59,18 @@ function normalizeWordScramble(
   };
 }
 
+function normalizeWordSearch(
+  stored: Partial<WordSearchProgress> | undefined,
+): WordSearchProgress {
+  return {
+    level: clampLevel(stored?.level),
+    bestWordsFound:
+      typeof stored?.bestWordsFound === "number" && stored.bestWordsFound > 0
+        ? stored.bestWordsFound
+        : 0,
+  };
+}
+
 export function getProgress(): Progress {
   if (typeof window === "undefined") return emptyProgress;
   try {
@@ -66,6 +86,9 @@ export function getProgress(): Progress {
         : {}),
       ...(parsed.wordPuzzle
         ? { wordPuzzle: normalizeWordScramble(parsed.wordPuzzle) }
+        : {}),
+      ...(parsed.wordSearch
+        ? { wordSearch: normalizeWordSearch(parsed.wordSearch) }
         : {}),
     };
   } catch {
@@ -119,6 +142,24 @@ export function saveWordScrambleProgress(next: WordScrambleProgress): void {
     bestPerfectWords: Math.max(
       next.bestPerfectWords,
       previous?.bestPerfectWords ?? 0,
+    ),
+  };
+  saveProgress(progress);
+}
+
+/** Progreso de la sopa de letras. Independiente del de Word Scramble. */
+export function getWordSearchProgress(): WordSearchProgress {
+  return normalizeWordSearch(getProgress().wordSearch);
+}
+
+/** Guarda el nivel alcanzado y conserva siempre la mejor marca anterior. */
+export function saveWordSearchProgress(next: WordSearchProgress): void {
+  const progress = getProgress();
+  progress.wordSearch = {
+    level: clampLevel(next.level),
+    bestWordsFound: Math.max(
+      next.bestWordsFound,
+      progress.wordSearch?.bestWordsFound ?? 0,
     ),
   };
   saveProgress(progress);

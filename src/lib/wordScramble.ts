@@ -1,5 +1,6 @@
 import { nextLevel, shuffle } from "./gameEngine";
 import type { Language } from "./language";
+import { getWordLetters, WORD_ALPHABET } from "./letters";
 
 export const WORD_SCRAMBLE_WORDS_PER_SESSION = 10;
 export const WORD_SCRAMBLE_MAX_LEVEL = 3;
@@ -25,22 +26,15 @@ export type LetterTile = {
 };
 
 /** Alfabeto admitido por idioma, con la ortografía real del español. */
-export const WORD_SCRAMBLE_ALPHABET: Record<Language, RegExp> = {
-  en: /^[A-Z]+$/,
-  es: /^[A-ZÁÉÍÓÚÑÜ]+$/,
-};
+export const WORD_SCRAMBLE_ALPHABET: Record<Language, RegExp> = WORD_ALPHABET;
 
 /**
- * Separa la palabra en letras para las fichas.
- *
- * Normaliza a NFC (composición, nunca eliminación de diacríticos) porque "Á"
- * puede venir como un solo carácter o como "A" + tilde combinante; sin esto la
- * segunda forma se rompería en dos fichas. `Ñ`, `Ü` y las vocales acentuadas
- * quedan cada una como una única letra independiente.
+ * Separa la palabra en letras para las fichas. La implementación es compartida
+ * (`letters.ts`) porque el manejo de Unicode no es propio de este juego: NFC,
+ * nunca eliminación de diacríticos, y `Ñ`, `Ü` y las vocales acentuadas como
+ * una única ficha cada una.
  */
-export function getWordLetters(word: string): string[] {
-  return [...word.normalize("NFC")];
-}
+export { getWordLetters };
 
 export type WordScrambleStats = {
   solvedWords: number;

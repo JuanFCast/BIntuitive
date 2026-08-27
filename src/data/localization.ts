@@ -30,6 +30,10 @@ const englishHexagons: Record<
     name: "Word Scramble",
     description: "Unscramble the letters to form the word.",
   },
+  search: {
+    name: "Word Search",
+    description: "Find the hidden words in the letter grid.",
+  },
 };
 
 type QuestionCopy = {

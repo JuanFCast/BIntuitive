@@ -561,56 +561,61 @@ button {
 
 .hexagons-grid {
   max-width: 24rem;
-  aspect-ratio: 0.8660254;
+  aspect-ratio: 1.0392305;
   filter: drop-shadow(0 6px 10px rgb(120 88 0 / 0.08));
 }
 
 .hexagon-card {
-  width: 40%;
+  width: 33.3333%;
   aspect-ratio: 0.8660254;
 }
 
-/* Panal de 6 hexágonos: filas de 2 desplazadas media ficha (2-2-2). */
+/* Panal de 7 hexagonos: roseta 2-3-2, filas desplazadas media ficha. */
 .hexagon-card:nth-child(1) {
-  left: 0;
+  left: 16.6667%;
   top: 0;
 }
 
 .hexagon-card:nth-child(2) {
-  left: 40%;
+  left: 50%;
   top: 0;
 }
 
 .hexagon-card:nth-child(3) {
-  left: 20%;
+  left: 0;
   top: 30%;
 }
 
 .hexagon-card:nth-child(4) {
-  left: 60%;
+  left: 33.3333%;
   top: 30%;
 }
 
 .hexagon-card:nth-child(5) {
-  left: 0;
-  top: 60%;
+  left: 66.6667%;
+  top: 30%;
 }
 
 .hexagon-card:nth-child(6) {
-  left: 40%;
+  left: 16.6667%;
+  top: 60%;
+}
+
+.hexagon-card:nth-child(7) {
+  left: 50%;
   top: 60%;
 }
 
 @media (min-width: 640px) {
-  /* Dos filas de 3 desplazadas media ficha: 3.5 fichas de ancho, √3 de proporción. */
+  /* Fila de 4 y fila de 3 desplazada media ficha: 4 fichas de ancho. */
   .hexagons-grid {
-    width: min(100%, calc((100dvh - 13rem) * 1.7320508));
-    max-width: 42rem;
-    aspect-ratio: 1.7320508;
+    width: min(100%, calc((100dvh - 13rem) * 1.9794867));
+    max-width: 48rem;
+    aspect-ratio: 1.9794867;
   }
 
   .hexagon-card {
-    width: 28.5714%;
+    width: 25%;
   }
 
   .hexagon-card:nth-child(1) {
@@ -619,28 +624,33 @@ button {
   }
 
   .hexagon-card:nth-child(2) {
-    left: 28.5714%;
+    left: 25%;
     top: 0;
   }
 
   .hexagon-card:nth-child(3) {
-    left: 57.1428%;
+    left: 50%;
     top: 0;
   }
 
   .hexagon-card:nth-child(4) {
-    left: 14.2857%;
-    top: 42.857%;
+    left: 75%;
+    top: 0;
   }
 
   .hexagon-card:nth-child(5) {
-    left: 42.8571%;
-    top: 42.857%;
+    left: 12.5%;
+    top: 42.8571%;
   }
 
   .hexagon-card:nth-child(6) {
-    left: 71.4285%;
-    top: 42.857%;
+    left: 37.5%;
+    top: 42.8571%;
+  }
+
+  .hexagon-card:nth-child(7) {
+    left: 62.5%;
+    top: 42.8571%;
   }
 }
 
@@ -672,5 +682,29 @@ button {
   .hexagon-name {
     margin-top: 0.125rem;
     font-size: 0.9rem;
+  }
+}
+
+/*
+ * Sopa de letras. La cuadricula es siempre cuadrada y su lado se limita por el
+ * ancho disponible y por la altura de la ventana, para que quepa entera sin
+ * hacer scroll en iPad. `touch-action: none` es imprescindible: sin eso el
+ * arrastre del dedo desplazaria la pagina en vez de trazar la palabra.
+ */
+.word-search-board {
+  display: grid;
+  gap: 0.2rem;
+  width: min(100%, 26rem);
+  aspect-ratio: 1;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@media (min-width: 640px) {
+  .word-search-board {
+    gap: 0.3rem;
+    width: min(100%, 32rem, calc(100dvh - 19rem));
   }
 }
