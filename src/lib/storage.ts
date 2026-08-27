@@ -10,8 +10,8 @@ export type SessionSummary = {
   total: number;
 };
 
-/** Progreso local de Word Puzzle: nivel alcanzado y mejor marca. */
-export type WordPuzzleProgress = {
+/** Progreso local de Word Scramble: nivel alcanzado y mejor marca. */
+export type WordScrambleProgress = {
   level: number;
   bestPerfectWords: number;
 };
@@ -20,7 +20,13 @@ export type Progress = {
   sessions: SessionSummary[];
   totalStars: number;
   levelByCategory: Partial<Record<CategoryId, number>>;
-  wordPuzzle?: WordPuzzleProgress;
+  wordScramble?: WordScrambleProgress;
+  /**
+   * Nombre anterior del juego, cuando se llamaba "Word Puzzle". Se sigue
+   * leyendo para no perder el progreso ya guardado, y se conserva al escribir
+   * por si se revierte el despliegue. No escribir aquí en código nuevo.
+   */
+  wordPuzzle?: WordScrambleProgress;
 };
 
 const emptyProgress: Progress = {
@@ -33,9 +39,9 @@ function clampLevel(level: unknown): number {
   return typeof level === "number" && level >= 1 && level <= 3 ? level : 1;
 }
 
-function normalizeWordPuzzle(
-  stored: Partial<WordPuzzleProgress> | undefined,
-): WordPuzzleProgress {
+function normalizeWordScramble(
+  stored: Partial<WordScrambleProgress> | undefined,
+): WordScrambleProgress {
   return {
     level: clampLevel(stored?.level),
     bestPerfectWords:
@@ -55,8 +61,11 @@ export function getProgress(): Progress {
       sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
       totalStars: typeof parsed.totalStars === "number" ? parsed.totalStars : 0,
       levelByCategory: parsed.levelByCategory ?? {},
+      ...(parsed.wordScramble
+        ? { wordScramble: normalizeWordScramble(parsed.wordScramble) }
+        : {}),
       ...(parsed.wordPuzzle
-        ? { wordPuzzle: normalizeWordPuzzle(parsed.wordPuzzle) }
+        ? { wordPuzzle: normalizeWordScramble(parsed.wordPuzzle) }
         : {}),
     };
   } catch {
@@ -88,18 +97,28 @@ export function getLevelForCategory(category: CategoryId): number {
   return level && level >= 1 && level <= 3 ? level : 1;
 }
 
-export function getWordPuzzleProgress(): WordPuzzleProgress {
-  return normalizeWordPuzzle(getProgress().wordPuzzle);
+/**
+ * Lee el progreso del juego, aceptando el campo antiguo `wordPuzzle` de quien
+ * ya jugó antes del cambio de nombre.
+ */
+export function getWordScrambleProgress(): WordScrambleProgress {
+  const progress = getProgress();
+  return normalizeWordScramble(progress.wordScramble ?? progress.wordPuzzle);
 }
 
-/** Guarda el nivel alcanzado y conserva siempre la mejor marca anterior. */
-export function saveWordPuzzleProgress(next: WordPuzzleProgress): void {
+/**
+ * Guarda el nivel alcanzado y conserva siempre la mejor marca anterior, venga
+ * del campo nuevo o del antiguo. Escribe solo en `wordScramble`; `wordPuzzle`
+ * se deja intacto para que revertir el despliegue no pierda el progreso.
+ */
+export function saveWordScrambleProgress(next: WordScrambleProgress): void {
   const progress = getProgress();
-  progress.wordPuzzle = {
+  const previous = progress.wordScramble ?? progress.wordPuzzle;
+  progress.wordScramble = {
     level: clampLevel(next.level),
     bestPerfectWords: Math.max(
       next.bestPerfectWords,
-      progress.wordPuzzle?.bestPerfectWords ?? 0,
+      previous?.bestPerfectWords ?? 0,
     ),
   };
   saveProgress(progress);

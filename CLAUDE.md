@@ -49,7 +49,7 @@ src/lib/
   gameEngine.ts         Selección de pregunta + dificultad adaptativa (categorías)
   visualGame.ts         Lógica pura de Agilidad visual
   typingGame.ts         Lógica pura de Type Rush
-  wordPuzzle.ts         Banco bilingüe de palabras, fichas y dificultad de Word Puzzle
+  wordScramble.ts         Banco bilingüe de palabras, fichas y dificultad de Word Scramble
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
@@ -106,10 +106,18 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
 
 ## Cosas a tener en cuenta
 
-- `storage.ts` modela el progreso de **categorías** (`levelByCategory`) y el de Word Puzzle
-  (`wordPuzzle`, opcional). `visual` y `typing` no persisten nada. Para añadir persistencia a un
-  juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hace
-  `normalizeWordPuzzle`: `getProgress` debe tolerar el campo ausente en datos ya guardados.
+- `storage.ts` modela el progreso de **categorías** (`levelByCategory`) y el de Word Scramble
+  (`wordScramble`, opcional). `visual` y `typing` no persisten nada. Para añadir persistencia
+  a un juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hace
+  `normalizeWordScramble`: `getProgress` debe tolerar el campo ausente en datos ya guardados.
+- **Campo heredado**: `Progress.wordPuzzle` es el nombre que tenía Word Scramble antes de
+  distinguirlo de la futura sopa de letras. `getWordScrambleProgress` lo lee como respaldo y
+  las escrituras van solo a `wordScramble`; el campo antiguo se conserva por si se revierte
+  el despliegue. No escribir en él desde código nuevo.
+- **Nombres de los juegos de palabras**: `scramble` es *ordenar las letras de una palabra*.
+  Una futura sopa de letras (`Word Search` / `Sopa de letras`) es un juego distinto y debe
+  usar su propio id (`search`), su propia ruta, su propia lib y su propio prefijo de claves
+  i18n. Nunca reutilizar el prefijo genérico `word*` para ninguno de los dos.
 - Ningún juego independiente suma a `totalStars` ni a `sessions`: esas métricas son de las
   lecciones de preguntas y `/progress` solo muestra esas.
 - `speech.ts` (Web Speech API) se usa solo en la ruta `/game` de preguntas, no en los juegos.

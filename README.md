@@ -9,12 +9,12 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
 - **Explore as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the Explore honeycomb. There is no separate games section.
-- **6 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, and Word Puzzle.
+- **6 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, and Word Scramble.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
 - **Visual Agility:** a local, touch-first matching challenge where two nine-symbol cards share exactly one symbol and mistakes add a one-second penalty.
 - **Type Rush:** a responsive 30-second typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish.
-- **Word Puzzle:** a 10-word spelling challenge where players tap large letter tiles in order to build a word, with a picture clue, spoken word, undo and clear controls, and adaptive word length.
+- **Word Scramble:** a 10-word spelling challenge where players tap large letter tiles in order to build a word, with a picture clue, spoken word, undo and clear controls, and adaptive word length.
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
@@ -67,7 +67,7 @@ src/
       page.tsx          #   Question categories: /game?hexagon=<slug>
       visual/           #   Visual Agility
       typing/           #   Type Rush
-      word-puzzle/      #   Word Puzzle
+      word-scramble/    #   Word Scramble
   components/           # Brand mark, hexagon cards, answers, feedback, results...
   data/
     categories.ts       # Base category definitions
@@ -82,7 +82,7 @@ src/
     storage.ts          # Progress and mute persistence
     typingGame.ts       # Local typing passages and statistics
     visualGame.ts       # Visual cards, symbols, and matching logic
-    wordPuzzle.ts       # Bilingual word bank, letter tiles, and difficulty
+    wordScramble.ts       # Bilingual word bank, letter tiles, and difficulty
 ```
 
 The Visual Agility and Type Rush hexagons adapt the core game mechanics from
@@ -104,10 +104,10 @@ When adding a question:
 3. Add English option labels and accessibility descriptions to `englishOptions` when the option ID is new.
 4. Run `npm run build` to verify the content and types.
 
-### Adding a Word Puzzle word
+### Adding a Word Scramble word
 
-The Word Puzzle bank is not a translation: each language has its own words in
-`WORD_BANK` inside `src/lib/wordPuzzle.ts`. A new entry needs an `id`, the
+The Word Scramble bank is not a translation: each language has its own words in
+`WORD_BANK` inside `src/lib/wordScramble.ts`. A new entry needs an `id`, the
 `word` in uppercase, an `emoji`, a short `clue` written in that language, and a
 `level`: 1 for 3-4 letters, 2 for 5-6 letters, 3 for 7-8 letters.
 
@@ -133,9 +133,9 @@ Each hexagon type runs its own session length, defined in one place per game.
 - Two consecutive first-try answers increase the category level, up to level 3.
 - A fully missed question decreases the level, down to level 1.
 
-### Word Puzzle
+### Word Scramble
 
-`WORD_PUZZLE_WORDS_PER_SESSION` in `src/lib/wordPuzzle.ts`.
+`WORD_SCRAMBLE_WORDS_PER_SESSION` in `src/lib/wordScramble.ts`.
 
 - Each session contains 10 words, and a word never repeats within a session.
 - A word cannot be failed: a wrong letter is rejected and counted as a mistake.

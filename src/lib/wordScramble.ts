@@ -1,21 +1,21 @@
 import { nextLevel, shuffle } from "./gameEngine";
 import type { Language } from "./language";
 
-export const WORD_PUZZLE_WORDS_PER_SESSION = 10;
-export const WORD_PUZZLE_MAX_LEVEL = 3;
+export const WORD_SCRAMBLE_WORDS_PER_SESSION = 10;
+export const WORD_SCRAMBLE_MAX_LEVEL = 3;
 
 /** A partir de esta cantidad de errores en una palabra, el nivel baja. */
-export const WORD_PUZZLE_DROP_MISTAKES = 3;
+export const WORD_SCRAMBLE_DROP_MISTAKES = 3;
 
-export type WordPuzzleLevel = 1 | 2 | 3;
+export type WordScrambleLevel = 1 | 2 | 3;
 
-export type PuzzleWord = {
+export type ScrambleWord = {
   id: string;
   /** Palabra objetivo en mayúsculas y con su ortografía real, en NFC. */
   word: string;
   emoji: string;
   clue: string;
-  level: WordPuzzleLevel;
+  level: WordScrambleLevel;
 };
 
 export type LetterTile = {
@@ -25,7 +25,7 @@ export type LetterTile = {
 };
 
 /** Alfabeto admitido por idioma, con la ortografía real del español. */
-export const WORD_PUZZLE_ALPHABET: Record<Language, RegExp> = {
+export const WORD_SCRAMBLE_ALPHABET: Record<Language, RegExp> = {
   en: /^[A-Z]+$/,
   es: /^[A-ZÁÉÍÓÚÑÜ]+$/,
 };
@@ -42,7 +42,7 @@ export function getWordLetters(word: string): string[] {
   return [...word.normalize("NFC")];
 }
 
-export type WordPuzzleStats = {
+export type WordScrambleStats = {
   solvedWords: number;
   perfectWords: number;
   mistakes: number;
@@ -62,7 +62,7 @@ export type WordPuzzleStats = {
  *   evitar un carácter (`ÁRBOL`, no `ARBOL`). Las palabras van en NFC.
  * - Sin palabras ambiguas: cada emoji debe sugerir una sola palabra posible.
  */
-const WORD_BANK: Record<Language, PuzzleWord[]> = {
+const WORD_BANK: Record<Language, ScrambleWord[]> = {
   en: [
     { id: "en-sun", word: "SUN", emoji: "☀️", clue: "It shines in the sky during the day.", level: 1 },
     { id: "en-cat", word: "CAT", emoji: "🐱", clue: "A pet that says meow.", level: 1 },
@@ -129,7 +129,7 @@ const WORD_BANK: Record<Language, PuzzleWord[]> = {
   ],
 };
 
-export function getWordBank(language: Language): PuzzleWord[] {
+export function getWordBank(language: Language): ScrambleWord[] {
   return WORD_BANK[language];
 }
 
@@ -144,7 +144,7 @@ export function pickNextWord(
   language: Language,
   level: number,
   usedIds: string[],
-): PuzzleWord | null {
+): ScrambleWord | null {
   const available = WORD_BANK[language].filter(
     (candidate) => !usedIds.includes(candidate.id),
   );
@@ -188,12 +188,12 @@ export function createLetterTiles(word: string): LetterTile[] {
  * - Una palabra con muchos errores baja el nivel (mínimo 1).
  * - Entre medias el nivel se mantiene y la racha se reinicia.
  */
-export function nextWordPuzzleLevel(
+export function nextWordScrambleLevel(
   level: number,
   streak: number,
   mistakes: number,
 ): { level: number; streak: number } {
-  if (mistakes >= WORD_PUZZLE_DROP_MISTAKES) {
+  if (mistakes >= WORD_SCRAMBLE_DROP_MISTAKES) {
     return nextLevel(level, streak, true);
   }
   if (mistakes > 0) {
@@ -202,12 +202,12 @@ export function nextWordPuzzleLevel(
   return nextLevel(level, streak, false);
 }
 
-export function computeWordPuzzleStats(
+export function computeWordScrambleStats(
   solvedWords: number,
   perfectWords: number,
   correctTaps: number,
   mistakes: number,
-): WordPuzzleStats {
+): WordScrambleStats {
   const totalTaps = correctTaps + mistakes;
   return {
     solvedWords,

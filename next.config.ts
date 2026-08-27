@@ -31,9 +31,22 @@ const nextConfig: NextConfig = {
         destination: "/hexagons",
         permanent: true,
       },
+      // El juego se llamaba "Word Puzzle" antes de distinguirlo de la futura
+      // sopa de letras. Las dos rutas anteriores llegan al destino en un solo
+      // salto, por eso esta regla va antes de la genérica de /games.
+      {
+        source: "/games/word-puzzle",
+        destination: "/game/word-scramble",
+        permanent: true,
+      },
       {
         source: "/games/:path+",
         destination: "/game/:path+",
+        permanent: true,
+      },
+      {
+        source: "/game/word-puzzle",
+        destination: "/game/word-scramble",
         permanent: true,
       },
     ];

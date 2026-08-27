@@ -9,7 +9,7 @@ export type Category = {
 };
 
 export type GameHexagon = {
-  id: "visual" | "typing" | "word";
+  id: "visual" | "typing" | "scramble";
   name: string;
   emoji: string;
   description: string;
@@ -58,11 +58,11 @@ export const gameHexagons: GameHexagon[] = [
     href: "/game/typing",
   },
   {
-    id: "word",
-    name: "Word Puzzle",
+    id: "scramble",
+    name: "Ordena la palabra",
     emoji: "🧩",
-    description: "Ordena las letras y forma la palabra",
-    href: "/game/word-puzzle",
+    description: "Ordena las letras y forma la palabra.",
+    href: "/game/word-scramble",
   },
 ];
 

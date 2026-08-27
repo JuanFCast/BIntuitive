@@ -12,29 +12,29 @@ import {
   playTapSound,
   playWrongSound,
 } from "@/lib/sounds";
-import { getWordPuzzleProgress, saveWordPuzzleProgress } from "@/lib/storage";
+import { getWordScrambleProgress, saveWordScrambleProgress } from "@/lib/storage";
 import {
-  computeWordPuzzleStats,
+  computeWordScrambleStats,
   createLetterTiles,
   getWordLetters,
-  nextWordPuzzleLevel,
+  nextWordScrambleLevel,
   pickNextWord,
-  WORD_PUZZLE_MAX_LEVEL,
-  WORD_PUZZLE_WORDS_PER_SESSION,
+  WORD_SCRAMBLE_MAX_LEVEL,
+  WORD_SCRAMBLE_WORDS_PER_SESSION,
   type LetterTile,
-  type PuzzleWord,
-  type WordPuzzleStats,
-} from "@/lib/wordPuzzle";
+  type ScrambleWord,
+  type WordScrambleStats,
+} from "@/lib/wordScramble";
 
 type Phase = "intro" | "playing" | "results";
 
 const SOLVED_PAUSE_MS = 1100;
 const WRONG_FLASH_MS = 350;
 
-export default function WordPuzzleGame() {
+export default function WordScrambleGame() {
   const { language, t } = useLanguage();
   const [phase, setPhase] = useState<Phase>("intro");
-  const [word, setWord] = useState<PuzzleWord | null>(null);
+  const [word, setWord] = useState<ScrambleWord | null>(null);
   const [tiles, setTiles] = useState<LetterTile[]>([]);
   const [placed, setPlaced] = useState<LetterTile[]>([]);
   const [wordIndex, setWordIndex] = useState(0);
@@ -42,7 +42,7 @@ export default function WordPuzzleGame() {
   const [wrongTileId, setWrongTileId] = useState<string | null>(null);
   const [solved, setSolved] = useState(false);
   const [locked, setLocked] = useState(false);
-  const [result, setResult] = useState<WordPuzzleStats | null>(null);
+  const [result, setResult] = useState<WordScrambleStats | null>(null);
   const [isRecord, setIsRecord] = useState(false);
 
   const levelRef = useRef(1);
@@ -100,7 +100,7 @@ export default function WordPuzzleGame() {
 
   const startGame = useCallback(() => {
     clearTimers();
-    levelRef.current = getWordPuzzleProgress().level;
+    levelRef.current = getWordScrambleProgress().level;
     streakRef.current = 0;
     usedIdsRef.current = [];
     mistakesRef.current = 0;
@@ -123,14 +123,14 @@ export default function WordPuzzleGame() {
   }, [clearTimers, language]);
 
   const finishGame = useCallback((solvedWords: number) => {
-    const stats = computeWordPuzzleStats(
+    const stats = computeWordScrambleStats(
       solvedWords,
       perfectWordsRef.current,
       correctTapsRef.current,
       mistakesRef.current,
     );
-    const previousBest = getWordPuzzleProgress().bestPerfectWords;
-    saveWordPuzzleProgress({
+    const previousBest = getWordScrambleProgress().bestPerfectWords;
+    saveWordScrambleProgress({
       level: levelRef.current,
       bestPerfectWords: stats.perfectWords,
     });
@@ -149,7 +149,7 @@ export default function WordPuzzleGame() {
     const wordMistakes = wordMistakesRef.current;
     if (wordMistakes === 0) perfectWordsRef.current += 1;
 
-    const progression = nextWordPuzzleLevel(
+    const progression = nextWordScrambleLevel(
       levelRef.current,
       streakRef.current,
       wordMistakes,
@@ -165,7 +165,7 @@ export default function WordPuzzleGame() {
       const nextIndex = wordIndex + 1;
       setWordIndex(nextIndex);
       setLevel(levelRef.current);
-      if (nextIndex >= WORD_PUZZLE_WORDS_PER_SESSION || !loadWord()) {
+      if (nextIndex >= WORD_SCRAMBLE_WORDS_PER_SESSION || !loadWord()) {
         finishGame(nextIndex);
       }
     }, SOLVED_PAUSE_MS);
@@ -242,13 +242,13 @@ export default function WordPuzzleGame() {
           <div>
             <p className="text-5xl" aria-hidden="true">🧩</p>
             <h1 className="mt-2 text-4xl font-extrabold text-ink sm:text-5xl">
-              {t("wordTitle")}
+              {t("scrambleTitle")}
             </h1>
             <p className="mt-3 text-xl font-bold text-ink/70">
-              {t("wordIntro")}
+              {t("scrambleIntro")}
             </p>
             <p className="mx-auto mt-2 max-w-lg text-base font-semibold text-ink/55 sm:text-lg">
-              {t("wordHowTo")}
+              {t("scrambleHowTo")}
             </p>
           </div>
           <button
@@ -256,7 +256,7 @@ export default function WordPuzzleGame() {
             onClick={startGame}
             className="min-h-16 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-10 py-3 text-2xl font-extrabold text-black shadow-xl transition-transform active:scale-95 active:border-b-4"
           >
-            {t("wordStart")}
+            {t("scrambleStart")}
           </button>
         </section>
       )}
@@ -267,23 +267,23 @@ export default function WordPuzzleGame() {
             <span
               className="rounded-full border-2 border-ink/10 bg-white px-4 py-1.5 font-mono text-base font-extrabold tabular-nums text-ink/70 shadow-sm sm:text-lg"
               role="status"
-              aria-label={t("wordProgressAria", {
-                current: Math.min(wordIndex + 1, WORD_PUZZLE_WORDS_PER_SESSION),
-                total: WORD_PUZZLE_WORDS_PER_SESSION,
+              aria-label={t("scrambleProgressAria", {
+                current: Math.min(wordIndex + 1, WORD_SCRAMBLE_WORDS_PER_SESSION),
+                total: WORD_SCRAMBLE_WORDS_PER_SESSION,
               })}
             >
-              {Math.min(wordIndex + 1, WORD_PUZZLE_WORDS_PER_SESSION)} / {WORD_PUZZLE_WORDS_PER_SESSION}
+              {Math.min(wordIndex + 1, WORD_SCRAMBLE_WORDS_PER_SESSION)} / {WORD_SCRAMBLE_WORDS_PER_SESSION}
             </span>
             <span
               className="flex items-center gap-2 rounded-full border-2 border-mint bg-mintsoft px-4 py-1.5 text-sm font-extrabold uppercase tracking-wide text-ink/70 shadow-sm sm:text-base"
-              aria-label={t("wordLevelAria", {
+              aria-label={t("scrambleLevelAria", {
                 level,
-                total: WORD_PUZZLE_MAX_LEVEL,
+                total: WORD_SCRAMBLE_MAX_LEVEL,
               })}
             >
-              <span>{t("wordLevel")}</span>
+              <span>{t("scrambleLevel")}</span>
               <span aria-hidden="true" className="flex gap-1">
-                {Array.from({ length: WORD_PUZZLE_MAX_LEVEL }, (_, index) => (
+                {Array.from({ length: WORD_SCRAMBLE_MAX_LEVEL }, (_, index) => (
                   <span
                     key={index}
                     className={`h-2 w-2 rounded-full ${
@@ -305,20 +305,20 @@ export default function WordPuzzleGame() {
             <p className="min-w-0 flex-1 text-left text-base font-bold leading-snug text-ink/70 sm:text-xl">
               {word.clue}
             </p>
-            <AudioButton text={word.word} label={t("wordListen")} />
+            <AudioButton text={word.word} label={t("scrambleListen")} />
           </div>
 
           <div className="w-full text-center">
             <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[#9b7400] sm:text-base">
-              {t("wordInstruction")}
+              {t("scrambleInstruction")}
             </p>
 
             <div
               className="mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3"
               role="status"
               aria-live="polite"
-              aria-label={t("wordAnswerAria", {
-                word: answerText || t("wordEmptyAnswer"),
+              aria-label={t("scrambleAnswerAria", {
+                word: answerText || t("scrambleEmptyAnswer"),
               })}
             >
               {letters.map((_, index) => {
@@ -349,7 +349,7 @@ export default function WordPuzzleGame() {
                 type="button"
                 onClick={handleUndo}
                 disabled={placed.length === 0 || solved}
-                aria-label={t("wordUndo")}
+                aria-label={t("scrambleUndo")}
                 className="flex h-12 min-w-14 items-center justify-center rounded-2xl border-2 border-ink/15 bg-white text-xl font-extrabold text-ink shadow-sm transition-transform active:scale-90 disabled:opacity-30"
               >
                 <span aria-hidden="true">⌫</span>
@@ -358,7 +358,7 @@ export default function WordPuzzleGame() {
                 type="button"
                 onClick={handleClear}
                 disabled={placed.length === 0 || solved}
-                aria-label={t("wordClear")}
+                aria-label={t("scrambleClear")}
                 className="flex h-12 min-w-14 items-center justify-center rounded-2xl border-2 border-ink/15 bg-white text-xl font-extrabold text-ink shadow-sm transition-transform active:scale-90 disabled:opacity-30"
               >
                 <span aria-hidden="true">↺</span>
@@ -368,7 +368,7 @@ export default function WordPuzzleGame() {
 
           <div
             className="flex flex-wrap items-center justify-center gap-2 sm:gap-3"
-            aria-label={t("wordLettersAria")}
+            aria-label={t("scrambleLettersAria")}
           >
             {tiles.map((tile) => {
               const used = placedIds.has(tile.id);
@@ -383,7 +383,7 @@ export default function WordPuzzleGame() {
                   type="button"
                   onClick={() => handleTapLetter(tile)}
                   disabled={used || locked}
-                  aria-label={t("wordLetterAria", { letter: tile.letter })}
+                  aria-label={t("scrambleLetterAria", { letter: tile.letter })}
                   className={`flex h-[clamp(3.5rem,13vw,5rem)] w-[clamp(3.2rem,12vw,4.75rem)] items-center justify-center rounded-2xl border-[3px] text-[clamp(1.75rem,6.5vw,2.75rem)] font-extrabold uppercase leading-none text-ink shadow-[0_6px_0_rgba(74,56,0,0.08)] transition-transform duration-150 active:scale-90 disabled:opacity-25 disabled:shadow-none ${stateClass}`}
                 >
                   <span aria-hidden="true">{tile.letter}</span>
@@ -412,27 +412,27 @@ export default function WordPuzzleGame() {
           />
           <div>
             <h1 className="text-4xl font-extrabold text-ink sm:text-5xl">
-              {t("wordResultsTitle")}
+              {t("scrambleResultsTitle")}
             </h1>
             <p className="mt-2 text-lg font-semibold text-ink/60">
-              {t("wordResultsText", { total: result.solvedWords })}
+              {t("scrambleResultsText", { total: result.solvedWords })}
             </p>
             {isRecord && (
               <p className="mt-3 inline-block rounded-full border-2 border-sun bg-sunsoft px-5 py-1.5 text-base font-extrabold text-ink">
-                {t("wordRecord")}
+                {t("scrambleRecord")}
               </p>
             )}
           </div>
           <div className="grid w-full grid-cols-3 gap-3">
             <ResultStat
-              label={t("wordPerfectWords")}
+              label={t("scramblePerfectWords")}
               value={`${result.perfectWords}/${result.solvedWords}`}
             />
             <ResultStat
-              label={t("wordAccuracy")}
+              label={t("scrambleAccuracy")}
               value={`${Math.round(result.accuracy * 100)}%`}
             />
-            <ResultStat label={t("wordMistakes")} value={result.mistakes} />
+            <ResultStat label={t("scrambleMistakes")} value={result.mistakes} />
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row">
             <button
@@ -440,7 +440,7 @@ export default function WordPuzzleGame() {
               onClick={startGame}
               className="min-h-14 flex-1 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-6 py-3 text-xl font-extrabold text-black shadow-lg active:scale-95 active:border-b-4"
             >
-              {t("wordPlayAgain")}
+              {t("scramblePlayAgain")}
             </button>
             <Link
               href="/hexagons"

@@ -26,9 +26,9 @@ const englishHexagons: Record<
     name: "Type Rush",
     description: "Type quickly and accurately",
   },
-  word: {
-    name: "Word Puzzle",
-    description: "Put the letters in order",
+  scramble: {
+    name: "Word Scramble",
+    description: "Unscramble the letters to form the word.",
   },
 };
 
