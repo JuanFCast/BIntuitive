@@ -284,13 +284,18 @@ export default function GameClient() {
           current={round}
           starsByRound={starsByRound}
         />
+        {/*
+          Misma casa que los demás juegos: siempre devuelve a Explore. Aquí va
+          antes el diálogo de confirmación, porque la lección está en curso y
+          salir por descuido perdería las estrellas de la sesión.
+        */}
         <button
           type="button"
           onClick={() => setExitOpen(true)}
           aria-label={t("exitGameAria")}
           className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-ink/20 bg-white text-2xl shadow-sm transition-transform active:scale-90"
         >
-          🚪
+          <span aria-hidden="true">🏠</span>
         </button>
       </footer>
 

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AudioButton from "@/components/AudioButton";
 import BrandMark from "@/components/BrandMark";
-import MuteButton from "@/components/MuteButton";
+import GameIntro from "@/components/GameIntro";
+import GameShell from "@/components/GameShell";
 import { useLanguage } from "@/lib/i18n";
 import {
   playCelebrationSound,
@@ -221,44 +222,16 @@ export default function WordScrambleGame() {
   const answerText = placed.map((tile) => tile.letter).join("");
 
   return (
-    <main className="min-h-dvh overflow-y-auto bg-cream px-3 py-3 sm:px-6 sm:py-5">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
-        <Link
-          href="/hexagons"
-          aria-label={t("backToHexagons")}
-          className="flex min-h-12 items-center rounded-full border-2 border-ink/15 bg-white px-4 text-base font-extrabold text-ink shadow-sm active:scale-95"
-        >
-          ← <span className="hidden sm:inline">{t("backToHexagons")}</span>
-        </Link>
-        <MuteButton />
-      </header>
-
+    <GameShell>
       {phase === "intro" && (
-        <section className="mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-xl flex-col items-center justify-center gap-5 text-center">
-          <BrandMark
-            size={130}
-            className="shadow-[0_14px_40px_rgba(255,196,0,0.2)]"
-          />
-          <div>
-            <p className="text-5xl" aria-hidden="true">🧩</p>
-            <h1 className="mt-2 text-4xl font-extrabold text-ink sm:text-5xl">
-              {t("scrambleTitle")}
-            </h1>
-            <p className="mt-3 text-xl font-bold text-ink/70">
-              {t("scrambleIntro")}
-            </p>
-            <p className="mx-auto mt-2 max-w-lg text-base font-semibold text-ink/55 sm:text-lg">
-              {t("scrambleHowTo")}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={startGame}
-            className="min-h-16 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-10 py-3 text-2xl font-extrabold text-black shadow-xl transition-transform active:scale-95 active:border-b-4"
-          >
-            {t("scrambleStart")}
-          </button>
-        </section>
+        <GameIntro
+          emoji="🧩"
+          title={t("scrambleTitle")}
+          goal={t("scrambleIntro")}
+          howTo={t("scrambleHowTo")}
+          startLabel={t("scrambleStart")}
+          onStart={startGame}
+        />
       )}
 
       {phase === "playing" && word && (
@@ -451,7 +424,7 @@ export default function WordScrambleGame() {
           </div>
         </section>
       )}
-    </main>
+    </GameShell>
   );
 }
 

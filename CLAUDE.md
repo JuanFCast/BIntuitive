@@ -39,7 +39,7 @@ src/app/
     <id>/page.tsx       Server component: solo metadata + render del cliente
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
-src/components/         BrandMark, MuteButton, HexagonCard, AppShell, BottomNavigation...
+src/components/         BrandMark, MuteButton, HexagonCard, AppShell, GameShell, GameIntro...
 src/data/
   categories.ts         Category[] + GameHexagon[] → hexagons[] (fuente de verdad del panal)
   questions.ts          Banco de preguntas en español (fuente)
@@ -67,8 +67,9 @@ src/lib/
 - **Máquina de fases**: los juegos usan `type Phase = "intro" | "playing" | "results"`
   (Type Rush añade `"ready"`), con una sección JSX por fase.
 - **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve `/`, `/hexagons`, `/progress`
-  y `/profile`. Un juego renderiza su propio header con `← backToHexagons` + `<MuteButton />`,
-  y siempre vuelve a Explore.
+  y `/profile`. Un juego se envuelve en `<GameShell>`, que pone el `<main>` y el encabezado
+  común: casa a `/hexagons` a la izquierda y `<MuteButton />` a la derecha. `GameShell` no
+  tiene nada que ver con `AppShell`; la salida de un juego siempre es Explore.
 - **Paleta**: tokens `@theme` en `globals.css` — `cream` (fondo), `sun`/`sunsoft` (marca),
   `sky`/`skysoft`, `mint`/`mintsoft` (acierto), `coral`/`coralsoft` (error), `berry`/`berrysoft`, `ink`.
   Botones con `border-b-8` + `active:scale-95` + `active:border-b-4`.
@@ -84,8 +85,10 @@ src/lib/
 1. `src/lib/<juego>.ts` — tipos, constantes (rondas, duración, penalizaciones), generación de
    rondas y cálculo de estadísticas. Sin React.
 2. `src/app/game/<id>/page.tsx` — server component con `metadata` (`"<Nombre> · BIntuitive"`).
-3. `src/app/game/<id>/<Nombre>Game.tsx` — `"use client"`, fases intro/playing/results,
-   header con back a `/hexagons` y `MuteButton`.
+3. `src/app/game/<id>/<Nombre>Game.tsx` — `"use client"`, fases intro/playing/results.
+   El render va dentro de `<GameShell>` (encabezado común) y la fase `intro` es un
+   `<GameIntro emoji title goal howTo startLabel onStart />`: no se vuelve a escribir a mano
+   ni el encabezado ni la pantalla de introducción.
 4. `src/data/categories.ts` — añadir el id al union de `GameHexagon["id"]` y una entrada en
    `gameHexagons` (nombre y descripción **en español**, emoji, `href: "/game/<id>"`).
    Con eso el juego ya aparece en Explore: **no hay ningún índice de juegos que actualizar**.
