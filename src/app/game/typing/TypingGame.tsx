@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
+import ResultActions from "@/components/ResultActions";
+import ResultStat from "@/components/ResultStat";
 import { useClockPause } from "@/lib/clockPause";
 import { useLanguage } from "@/lib/i18n";
 import { playCelebrationSound } from "@/lib/sounds";
@@ -340,28 +341,18 @@ export default function TypingGame() {
             </p>
           </div>
           <div className="grid w-full grid-cols-3 gap-3">
-            <ResultStat label={t("typingWpm")} value={result.wpm} />
+            <ResultStat tone="berry" label={t("typingWpm")} value={result.wpm} />
             <ResultStat
+              tone="berry"
               label={t("typingAccuracy")}
               value={`${Math.round(result.accuracy * 100)}%`}
             />
-            <ResultStat label={t("typingMistakes")} value={result.mistakes} />
+            <ResultStat tone="berry" label={t("typingMistakes")} value={result.mistakes} />
           </div>
-          <div className="flex w-full flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={prepareRound}
-              className="min-h-14 flex-1 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-6 py-3 text-xl font-extrabold text-black shadow-lg active:scale-95 active:border-b-4"
-            >
-              {t("typingPlayAgain")}
-            </button>
-            <Link
-              href="/hexagons"
-              className="flex min-h-14 flex-1 items-center justify-center rounded-2xl border-b-8 border-black/30 bg-black px-6 py-3 text-xl font-extrabold text-white shadow-lg active:scale-95 active:border-b-4"
-            >
-              {t("backToHexagons")}
-            </Link>
-          </div>
+          <ResultActions
+            playAgainLabel={t("typingPlayAgain")}
+            onPlayAgain={prepareRound}
+          />
         </section>
       )}
     </GameShell>
@@ -412,13 +403,3 @@ function TypingExample() {
   );
 }
 
-function ResultStat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-2xl border-2 border-berry bg-white px-2 py-4 shadow-sm">
-      <p className="text-2xl font-extrabold text-ink sm:text-3xl">{value}</p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-ink/50 sm:text-sm">
-        {label}
-      </p>
-    </div>
-  );
-}

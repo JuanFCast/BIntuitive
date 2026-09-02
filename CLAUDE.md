@@ -40,7 +40,8 @@ src/app/
     <id>/page.tsx       Server component: solo metadata + render del cliente
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
-src/components/         BrandMark, MuteButton, HexagonCard, AppShell, AppMenu, GameShell...
+src/components/         BrandMark, MuteButton, HexagonCard, AppShell, AppMenu, GameShell,
+                        GameIntro, GameHelp, ResultActions, ResultStat...
 src/data/
   categories.ts         Category[] + GameHexagon[] → hexagons[] (fuente de verdad del panal)
   questions.ts          Banco de preguntas en español (fuente)
@@ -85,6 +86,10 @@ src/lib/
 - **Una sola explicación por juego**: el objeto `intro` que recibe `GameShell` es la única
   fuente de contenido, y de ahí salen tanto la pantalla previa a jugar como la ayuda. No
   escribir una segunda explicación en ningún sitio: divergirían.
+- **Los resultados hablan el mismo idioma visual**: cada actividad enseña sus propias métricas
+  —estrellas en las lecciones, estadísticas en los juegos—, pero la tarjeta (`ResultStat`, con
+  un `tone` por juego) y el par de botones del final (`ResultActions`: repetir y volver a
+  Explore) se definen una sola vez. No duplicar esos botones en un juego nuevo.
 - **Dos superficies, la misma plantilla**: los juegos independientes usan `GameShell` entero.
   La ruta de preguntas tiene encabezado propio (marca, estrellas, pie con progreso y salida
   con confirmación), así que usa `GameShell` solo en su fase `intro` —allí la casa no

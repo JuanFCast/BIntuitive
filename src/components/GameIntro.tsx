@@ -25,22 +25,9 @@ export type GameIntroContent = {
   example?: ReactNode;
 };
 
-export type ActionVariant = "default" | "round";
-
-const ACTION_VARIANTS: Record<ActionVariant, string> = {
-  default: "rounded-2xl border-[#9b7600] text-black",
-  round: "rounded-full border-[#e0a800] text-ink",
-};
-
 type GameIntroProps = GameIntroContent & {
   actionLabel: string;
   onAction: () => void;
-  /**
-   * Aspecto del botón principal. Existe solo porque Agilidad visual llegó a la
-   * plantilla con un CTA distinto al de los demás juegos, y unificarlos es una
-   * decisión de diseño que aún no está tomada.
-   */
-  actionVariant?: ActionVariant;
   /**
    * `screen` es la pantalla previa a jugar y ocupa el alto disponible.
    * `dialog` es la misma explicación dentro de la ayuda, sin la marca y con la
@@ -57,7 +44,6 @@ export default function GameIntro({
   example,
   actionLabel,
   onAction,
-  actionVariant = "default",
   layout = "screen",
 }: GameIntroProps) {
   const { t } = useLanguage();
@@ -114,7 +100,7 @@ export default function GameIntro({
         <button
           type="button"
           onClick={onAction}
-          className={`min-h-16 border-b-8 bg-sun px-10 py-3 text-2xl font-extrabold shadow-xl transition-transform active:scale-95 active:border-b-4 ${ACTION_VARIANTS[actionVariant]}`}
+          className="min-h-16 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-10 py-3 text-2xl font-extrabold text-black shadow-xl transition-transform active:scale-95 active:border-b-4"
         >
           {actionLabel}
         </button>

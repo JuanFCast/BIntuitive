@@ -4,10 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import GameHelp from "./GameHelp";
-import GameIntro, {
-  type ActionVariant,
-  type GameIntroContent,
-} from "./GameIntro";
+import GameIntro, { type GameIntroContent } from "./GameIntro";
 import MuteButton from "./MuteButton";
 import { useLanguage } from "@/lib/i18n";
 import { cancelSpeech } from "@/lib/speech";
@@ -19,7 +16,6 @@ type GameShellProps = {
   showIntro: boolean;
   startLabel: string;
   onStart: () => void;
-  actionVariant?: ActionVariant;
   /**
    * Se llama al abrir y cerrar la ayuda. Los juegos con reloj lo usan para
    * pausarlo: leer la explicación no puede costarle tiempo al jugador.
@@ -47,7 +43,6 @@ export default function GameShell({
   showIntro,
   startLabel,
   onStart,
-  actionVariant,
   onHelpOpenChange,
   children,
 }: GameShellProps) {
@@ -88,7 +83,6 @@ export default function GameShell({
           {...intro}
           actionLabel={startLabel}
           onAction={onStart}
-          actionVariant={actionVariant}
         />
       ) : (
         children

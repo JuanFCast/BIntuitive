@@ -230,19 +230,31 @@ function MenuGroup({
   label: string;
   children: React.ReactNode;
 }) {
+  const labelId = useId();
+
   return (
     <div className="mb-3 last:mb-0">
-      <p className="px-2 pb-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-ink/45">
+      <p
+        id={labelId}
+        className="px-2 pb-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-ink/45"
+      >
         {label}
       </p>
-      {children}
+      <div role="group" aria-labelledby={labelId} className="flex gap-1.5">
+        {children}
+      </div>
     </div>
   );
 }
 
 /**
- * Grupo de opciones excluyentes. Es un `radiogroup` porque son ajustes con un
- * valor elegido, no acciones sueltas.
+ * Grupo de opciones excluyentes.
+ *
+ * Son botones normales con `aria-pressed`, no un `radiogroup`: un grupo de
+ * radios promete navegación con flechas y un único punto de tabulación, y
+ * anunciarlo sin implementarlo confunde más que ayudar. Así cada opción se
+ * alcanza con Tab y se activa con Enter o espacio, que es lo que un botón hace
+ * de por sí, y el estado elegido se anuncia igual.
  */
 function Segmented<T extends string | boolean>({
   options,
@@ -254,15 +266,14 @@ function Segmented<T extends string | boolean>({
   onSelect: (value: T) => void;
 }) {
   return (
-    <div role="radiogroup" className="flex gap-1.5">
+    <>
       {options.map((option) => {
         const isSelected = option.value === selected;
         return (
           <button
             key={String(option.value)}
             type="button"
-            role="radio"
-            aria-checked={isSelected}
+            aria-pressed={isSelected}
             onClick={() => onSelect(option.value)}
             className={`min-h-12 flex-1 rounded-2xl border-2 px-2 text-sm font-extrabold transition-colors ${
               isSelected
@@ -274,6 +285,6 @@ function Segmented<T extends string | boolean>({
           </button>
         );
       })}
-    </div>
+    </>
   );
 }

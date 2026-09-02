@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
+import ResultActions from "@/components/ResultActions";
+import ResultStat from "@/components/ResultStat";
 import { useClockPause } from "@/lib/clockPause";
 import { useGameTimers } from "@/lib/gameTimers";
 import { useLanguage } from "@/lib/i18n";
@@ -145,7 +146,6 @@ export default function VisualGame() {
       showIntro={phase === "intro"}
       startLabel={t("visualStart")}
       onStart={startGame}
-      actionVariant="round"
       onHelpOpenChange={handleHelpOpenChange}
     >
       {phase === "playing" && baseCard && playerCard && (
@@ -217,25 +217,26 @@ export default function VisualGame() {
             </p>
           </div>
           <div className="grid w-full grid-cols-3 gap-3">
-            <Stat label={t("visualTime")} value={formatVisualTime(finalTime)} />
-            <Stat label={t("visualAccuracy")} value={`${accuracy}%`} />
-            <Stat label={t("visualMistakes")} value={errors} />
+            <ResultStat
+              tone="neutral"
+              label={t("visualTime")}
+              value={formatVisualTime(finalTime)}
+            />
+            <ResultStat
+              tone="neutral"
+              label={t("visualAccuracy")}
+              value={`${accuracy}%`}
+            />
+            <ResultStat
+              tone="neutral"
+              label={t("visualMistakes")}
+              value={errors}
+            />
           </div>
-          <div className="flex w-full flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={startGame}
-              className="min-h-14 flex-1 rounded-full border-b-8 border-[#e0a800] bg-sun px-6 py-3 text-xl font-extrabold text-ink shadow-lg active:scale-95 active:border-b-4"
-            >
-              {t("visualPlayAgain")}
-            </button>
-            <Link
-              href="/hexagons"
-              className="flex min-h-14 flex-1 items-center justify-center rounded-full border-b-8 border-sky bg-skysoft px-6 py-3 text-xl font-extrabold text-ink shadow-lg active:scale-95 active:border-b-4"
-            >
-              {t("backToHexagons")}
-            </Link>
-          </div>
+          <ResultActions
+            playAgainLabel={t("visualPlayAgain")}
+            onPlayAgain={startGame}
+          />
         </section>
       )}
     </GameShell>
@@ -407,13 +408,3 @@ function ExampleCard({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-2xl border-2 border-ink/10 bg-white px-2 py-3 text-center shadow-sm">
-      <p className="text-xl font-extrabold text-ink sm:text-2xl">{value}</p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-ink/50 sm:text-sm">
-        {label}
-      </p>
-    </div>
-  );
-}

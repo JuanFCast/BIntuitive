@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import BrandMark from "./BrandMark";
+import ResultActions from "./ResultActions";
 import { playCelebrationSound } from "@/lib/sounds";
 import { speak } from "@/lib/speech";
 import { isMuted } from "@/lib/storage";
@@ -40,9 +40,9 @@ export default function ResultsScreen({
   }, [language, text]);
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-cream px-6 py-10 text-center text-ink">
+    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col items-center justify-center gap-5 bg-cream px-6 py-10 text-center text-ink">
       <BrandMark
-        size={150}
+        size={140}
         className="animate-pop shadow-[0_18px_50px_rgba(255,196,0,0.2)]"
       />
 
@@ -73,21 +73,10 @@ export default function ResultsScreen({
         </p>
       )}
 
-      <div className="mt-4 flex flex-col gap-4 sm:flex-row">
-        <button
-          type="button"
-          onClick={onPlayAgain}
-          className="min-h-16 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-10 py-4 text-2xl font-extrabold text-black shadow-lg transition-transform active:scale-95 active:border-b-4 sm:text-3xl"
-        >
-          {t("playAgain")}
-        </button>
-        <Link
-          href="/hexagons"
-          className="flex min-h-16 items-center justify-center rounded-2xl border-b-8 border-white/30 bg-white px-10 py-4 text-2xl font-extrabold text-black shadow-lg transition-transform active:scale-95 active:border-b-4 sm:text-3xl"
-        >
-          {t("anotherHexagon")}
-        </Link>
-      </div>
+      <ResultActions
+        playAgainLabel={t("playAgain")}
+        onPlayAgain={onPlayAgain}
+      />
     </main>
   );
 }
