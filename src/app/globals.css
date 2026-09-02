@@ -564,10 +564,16 @@ button {
    * El panal movil es una columna alta: el ancho lo manda la altura de la
    * ventana, no al reves, para que las cinco filas quepan enteras entre la
    * cabecera y la barra inferior sin hacer scroll.
+   *
+   * Geometria: la rejilla mide dos fichas de ancho, la ficha es un hexagono
+   * pointy-top de aspect-ratio 0.8660254 (raiz de 3 partido por 2) y las filas
+   * se solapan con el paso vertical de 3/4 de la altura de ficha propio del
+   * teselado. Cinco filas dan una altura de 4 pasos mas una ficha, es decir
+   * 2.3094011 anchos de rejilla, de ahi el aspect-ratio 0.4330127.
    */
-  width: min(100%, calc((100dvh - 17rem) * 0.4075414));
+  width: min(100%, calc((100dvh - 17rem) * 0.4330127));
   max-width: 24rem;
-  aspect-ratio: 0.4075414;
+  aspect-ratio: 0.4330127;
   filter: drop-shadow(0 6px 10px rgb(120 88 0 / 0.08));
 }
 
@@ -578,10 +584,14 @@ button {
 
 /*
  * Panal vertical de 7 hexagonos en movil: filas 2-1-2-1-1.
- * Las filas de una ficha van centradas respecto a las de dos, con el paso
- * habitual de 3/4 de la altura de la ficha. Las dos ultimas comparten columna,
- * asi que entre ellas el paso es de una altura completa: se tocan en el
- * vertice, sin solaparse.
+ * Todas las filas caen en el mismo teselado, alternando columnas a ras de la
+ * rejilla (izquierda 0 y 50%) y columnas desplazadas media ficha (25%), con el
+ * paso constante de 3/4 de altura: 0, 18.75%, 37.5%, 56.25% y 75% de la altura
+ * total, que es justo un paso entre filas consecutivas.
+ *
+ * El septimo NO va centrado bajo el sexto: ocupa la posicion lateral que le
+ * toca en el teselado, como si empezara una fila de dos y faltase su pareja a
+ * la derecha. Asi el panal se lee incompleto en vez de terminar en columna.
  */
 .hexagon-card:nth-child(1) {
   left: 0;
@@ -595,27 +605,27 @@ button {
 
 .hexagon-card:nth-child(3) {
   left: 25%;
-  top: 17.6471%;
+  top: 18.75%;
 }
 
 .hexagon-card:nth-child(4) {
   left: 0;
-  top: 35.2941%;
+  top: 37.5%;
 }
 
 .hexagon-card:nth-child(5) {
   left: 50%;
-  top: 35.2941%;
+  top: 37.5%;
 }
 
 .hexagon-card:nth-child(6) {
   left: 25%;
-  top: 52.9412%;
+  top: 56.25%;
 }
 
 .hexagon-card:nth-child(7) {
-  left: 25%;
-  top: 76.4706%;
+  left: 0;
+  top: 75%;
 }
 
 @media (min-width: 640px) {
@@ -685,7 +695,7 @@ button {
 
   .hexagons-grid {
     margin-top: 0.75rem;
-    width: min(100%, calc((100dvh - 14rem) * 0.4075414));
+    width: min(100%, calc((100dvh - 14rem) * 0.4330127));
   }
 
   .hexagon-emoji {

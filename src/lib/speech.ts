@@ -36,7 +36,12 @@ export function speak(
     onEnd?.();
     return;
   }
-  window.speechSynthesis.cancel();
+  const synthesis = window.speechSynthesis;
+  // Solo se cancela si de verdad hay algo sonando o en cola. En Safari (iOS
+  // incluido) un cancel() con la cola vacía puede dejar el sintetizador en
+  // pausa, y entonces la locución siguiente ya no se oye.
+  if (synthesis.speaking || synthesis.pending) synthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = language === "en" ? "en-US" : "es-ES";
   utterance.rate = 0.85;
@@ -50,7 +55,10 @@ export function speak(
     utterance.onend = onEnd;
     utterance.onerror = () => onEnd();
   }
-  window.speechSynthesis.speak(utterance);
+  synthesis.speak(utterance);
+  // Safari puede quedarse pausado tras un cancel anterior; si no lo está,
+  // resume() no hace nada.
+  synthesis.resume();
 }
 
 export function cancelSpeech(): void {

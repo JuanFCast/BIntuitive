@@ -40,6 +40,14 @@ type Phase = "intro" | "playing" | "results";
 const BOARD_PAUSE_MS = 1400;
 const MISS_FLASH_MS = 400;
 
+/**
+ * Espera entre el sonido de acierto y la voz. En iOS el AudioContext que suena
+ * el acorde se traga la locucion si las dos arrancan a la vez, asi que la
+ * palabra se dice cuando el sonido ya ha terminado. Es el mismo retraso que
+ * usa AudioButton para su reproduccion automatica.
+ */
+const SPEAK_DELAY_MS = 350;
+
 export default function WordSearchGame() {
   const { language, t } = useLanguage();
   const [phase, setPhase] = useState<Phase>("intro");
@@ -69,6 +77,7 @@ export default function WordSearchGame() {
   const boardMissesRef = useRef(0);
   const startedAtRef = useRef(0);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionLanguageRef = useRef(language);
 
   // Espejo en refs del gesto y del bloqueo: los eventos de puntero llegan
@@ -84,6 +93,10 @@ export default function WordSearchGame() {
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
+    if (speakTimerRef.current) {
+      clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = null;
+    }
   }, []);
 
   const later = useCallback((fn: () => void, ms: number) => {
@@ -126,6 +139,24 @@ export default function WordSearchGame() {
     draggingRef.current = false;
     pointerIdRef.current = null;
   }, [applyAnchor, applyHead]);
+
+  /**
+   * Dice la palabra encontrada, justo despues del sonido de acierto.
+   * Solo hay un temporizador de voz a la vez: si el nino encuentra otra
+   * palabra antes de que hable, la anterior se descarta y suena la ultima, de
+   * modo que nunca se acumulan ni se pisan. El mute se comprueba al disparar,
+   * no al programar, para que silenciar entre medias tambien calle esta.
+   */
+  const speakWord = useCallback(
+    (word: string) => {
+      if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = setTimeout(() => {
+        speakTimerRef.current = null;
+        if (!isMuted()) speak(word, language);
+      }, SPEAK_DELAY_MS);
+    },
+    [language],
+  );
 
   const loadBoard = useCallback(() => {
     const next = generateBoard(
@@ -260,16 +291,12 @@ export default function WordSearchGame() {
       setLastFound(match.word);
       playCorrectSound();
 
-      // Pronunciación de la palabra encontrada. Va dentro del mismo gesto que
-      // soltó la selección porque iOS solo permite hablar a SpeechSynthesis
-      // como consecuencia directa de un gesto. `speak` cancela lo anterior,
-      // así que dos hallazgos seguidos no se montan uno sobre otro. El mute se
-      // comprueba aquí, igual que hacen AudioButton y ResultsScreen.
-      if (!isMuted()) speak(match.word, language);
+      // Primero el sonido de acierto, y la palabra en voz alta justo despues.
+      speakWord(match.word);
 
       if (nextFound.length >= current.placements.length) completeBoard();
     },
-    [clearSelection, completeBoard, language, later],
+    [clearSelection, completeBoard, later, speakWord],
   );
 
   const cellFromPoint = (clientX: number, clientY: number): Cell | null => {

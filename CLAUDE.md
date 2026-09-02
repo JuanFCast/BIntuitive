@@ -94,8 +94,11 @@ src/lib/
 6. `src/lib/i18n.tsx` — añadir todas las claves nuevas a `messages.en` **y** `messages.es`
    (el tipo `MessageKey` sale de `en`, así que faltar en `es` rompe el build).
 7. `src/app/globals.css` — **importante**: el panal de `/hexagons` posiciona cada hexágono con
-   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-3-2 y ≥640px 4-3). Hoy está
+   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-1-2-1-1 y ≥640px 4-3). Hoy está
    cableado para 7 hexágonos; un octavo exige rehacer esas posiciones en ambos breakpoints.
+   En móvil el séptimo va en la columna lateral que le toca en el teselado (no centrado), para
+   que el panal se lea incompleto en vez de terminar en columna; un octavo ocuparía justo el
+   hueco a su derecha y ahí el `aspect-ratio` ya no cambiaría.
    La geometría: hexágono pointy-top con `aspect-ratio` 0.8660254 (√3/2), las filas se
    solapan con paso vertical de 3/4 de la altura de la ficha y desplazamiento horizontal de
    media ficha. El `aspect-ratio` de `.hexagons-grid` debe recalcularse con el nuevo número
@@ -128,5 +131,9 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
   `nextLevel` de `gameEngine.ts`. Cualquier otra cosa en común es señal de acoplamiento.
 - Ningún juego independiente suma a `totalStars` ni a `sessions`: esas métricas son de las
   lecciones de preguntas y `/progress` solo muestra esas.
-- `speech.ts` (Web Speech API) se usa solo en la ruta `/game` de preguntas, no en los juegos.
+- `speech.ts` (Web Speech API) lo usan la ruta `/game` de preguntas y Word Search, que pronuncia
+  cada palabra encontrada. En iOS conviene programar la locución con un pequeño retraso tras el
+  sonido de acierto (el `AudioContext` de `sounds.ts` se traga la voz si arrancan a la vez) y
+  comprobar `isMuted()` al disparar, no al programar. Quien programe un temporizador de voz debe
+  cancelarlo al desmontar y al cambiar de idioma, junto con `cancelSpeech()`.
 - Los comentarios existentes en el código están en español; mantener ese idioma en el código.
