@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Baloo_2 } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n";
 import AppShell from "@/components/AppShell";
+import TextSizePreference from "@/components/TextSizePreference";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -59,6 +60,7 @@ export default function RootLayout({
     <html lang="en" className={baloo.variable}>
       <body className="font-sans antialiased">
         <LanguageProvider>
+          <TextSizePreference />
           <AppShell>{children}</AppShell>
         </LanguageProvider>
       </body>

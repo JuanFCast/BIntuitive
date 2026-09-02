@@ -1,11 +1,26 @@
 "use client";
 
-import LanguageToggle from "@/components/LanguageToggle";
-import MuteButton from "@/components/MuteButton";
 import { useLanguage } from "@/lib/i18n";
+import { useMuted, useTextSize } from "@/lib/preferences";
 
+/**
+ * Perfil. Las preferencias se editan en el menú de ajustes de la cabecera, que
+ * es único; aquí solo se leen, para que la pantalla diga en qué estado está la
+ * aplicación sin ser una segunda interfaz de edición.
+ *
+ * Cuando lleguen las cuentas y los perfiles infantiles, la identidad ocupará la
+ * parte de arriba y este resumen pasará a ser secundario.
+ */
 export default function ProfileClient() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const muted = useMuted();
+  const textSize = useTextSize();
+
+  const textSizeLabel = {
+    normal: t("menuTextNormal"),
+    large: t("menuTextLarge"),
+    xlarge: t("menuTextXLarge"),
+  }[textSize];
 
   return (
     <main className="min-h-full bg-cream px-4 py-6 text-ink sm:px-6 sm:py-10">
@@ -35,24 +50,24 @@ export default function ProfileClient() {
           <div className="mt-2 overflow-hidden rounded-3xl border border-ink/10 bg-white shadow-sm">
             <PreferenceRow
               icon="🌐"
-              title={t("profileLanguage")}
-              description={t("profileLanguageDescription")}
-              control={<LanguageToggle />}
+              title={t("menuLanguage")}
+              value={language === "en" ? "English" : "Español"}
             />
             <div className="mx-5 border-t border-ink/8" />
             <PreferenceRow
               icon="🔊"
-              title={t("profileSound")}
-              description={t("profileSoundDescription")}
-              control={<MuteButton />}
+              title={t("menuSound")}
+              value={muted ? t("menuSoundOff") : t("menuSoundOn")}
+            />
+            <div className="mx-5 border-t border-ink/8" />
+            <PreferenceRow
+              icon="🔡"
+              title={t("menuText")}
+              value={textSizeLabel}
             />
           </div>
-        </section>
-
-        <section className="mt-5 rounded-3xl border border-ink/10 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="text-xl font-extrabold">{t("profileAbout")}</h2>
-          <p className="mt-1.5 font-semibold leading-relaxed text-ink/60">
-            {t("profileAboutDescription")}
+          <p className="mt-2 px-1 text-sm font-semibold text-ink/50">
+            {t("profilePreferencesSummary")}
           </p>
         </section>
       </div>
@@ -63,13 +78,11 @@ export default function ProfileClient() {
 function PreferenceRow({
   icon,
   title,
-  description,
-  control,
+  value,
 }: {
   icon: string;
   title: string;
-  description: string;
-  control: React.ReactNode;
+  value: string;
 }) {
   return (
     <div className="flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
@@ -79,13 +92,8 @@ function PreferenceRow({
       >
         {icon}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-lg font-extrabold">{title}</span>
-        <span className="mt-0.5 block text-sm font-semibold leading-snug text-ink/50">
-          {description}
-        </span>
-      </span>
-      {control}
+      <span className="min-w-0 flex-1 text-lg font-extrabold">{title}</span>
+      <span className="shrink-0 text-base font-bold text-ink/55">{value}</span>
     </div>
   );
 }

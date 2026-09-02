@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { isMuted, setMuted } from "@/lib/storage";
+import { setMuted } from "@/lib/storage";
+import { useMuted } from "@/lib/preferences";
 import { cancelSpeech } from "@/lib/speech";
 import { useLanguage } from "@/lib/i18n";
 
@@ -11,11 +11,9 @@ type MuteButtonProps = {
 
 export default function MuteButton({ className = "" }: MuteButtonProps) {
   const { t } = useLanguage();
-  const [muted, setMutedState] = useState(false);
-
-  useEffect(() => {
-    setMutedState(isMuted());
-  }, []);
+  // Lee la preferencia compartida: silenciar desde el menú superior también
+  // cambia este botón, y al revés.
+  const muted = useMuted();
 
   return (
     <button
@@ -24,7 +22,6 @@ export default function MuteButton({ className = "" }: MuteButtonProps) {
       onClick={() => {
         const next = !muted;
         setMuted(next);
-        setMutedState(next);
         if (next) cancelSpeech();
       }}
       className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-ink/20 bg-white text-xl shadow-sm transition-transform active:scale-90 ${className}`}

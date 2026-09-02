@@ -2,6 +2,32 @@ import type { CategoryId } from "@/data/questions";
 
 const PROGRESS_KEY = "bintuitive-progress";
 const MUTE_KEY = "bintuitive-muted";
+const TEXT_SIZE_KEY = "bintuitive-text-size";
+
+/** Tamaño de letra elegido. Es una preferencia, no progreso educativo. */
+export type TextSize = "normal" | "large" | "xlarge";
+
+const TEXT_SIZES: TextSize[] = ["normal", "large", "xlarge"];
+
+/**
+ * Preferencias que la interfaz debe reflejar en cuanto cambian, se cambien
+ * desde donde se cambien. `localStorage` no avisa a la propia pestaña, así que
+ * quien escribe avisa aquí y los componentes se suscriben con
+ * `useSyncExternalStore`. El valor sigue viviendo solo en `localStorage`: esto
+ * no es una segunda fuente de verdad, solo el aviso de que cambió.
+ */
+const preferenceListeners = new Set<() => void>();
+
+export function subscribeToPreferences(listener: () => void): () => void {
+  preferenceListeners.add(listener);
+  return () => {
+    preferenceListeners.delete(listener);
+  };
+}
+
+function notifyPreferenceChange(): void {
+  preferenceListeners.forEach((listener) => listener());
+}
 
 export type SessionSummary = {
   date: string;
@@ -176,4 +202,20 @@ export function setMuted(muted: boolean): void {
   } catch {
     // Ignorar si no hay almacenamiento.
   }
+  notifyPreferenceChange();
+}
+
+export function getTextSize(): TextSize {
+  if (typeof window === "undefined") return "normal";
+  const saved = window.localStorage.getItem(TEXT_SIZE_KEY);
+  return TEXT_SIZES.find((size) => size === saved) ?? "normal";
+}
+
+export function setTextSize(size: TextSize): void {
+  try {
+    window.localStorage.setItem(TEXT_SIZE_KEY, size);
+  } catch {
+    // Ignorar si no hay almacenamiento.
+  }
+  notifyPreferenceChange();
 }

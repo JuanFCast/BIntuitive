@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AppMenu from "./AppMenu";
 import BrandMark from "./BrandMark";
 import { useLanguage } from "@/lib/i18n";
 
@@ -28,7 +29,7 @@ export default function AppHeader() {
           <span className="text-sun">Intuitive</span>
         </Link>
 
-        <span className="h-11 w-11" aria-hidden="true" />
+        <AppMenu />
       </div>
     </header>
   );

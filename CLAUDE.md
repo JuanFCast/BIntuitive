@@ -39,7 +39,7 @@ src/app/
     <id>/page.tsx       Server component: solo metadata + render del cliente
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
-src/components/         BrandMark, MuteButton, HexagonCard, AppShell, GameShell, GameIntro...
+src/components/         BrandMark, MuteButton, HexagonCard, AppShell, AppMenu, GameShell...
 src/data/
   categories.ts         Category[] + GameHexagon[] → hexagons[] (fuente de verdad del panal)
   questions.ts          Banco de preguntas en español (fuente)
@@ -55,6 +55,7 @@ src/lib/
   clockPause.ts         useClockPause: parar el reloj de un juego mientras la ayuda está abierta
   gameTimers.ts         useGameTimers: esperas cortas congelables (destellos, pausas, transiciones)
   speakAfterSound.ts    useSpeakAfterSound: decir una palabra tras el sonido de acierto
+  preferences.ts        useMuted / useTextSize: lectura reactiva de las preferencias
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
@@ -107,6 +108,17 @@ src/lib/
   de texto o label; objetivos táctiles `min-h-12` o más.
 - **Sonido**: `playCorrectSound` / `playWrongSound` / `playTapSound` / `playCelebrationSound`;
   todos respetan `isMuted()` internamente, no hay que comprobarlo.
+- **Preferencias**: idioma, sonido y tamaño de texto son globales y cada una tiene su clave
+  propia en `localStorage` (`bintuitive-language`, `bintuitive-muted`, `bintuitive-text-size`),
+  separadas del progreso educativo. Se editan en un único sitio, `AppMenu` (el menú de la
+  cabecera); `Profile` solo las muestra. La verdad sigue en `localStorage`: `storage.ts` avisa
+  a quien se suscriba y `useMuted` / `useTextSize` leen con `useSyncExternalStore`, así que no
+  hay un segundo estado que pueda desincronizarse.
+- **Tamaño de texto**: escala los tokens `--text-*` de Tailwind desde `[data-text-size]` en
+  `<html>`. **Nunca** tocar el `font-size` de `html`: movería el panal, los tableros y todo lo
+  calculado contra el viewport. La geometría es inmune porque dimensiona su letra con
+  `text-[clamp(...)]`, que compila a un valor literal; si un elemento cuyo tamaño es parte de
+  la mecánica necesita letra, debe usar un valor arbitrario, no `text-lg`.
 - **Sin dependencias nuevas**: el proyecto solo depende de Next/React. Nada de librerías de
   animación, estado o UI.
 

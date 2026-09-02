@@ -1,0 +1,279 @@
+"use client";
+
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n";
+import type { Language } from "@/lib/language";
+import { useMuted, useTextSize } from "@/lib/preferences";
+import { cancelSpeech } from "@/lib/speech";
+import { setMuted, setTextSize, type TextSize } from "@/lib/storage";
+
+/** Lo que puede recibir foco dentro del panel. */
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Menú compacto de preferencias globales: idioma, sonido, tamaño de texto y
+ * Acerca de. Vive en `AppHeader`, así que existe una sola vez y aparece en las
+ * tres pantallas principales.
+ *
+ * Es un diálogo, no un `role="menu"`: dentro hay ajustes con estado, no
+ * acciones que se ejecutan y desaparecen. Elegir una opción no lo cierra,
+ * porque es normal ajustar varias seguidas; se cierra con el propio botón, con
+ * Escape o tocando fuera.
+ *
+ * Es modal de verdad, no solo de nombre: el fondo se oscurece y traga los
+ * toques, así que el teclado se comporta igual y el foco no se escapa por
+ * detrás mientras está abierto.
+ *
+ * Ninguna preferencia se guarda aquí: idioma va por `useLanguage` y sonido y
+ * texto por `storage.ts`. El menú solo las lee y las escribe.
+ */
+export default function AppMenu() {
+  const { language, setLanguage, t } = useLanguage();
+  const muted = useMuted();
+  const textSize = useTextSize();
+  const [open, setOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const panelId = useId();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setAboutOpen(false);
+    // El foco vuelve al botón que lo abrió.
+    buttonRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        close();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      // El panel se anuncia como modal, así que el tabulador no puede salirse
+      // de él hacia los controles que quedan detrás: sería prometer al lector
+      // de pantalla algo que no se cumple. Con el foco atrapado, Tab en el
+      // último control vuelve al primero y Mayús+Tab en el primero al último.
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusables = panel.querySelectorAll<HTMLElement>(FOCUSABLE);
+      if (focusables.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      const outside = !active || !panel.contains(active);
+      // Al abrir, el foco está en el propio panel: desde ahí Tab entra por el
+      // primero y Mayús+Tab por el último.
+      const atPanel = active === panel;
+
+      if (event.shiftKey) {
+        if (outside || atPanel || active === first) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+      if (outside || atPanel || active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, close]);
+
+  useEffect(() => {
+    if (open) panelRef.current?.focus();
+  }, [open]);
+
+  const languages: { value: Language; label: string }[] = [
+    { value: "en", label: "English" },
+    { value: "es", label: "Español" },
+  ];
+
+  const textSizes: { value: TextSize; label: string }[] = [
+    { value: "normal", label: t("menuTextNormal") },
+    { value: "large", label: t("menuTextLarge") },
+    { value: "xlarge", label: t("menuTextXLarge") },
+  ];
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => (open ? close() : setOpen(true))}
+        aria-label={t("menuAria")}
+        aria-expanded={open}
+        aria-controls={panelId}
+        className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink/15 bg-white text-ink shadow-sm transition-transform active:scale-90"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-5 w-5"
+          role="presentation"
+          aria-hidden="true"
+        >
+          <path
+            d="M4 7h16M4 12h16M4 17h16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          {/* Tocar fuera cierra. Va detrás del panel y no captura el teclado. */}
+          <button
+            type="button"
+            aria-label={t("menuClose")}
+            onClick={close}
+            className="fixed inset-0 z-40 cursor-default bg-ink/25"
+          />
+
+          <div
+            ref={panelRef}
+            id={panelId}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("menuTitle")}
+            tabIndex={-1}
+            className="app-menu-panel fixed right-3 z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto rounded-3xl border-2 border-ink/10 bg-cream p-4 shadow-2xl outline-none sm:right-6"
+          >
+            <MenuGroup label={t("menuLanguage")}>
+              <Segmented
+                options={languages}
+                selected={language}
+                onSelect={setLanguage}
+              />
+            </MenuGroup>
+
+            <MenuGroup label={t("menuSound")}>
+              <Segmented
+                options={[
+                  { value: false, label: t("menuSoundOn") },
+                  { value: true, label: t("menuSoundOff") },
+                ]}
+                selected={muted}
+                onSelect={(next) => {
+                  setMuted(next);
+                  // Silenciar calla también lo que se esté diciendo.
+                  if (next) cancelSpeech();
+                }}
+              />
+            </MenuGroup>
+
+            <MenuGroup label={t("menuText")}>
+              <Segmented
+                options={textSizes}
+                selected={textSize}
+                onSelect={setTextSize}
+              />
+            </MenuGroup>
+
+            <div className="mt-3 border-t border-ink/10 pt-3">
+              <button
+                type="button"
+                onClick={() => setAboutOpen((current) => !current)}
+                aria-expanded={aboutOpen}
+                className="flex min-h-12 w-full items-center justify-between gap-2 rounded-2xl px-2 text-left text-base font-extrabold text-ink transition-colors active:bg-sunsoft"
+              >
+                {t("menuAbout")}
+                <span
+                  aria-hidden="true"
+                  className={`text-sm text-ink/45 transition-transform ${
+                    aboutOpen ? "rotate-90" : ""
+                  }`}
+                >
+                  ▶
+                </span>
+              </button>
+
+              {aboutOpen && (
+                <div className="mt-1 rounded-2xl bg-white px-3 py-3 text-left">
+                  <p className="text-base font-extrabold text-ink">
+                    B<span className="text-sun">Intuitive</span>
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-ink/60">
+                    {t("aboutTagline")}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-snug text-ink/55">
+                    {t("aboutDescription")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+function MenuGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-3 last:mb-0">
+      <p className="px-2 pb-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-ink/45">
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Grupo de opciones excluyentes. Es un `radiogroup` porque son ajustes con un
+ * valor elegido, no acciones sueltas.
+ */
+function Segmented<T extends string | boolean>({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: { value: T; label: string }[];
+  selected: T;
+  onSelect: (value: T) => void;
+}) {
+  return (
+    <div role="radiogroup" className="flex gap-1.5">
+      {options.map((option) => {
+        const isSelected = option.value === selected;
+        return (
+          <button
+            key={String(option.value)}
+            type="button"
+            role="radio"
+            aria-checked={isSelected}
+            onClick={() => onSelect(option.value)}
+            className={`min-h-12 flex-1 rounded-2xl border-2 px-2 text-sm font-extrabold transition-colors ${
+              isSelected
+                ? "border-sun bg-sun text-black"
+                : "border-ink/12 bg-white text-ink/60 active:bg-sunsoft"
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
