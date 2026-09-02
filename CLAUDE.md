@@ -67,7 +67,9 @@ src/lib/
 - **Lógica pura separada de la UI**: constantes, generación de rondas y cálculo de stats van en
   `src/lib/<juego>.ts`; el componente cliente solo orquesta fases y render.
 - **Máquina de fases**: los juegos usan `type Phase = "intro" | "playing" | "results"`
-  (Type Rush añade `"ready"`), con una sección JSX por fase.
+  (Type Rush añade `"ready"`), con una sección JSX por fase. La ruta de preguntas tiene las
+  mismas tres: entra por la explicación y la sesión —nivel guardado incluido— arranca al
+  pulsar Comenzar, no al montar.
 - **No hay Home**: Explore es la entrada de la aplicación y la barra inferior tiene exactamente
   tres destinos (Explore, Progress, Profile). La raíz `/` no tiene pantalla: redirige a
   `/hexagons` desde `next.config.ts`. Un enlace global que signifique "volver al principio"
@@ -80,6 +82,13 @@ src/lib/
 - **Una sola explicación por juego**: el objeto `intro` que recibe `GameShell` es la única
   fuente de contenido, y de ahí salen tanto la pantalla previa a jugar como la ayuda. No
   escribir una segunda explicación en ningún sitio: divergirían.
+- **Dos superficies, la misma plantilla**: los juegos independientes usan `GameShell` entero.
+  La ruta de preguntas tiene encabezado propio (marca, estrellas, pie con progreso y salida
+  con confirmación), así que usa `GameShell` solo en su fase `intro` —allí la casa no
+  pregunta nada porque aún no hay sesión— y coloca `<GameHelp>` en su propio encabezado. Lo
+  que explica cada categoría vive en la tabla `CATEGORY_INTRO`, indexada por `slug` y
+  comprobada por TypeScript con `satisfies`: si se añade una categoría sin sus textos, el
+  build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
 - **Ayuda no es reiniciar**: la ayuda se superpone a la partida y no toca `phase`. Volver a
   `"intro"` reiniciaría ronda, tablero, letras colocadas y estadísticas. Un juego con reloj
   pasa `onHelpOpenChange` y usa `useClockPause`: leer la explicación no puede costar tiempo.

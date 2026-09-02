@@ -17,6 +17,19 @@ const messages = {
   en: {
     switchLanguage: "Cambiar a español",
     navAria: "Main navigation",
+    categoryStart: "Start playing",
+    categoryLevel: "Level {level}",
+    placesGoal: "Recognise places and pick the right one.",
+    placesHowTo: "Look at the picture or the clue, then tap the place it describes.",
+    placesExampleAria: "A beach picture matches the word Beach",
+    placesExampleWord: "Beach",
+    numbersGoal: "Recognise numbers, amounts and how they compare.",
+    numbersHowTo: "Look at the number, the group or the clue, then tap the right answer.",
+    numbersExampleAria: "Three apples match the number three",
+    colorsGoal: "Recognise colours and pick the right answer.",
+    colorsHowTo: "Look at the colour or the clue, then tap the answer that matches.",
+    colorsExampleAria: "A blue square matches the word Blue",
+    colorsExampleWord: "Blue",
     helpAria: "See how to play",
     helpClose: "Got it",
     introExample: "Example",
@@ -157,6 +170,19 @@ const messages = {
   es: {
     switchLanguage: "Switch to English",
     navAria: "Navegación principal",
+    categoryStart: "Empezar a jugar",
+    categoryLevel: "Nivel {level}",
+    placesGoal: "Reconoce lugares y elige el correcto.",
+    placesHowTo: "Mira la imagen o la pista y toca el lugar que le corresponde.",
+    placesExampleAria: "La imagen de una playa corresponde a la palabra Playa",
+    placesExampleWord: "Playa",
+    numbersGoal: "Reconoce números, cantidades y cómo se comparan.",
+    numbersHowTo: "Mira el número, el grupo o la pista y toca la respuesta correcta.",
+    numbersExampleAria: "Tres manzanas corresponden al número tres",
+    colorsGoal: "Reconoce colores y elige la respuesta correcta.",
+    colorsHowTo: "Mira el color o la pista y toca la respuesta que le corresponde.",
+    colorsExampleAria: "Un cuadro azul corresponde a la palabra Azul",
+    colorsExampleWord: "Azul",
     helpAria: "Ver cómo se juega",
     helpClose: "Entendido",
     introExample: "Ejemplo",
@@ -296,7 +322,9 @@ const messages = {
   },
 } as const;
 
-type MessageKey = keyof (typeof messages)["en"];
+/** Clave válida del diccionario. Se exporta para tablas de contenido que
+ *  guardan claves en vez de textos ya traducidos. */
+export type MessageKey = keyof (typeof messages)["en"];
 type MessageParams = Record<string, string | number>;
 
 type LanguageContextValue = {

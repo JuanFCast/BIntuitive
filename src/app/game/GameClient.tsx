@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CategoryId, Question } from "@/data/questions";
+import type { Category } from "@/data/categories";
 import { getCategory, getCategoryBySlug } from "@/data/categories";
-import { localizeQuestion } from "@/data/localization";
+import { localizeHexagon, localizeQuestion } from "@/data/localization";
 import {
   MAX_ATTEMPTS,
   ROUNDS_PER_SESSION,
@@ -13,6 +15,7 @@ import {
   shuffle,
 } from "@/lib/gameEngine";
 import { getLevelForCategory, saveSession } from "@/lib/storage";
+import { useGameTimers } from "@/lib/gameTimers";
 import { cancelSpeech } from "@/lib/speech";
 import {
   playCorrectSound,
@@ -21,6 +24,8 @@ import {
 } from "@/lib/sounds";
 import BrandMark from "@/components/BrandMark";
 import AudioButton from "@/components/AudioButton";
+import GameHelp from "@/components/GameHelp";
+import GameShell from "@/components/GameShell";
 import MuteButton from "@/components/MuteButton";
 import AnswerGrid from "@/components/AnswerGrid";
 import type { OptionState } from "@/components/AnswerOption";
@@ -28,9 +33,9 @@ import ProgressDots from "@/components/ProgressDots";
 import FeedbackOverlay, { type FeedbackType } from "@/components/FeedbackOverlay";
 import ResultsScreen from "@/components/ResultsScreen";
 import ExitDialog from "@/components/ExitDialog";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type MessageKey } from "@/lib/i18n";
 
-type Phase = "playing" | "results";
+type Phase = "intro" | "playing" | "results";
 
 export default function GameClient() {
   const router = useRouter();
@@ -45,7 +50,7 @@ export default function GameClient() {
     "";
   const category = getCategoryBySlug(hexagonParam) ?? getCategory(hexagonParam);
 
-  const [phase, setPhase] = useState<Phase>("playing");
+  const [phase, setPhase] = useState<Phase>("intro");
   const [question, setQuestion] = useState<Question | null>(null);
   const [round, setRound] = useState(0);
   const [stars, setStars] = useState(0);
@@ -54,14 +59,25 @@ export default function GameClient() {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [exitOpen, setExitOpen] = useState(false);
 
+  // Espejo del nivel para poder mostrarlo. La dificultad la sigue mandando
+  // `levelRef` y `nextLevel`; esto solo la hace visible.
+  const [level, setLevel] = useState(1);
   const levelRef = useRef(1);
   const streakRef = useRef(0);
   const usedIdsRef = useRef<string[]>([]);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const timers = useGameTimers();
+  const { later } = timers;
 
-  const later = useCallback((fn: () => void, ms: number) => {
-    timersRef.current.push(setTimeout(fn, ms));
-  }, []);
+  // Con la ayuda abierta la sesión queda quieta: las esperas que pasan a la
+  // siguiente pregunta se congelan, así que al cerrar sigue la misma pregunta.
+  // No hay cronómetro que pausar: estas categorías no miden tiempo.
+  const handleHelpOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) timers.freeze();
+      else timers.resume();
+    },
+    [timers],
+  );
 
   useEffect(() => {
     if (!searchParams.get("hexagon") && category) {
@@ -85,9 +101,9 @@ export default function GameClient() {
 
   const startSession = useCallback(() => {
     if (!category) return;
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
+    timers.clear();
     levelRef.current = getLevelForCategory(category.id);
+    setLevel(levelRef.current);
     streakRef.current = 0;
     usedIdsRef.current = [];
     setRound(0);
@@ -95,19 +111,26 @@ export default function GameClient() {
     setStarsByRound([]);
     setPhase("playing");
     loadQuestion(category.id);
-  }, [category, loadQuestion]);
+  }, [category, loadQuestion, timers]);
 
   useEffect(() => {
-    if (!category) {
-      router.replace("/hexagons");
-      return;
-    }
-    startSession();
-    return () => {
-      timersRef.current.forEach(clearTimeout);
+    if (!category) router.replace("/hexagons");
+  }, [category, router]);
+
+  // Se entra por la explicación, no por la primera pregunta. La sesión —y con
+  // ella el nivel guardado y el banco— arranca al pulsar Comenzar. Depende solo
+  // de la categoría: nada más puede devolver una partida en curso a la intro.
+  useEffect(() => {
+    setPhase("intro");
+  }, [category]);
+
+  useEffect(
+    () => () => {
+      timers.clear();
       cancelSpeech();
-    };
-  }, [category, router, startSession]);
+    },
+    [timers],
+  );
 
   const finishSession = useCallback(
     (finalStars: number) => {
@@ -155,6 +178,7 @@ export default function GameClient() {
           ? nextLevel(levelRef.current, streakRef.current, false)
           : { level: levelRef.current, streak: 0 };
         levelRef.current = result.level;
+        setLevel(result.level);
         streakRef.current = result.streak;
         later(() => advance(true, newStars), 1400);
         return;
@@ -170,6 +194,7 @@ export default function GameClient() {
         setFeedback("reveal");
         const result = nextLevel(levelRef.current, streakRef.current, true);
         levelRef.current = result.level;
+        setLevel(result.level);
         streakRef.current = result.streak;
         later(() => advance(false, stars), 2200);
       } else {
@@ -183,6 +208,30 @@ export default function GameClient() {
   );
 
   if (!category) return null;
+
+  const intro = {
+    emoji: category.emoji,
+    title: localizeHexagon(category, language).name,
+    goal: t(CATEGORY_INTRO[category.slug].goal),
+    howTo: t(CATEGORY_INTRO[category.slug].howTo),
+    example: CATEGORY_INTRO[category.slug].example,
+  };
+
+  if (phase === "intro") {
+    // La explicación previa reutiliza el mismo marco que los juegos
+    // independientes. Aquí la casa no pregunta nada: todavía no hay sesión que
+    // abandonar, así que volver a Explore no deja ninguna a medias.
+    return (
+      <GameShell
+        intro={intro}
+        showIntro
+        startLabel={t("categoryStart")}
+        onStart={startSession}
+      >
+        {null}
+      </GameShell>
+    );
+  }
 
   if (phase === "results") {
     return (
@@ -248,6 +297,11 @@ export default function GameClient() {
           </div>
 
           <div className="flex items-center justify-self-end gap-1.5 sm:gap-2">
+            <GameHelp
+              intro={intro}
+              buttonClassName="game-header-control game-header-sound"
+              onOpenChange={handleHelpOpenChange}
+            />
             <MuteButton className="game-header-control game-header-sound" />
           </div>
         </div>
@@ -302,5 +356,98 @@ export default function GameClient() {
       <FeedbackOverlay type={feedback} hint={displayedQuestion.hint} />
       <ExitDialog open={exitOpen} onClose={() => setExitOpen(false)} />
     </main>
+  );
+}
+
+/**
+ * Qué explica cada categoría. Es una tabla de datos por `slug`: ni `GameShell`
+ * ni `GameIntro` ni `GameHelp` saben que existen Lugares, Números o Colores.
+ * Los ejemplos son estáticos y no salen del banco de preguntas; solo enseñan
+ * la mecánica que el banco ya usa.
+ */
+const CATEGORY_INTRO = {
+  places: {
+    goal: "placesGoal",
+    howTo: "placesHowTo",
+    example: <PlacesExample />,
+  },
+  numbers: {
+    goal: "numbersGoal",
+    howTo: "numbersHowTo",
+    example: <NumbersExample />,
+  },
+  colors: {
+    goal: "colorsGoal",
+    howTo: "colorsHowTo",
+    example: <ColorsExample />,
+  },
+} as const satisfies Record<
+  Category["slug"],
+  { goal: MessageKey; howTo: MessageKey; example: ReactNode }
+>;
+
+function PlacesExample() {
+  const { t } = useLanguage();
+
+  return (
+    <ExampleRow ariaLabel={t("placesExampleAria")} answer={t("placesExampleWord")}>
+      <span className="text-3xl">🏖️</span>
+    </ExampleRow>
+  );
+}
+
+function NumbersExample() {
+  const { t } = useLanguage();
+
+  return (
+    <ExampleRow ariaLabel={t("numbersExampleAria")} answer="3">
+      <span className="text-2xl tracking-tight">🍎🍎🍎</span>
+    </ExampleRow>
+  );
+}
+
+function ColorsExample() {
+  const { t } = useLanguage();
+
+  return (
+    <ExampleRow ariaLabel={t("colorsExampleAria")} answer={t("colorsExampleWord")}>
+      {/* Un cuadro de color real se lee mejor que un emoji de color. */}
+      <span className="h-8 w-8 rounded-lg border-2 border-ink/15 bg-sky" />
+    </ExampleRow>
+  );
+}
+
+/** Pista a la izquierda, flecha y respuesta correcta a la derecha. */
+function ExampleRow({
+  ariaLabel,
+  answer,
+  children,
+}: {
+  ariaLabel: string;
+  answer: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="flex items-center gap-3"
+      role="img"
+      aria-label={ariaLabel}
+    >
+      <span
+        className="flex h-12 min-w-12 items-center justify-center rounded-2xl border-2 border-ink/10 bg-cream px-2"
+        aria-hidden="true"
+      >
+        {children}
+      </span>
+      <span aria-hidden="true" className="text-xl font-extrabold text-ink/35">
+        →
+      </span>
+      <span
+        className="flex h-12 items-center rounded-2xl border-2 border-mint bg-mintsoft px-4 text-lg font-extrabold text-ink"
+        aria-hidden="true"
+      >
+        {answer}
+      </span>
+    </div>
   );
 }
