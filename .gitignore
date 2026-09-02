@@ -11,3 +11,6 @@ next-env.d.ts
 .env*
 
 docs/
+
+# Salida compilada de `npm run validate:content`
+.content-check/

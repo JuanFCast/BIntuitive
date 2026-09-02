@@ -32,6 +32,11 @@ const PHRASES: Record<Language, string[]> = {
   ],
 };
 
+/** Banco de frases del idioma. Mismo estilo que `getWordBank` y `getSearchBank`. */
+export function getTypingPhrases(language: Language): string[] {
+  return PHRASES[language];
+}
+
 function shuffle<T>(items: readonly T[]): T[] {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {

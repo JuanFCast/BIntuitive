@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "validate:content": "tsc -p tsconfig.validate.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/validateContent.js"
   },
   "dependencies": {
     "next": "^15.3.4",

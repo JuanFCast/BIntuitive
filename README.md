@@ -56,6 +56,11 @@ npm run build
 npm start
 ```
 
+`npm run validate:content` checks the educational content: unique ids, answers that exist among
+their options, English copy present for every Spanish question, words in NFC and within their
+language alphabet, and enough content per level to build a session. The banks stay separate — the
+question bank, Word Scramble, Word Search, Typing and Visual each keep their own shape.
+
 The production build validates TypeScript, generates the application routes, and prepares the optimized Next.js output.
 
 ## Project structure

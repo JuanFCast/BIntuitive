@@ -9,8 +9,9 @@ Next.js 15 App Router + React 19 + TypeScript + Tailwind CSS 4. Sin backend, sin
 analytics: todo el estado vive en `localStorage`. Producción en `bintuitive.aumcrsp.com` vía AWS
 CloudFront (el workflow de deploy vive fuera del repo).
 
-Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`. No hay tests ni linter configurado;
-`npm run build` es la verificación.
+Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`,
+`npm run validate:content` (valida el contenido educativo). No hay tests ni linter configurado;
+esos dos comandos son la verificación.
 
 ## Arquitectura
 
@@ -175,8 +176,21 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
   tiene su id, su ruta (`/game/word-scramble` y `/game/word-search`), su lib, su banco de
   palabras y su prefijo de claves i18n (`scramble*` y `search*`). Nunca reutilizar el prefijo
   genérico `word*` para ninguno de los dos, ni compartir banco o progreso entre ellos.
-- Lo único compartido entre los dos juegos de palabras es `letters.ts` (`getWordLetters`) y
-  `nextLevel` de `gameEngine.ts`. Cualquier otra cosa en común es señal de acoplamiento.
+- Lo único compartido entre los dos juegos de palabras es `letters.ts` (`getWordLetters`),
+  `nextLevel` de `gameEngine.ts` y `useSpeakAfterSound`. Cualquier otra cosa en común es señal
+  de acoplamiento.
+- **Los bancos siguen separados**, y así deben seguir por ahora: preguntas (`questions.ts` en
+  español + `localization.ts` en inglés), Word Scramble y Word Search (bilingües, cada uno el
+  suyo, sin correspondencia entre idiomas), frases de Typing y símbolos de Visual. No hay banco
+  central y no toca unificarlos hasta que estén decididos los rangos de edad y llegue el
+  PowerPoint revisado.
+- **`npm run validate:content`** comprueba las invariantes que cada banco ya asume: ids únicos,
+  `answerId` existente, traducciones inglesas presentes y sin huérfanas, NFC y alfabeto por
+  idioma, longitud de palabra compatible con su nivel o con el tamaño de su tablero, y contenido
+  suficiente para formar una sesión. Es estructural y tarda menos de dos segundos: no genera
+  tableros ni simula partidas. Compila con `tsconfig.validate.json` a `.content-check/`
+  (ignorado) y ejecuta con un resolutor mínimo del alias `@/`, porque `tsc` lo deja tal cual en
+  la salida. Al añadir contenido, ejecutarlo antes de `npm run build`.
 - Ningún juego independiente suma a `totalStars` ni a `sessions`: esas métricas son de las
   lecciones de preguntas y `/progress` solo muestra esas.
 - `speech.ts` (Web Speech API) lo usan la ruta `/game` de preguntas y los dos juegos de

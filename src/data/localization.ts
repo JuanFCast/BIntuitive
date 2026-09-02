@@ -2,7 +2,8 @@ import type { Hexagon } from "./categories";
 import type { CategoryId, Question, QuestionOption } from "./questions";
 import type { Language } from "@/lib/language";
 
-const englishHexagons: Record<
+// Exportado para que `validate:content` pueda comprobar la capa inglesa.
+export const englishHexagons: Record<
   Hexagon["id"],
   Pick<Hexagon, "name" | "description">
 > = {
@@ -41,7 +42,7 @@ type QuestionCopy = {
   hint?: string;
 };
 
-const englishQuestions: Record<string, QuestionCopy> = {
+export const englishQuestions: Record<string, QuestionCopy> = {
   "lugares-desierto-01": {
     instruction: "Touch the place with lots of sand and no water.",
     hint: "Look for the dry place with a cactus.",
@@ -167,7 +168,7 @@ const englishQuestions: Record<string, QuestionCopy> = {
 type OptionCopy = Partial<Pick<QuestionOption, "label">> &
   Pick<QuestionOption, "alt">;
 
-const englishOptions: Record<string, OptionCopy> = {
+export const englishOptions: Record<string, OptionCopy> = {
   playa: { label: "Beach", alt: "Beach with sea and an umbrella" },
   desierto: { label: "Desert", alt: "Desert with a cactus" },
   ciudad: { label: "City", alt: "City with buildings" },
