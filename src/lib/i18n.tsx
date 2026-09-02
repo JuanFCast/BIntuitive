@@ -16,13 +16,7 @@ const LANGUAGE_KEY = "bintuitive-language";
 const messages = {
   en: {
     switchLanguage: "Cambiar a español",
-    homeTagline: "Learn, practice, and challenge yourself.",
-    totalStarsAria: "You have earned {count} stars in total",
-    starsEarned: "{count} stars earned",
-    play: "Play!",
-    homeFooter: "Learn, play, and explore · No ads · Works offline",
     navAria: "Main navigation",
-    navHome: "Home",
     navExplore: "Explore",
     navProgress: "Progress",
     navProfile: "Profile",
@@ -149,13 +143,7 @@ const messages = {
   },
   es: {
     switchLanguage: "Switch to English",
-    homeTagline: "Aprende, practica y supera nuevos retos.",
-    totalStarsAria: "Has ganado {count} estrellas en total",
-    starsEarned: "{count} estrellas ganadas",
-    play: "¡Jugar!",
-    homeFooter: "Aprende, juega y explora · Sin anuncios · Sin conexión",
     navAria: "Navegación principal",
-    navHome: "Inicio",
     navExplore: "Explorar",
     navProgress: "Progreso",
     navProfile: "Perfil",

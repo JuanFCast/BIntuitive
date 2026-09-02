@@ -14,6 +14,15 @@ const nextConfig: NextConfig = {
         destination: "https://bintuitive.aumcrsp.com/:path*",
         permanent: true,
       },
+      // Explore es la entrada de la aplicación y vive en /hexagons. La raíz ya
+      // no tiene pantalla propia: se resuelve aquí, en el servidor, igual que
+      // el resto de rutas retiradas, para no servir una página que solo
+      // redirige desde el cliente.
+      {
+        source: "/",
+        destination: "/hexagons",
+        permanent: true,
+      },
       {
         source: "/categorias",
         destination: "/hexagons",

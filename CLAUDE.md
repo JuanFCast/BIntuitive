@@ -32,7 +32,7 @@ Un juego nuevo casi siempre es del tipo 2.
 ```
 src/app/
   layout.tsx            LanguageProvider + AppShell + metadata/OG
-  page.tsx              Home
+  (sin page.tsx)        La raíz redirige a /hexagons desde next.config.ts
   hexagons/             Explore: panal con todos los Hexagon (única vía de entrada)
   game/                 Todas las rutas de juego
     page.tsx            Categorías de preguntas: /game?hexagon=<slug>
@@ -66,7 +66,11 @@ src/lib/
   `src/lib/<juego>.ts`; el componente cliente solo orquesta fases y render.
 - **Máquina de fases**: los juegos usan `type Phase = "intro" | "playing" | "results"`
   (Type Rush añade `"ready"`), con una sección JSX por fase.
-- **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve `/`, `/hexagons`, `/progress`
+- **No hay Home**: Explore es la entrada de la aplicación y la barra inferior tiene exactamente
+  tres destinos (Explore, Progress, Profile). La raíz `/` no tiene pantalla: redirige a
+  `/hexagons` desde `next.config.ts`. Un enlace global que signifique "volver al principio"
+  apunta a `/hexagons`, nunca a `/`, para no encadenar un redirect de más.
+- **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve `/hexagons`, `/progress`
   y `/profile`. Un juego se envuelve en `<GameShell>`, que pone el `<main>` y el encabezado
   común: casa a `/hexagons` a la izquierda y `<MuteButton />` a la derecha. `GameShell` no
   tiene nada que ver con `AppShell`; la salida de un juego siempre es Explore.

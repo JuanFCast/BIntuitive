@@ -62,7 +62,7 @@ The production build validates TypeScript, generates the application routes, and
 
 ```text
 src/
-  app/                  # Home, Explore, play routes, metadata, social cards, and icons
+  app/                  # Explore, play routes, metadata, social cards, and icons
     hexagons/           # Explore: the honeycomb that lists every hexagon
     game/               # Play routes
       page.tsx          #   Question categories: /game?hexagon=<slug>

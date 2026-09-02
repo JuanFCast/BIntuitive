@@ -10,15 +10,20 @@ export default function AppHeader() {
   return (
     <header className="app-header">
       <div className="app-header-inner">
+        {/* Volver al principio es volver a Explore: no hay pantalla de inicio. */}
         <Link
-          href="/"
+          href="/hexagons"
           className="app-header-logo"
-          aria-label={t("navHome")}
+          aria-label={t("navExplore")}
         >
           <BrandMark size={42} priority />
         </Link>
 
-        <Link href="/" className="app-header-brand" aria-label="BIntuitive">
+        <Link
+          href="/hexagons"
+          className="app-header-brand"
+          aria-label="BIntuitive"
+        >
           <span>B</span>
           <span className="text-sun">Intuitive</span>
         </Link>

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import AppHeader from "./AppHeader";
 import BottomNavigation from "./BottomNavigation";
 
-const primaryRoutes = new Set(["/", "/hexagons", "/progress", "/profile"]);
+const primaryRoutes = new Set(["/hexagons", "/progress", "/profile"]);
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();

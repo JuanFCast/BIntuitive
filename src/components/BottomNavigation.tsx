@@ -8,8 +8,9 @@ type IconProps = {
   active: boolean;
 };
 
+// Explore, Progress y Profile: los tres únicos destinos de la barra. No hay
+// entrada de inicio, porque Explore es la entrada.
 const navItems = [
-  { href: "/", labelKey: "navHome", icon: HomeIcon },
   { href: "/hexagons", labelKey: "navExplore", icon: ExploreIcon },
   { href: "/progress", labelKey: "navProgress", icon: ProgressIcon },
   { href: "/profile", labelKey: "navProfile", icon: ProfileIcon },
@@ -46,27 +47,6 @@ export default function BottomNavigation() {
         })}
       </div>
     </nav>
-  );
-}
-
-function HomeIcon({ active }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" role="presentation">
-      <path
-        d="M3.5 10.5 12 3l8.5 7.5v8.25A2.25 2.25 0 0 1 18.25 21H5.75a2.25 2.25 0 0 1-2.25-2.25V10.5Z"
-        fill={active ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.25 21v-6.25h5.5V21"
-        fill={active ? "var(--color-sunsoft)" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.9"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
 
