@@ -1,15 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
+import { useFocusTrap } from "@/lib/focusTrap";
 import { useLanguage } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
 import { useMuted, useTextSize } from "@/lib/preferences";
 import { cancelSpeech } from "@/lib/speech";
 import { setMuted, setTextSize, type TextSize } from "@/lib/storage";
-
-/** Lo que puede recibir foco dentro del panel. */
-const FOCUSABLE =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
  * Menú compacto de preferencias globales: idioma, sonido, tamaño de texto y
@@ -41,60 +38,11 @@ export default function AppMenu() {
   const close = useCallback(() => {
     setOpen(false);
     setAboutOpen(false);
-    // El foco vuelve al botón que lo abrió.
-    buttonRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        close();
-        return;
-      }
-      if (event.key !== "Tab") return;
-
-      // El panel se anuncia como modal, así que el tabulador no puede salirse
-      // de él hacia los controles que quedan detrás: sería prometer al lector
-      // de pantalla algo que no se cumple. Con el foco atrapado, Tab en el
-      // último control vuelve al primero y Mayús+Tab en el primero al último.
-      const panel = panelRef.current;
-      if (!panel) return;
-      const focusables = panel.querySelectorAll<HTMLElement>(FOCUSABLE);
-      if (focusables.length === 0) {
-        event.preventDefault();
-        return;
-      }
-
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      const outside = !active || !panel.contains(active);
-      // Al abrir, el foco está en el propio panel: desde ahí Tab entra por el
-      // primero y Mayús+Tab por el último.
-      const atPanel = active === panel;
-
-      if (event.shiftKey) {
-        if (outside || atPanel || active === first) {
-          event.preventDefault();
-          last.focus();
-        }
-        return;
-      }
-      if (outside || atPanel || active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, close]);
-
-  useEffect(() => {
-    if (open) panelRef.current?.focus();
-  }, [open]);
+  // Foco atrapado, Escape y devolución del foco al botón: el mismo
+  // comportamiento que los diálogos de confirmación.
+  useFocusTrap(open, panelRef, close);
 
   const languages: { value: Language; label: string }[] = [
     { value: "en", label: "English" },

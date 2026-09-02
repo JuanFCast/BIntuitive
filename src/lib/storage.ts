@@ -63,11 +63,22 @@ export type Progress = {
   wordPuzzle?: WordScrambleProgress;
 };
 
-const emptyProgress: Progress = {
-  sessions: [],
-  totalStars: 0,
-  levelByCategory: {},
-};
+/**
+ * Progreso recién estrenado, siempre en un objeto nuevo.
+ *
+ * Tiene que serlo: `saveSession` y las dos de palabras escriben sobre lo que
+ * devuelve `getProgress()`, así que compartir una única constante hacía que la
+ * primera partida de un dispositivo sin datos la ensuciara para el resto de la
+ * sesión. Se notaba justo después de borrar el progreso, cuando ya no hay nada
+ * guardado que leer y la copia contaminada volvía a salir como si lo hubiera.
+ */
+function createEmptyProgress(): Progress {
+  return {
+    sessions: [],
+    totalStars: 0,
+    levelByCategory: {},
+  };
+}
 
 function clampLevel(level: unknown): number {
   return typeof level === "number" && level >= 1 && level <= 3 ? level : 1;
@@ -98,10 +109,10 @@ function normalizeWordSearch(
 }
 
 export function getProgress(): Progress {
-  if (typeof window === "undefined") return emptyProgress;
+  if (typeof window === "undefined") return createEmptyProgress();
   try {
     const raw = window.localStorage.getItem(PROGRESS_KEY);
-    if (!raw) return emptyProgress;
+    if (!raw) return createEmptyProgress();
     const parsed = JSON.parse(raw) as Progress;
     return {
       sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
@@ -118,7 +129,7 @@ export function getProgress(): Progress {
         : {}),
     };
   } catch {
-    return emptyProgress;
+    return createEmptyProgress();
   }
 }
 
@@ -189,6 +200,23 @@ export function saveWordSearchProgress(next: WordSearchProgress): void {
     ),
   };
   saveProgress(progress);
+}
+
+/**
+ * Borra el progreso educativo de este dispositivo: estrellas, niveles, mejores
+ * marcas y sesiones guardadas, incluido el campo heredado `wordPuzzle`.
+ *
+ * Quita solo la clave del progreso. Las preferencias —idioma, sonido y tamaño
+ * de texto— viven en claves propias y no se tocan: quien borra su progreso no
+ * pide que la aplicación vuelva a hablarle en otro idioma. Por eso nunca se usa
+ * `localStorage.clear()`, que se llevaría también lo que no es progreso.
+ */
+export function clearProgress(): void {
+  try {
+    window.localStorage.removeItem(PROGRESS_KEY);
+  } catch {
+    // Sin almacenamiento disponible no había nada que borrar.
+  }
 }
 
 export function isMuted(): boolean {

@@ -1,20 +1,27 @@
 "use client";
 
+import { useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useLanguage } from "@/lib/i18n";
 import { useMuted, useTextSize } from "@/lib/preferences";
+import { clearProgress } from "@/lib/storage";
 
 /**
  * Perfil. Las preferencias se editan en el menú de ajustes de la cabecera, que
  * es único; aquí solo se leen, para que la pantalla diga en qué estado está la
  * aplicación sin ser una segunda interfaz de edición.
  *
+ * Es también donde vive lo que se hace con los datos guardados, que sin cuentas
+ * se reduce a poder borrarlos.
+ *
  * Cuando lleguen las cuentas y los perfiles infantiles, la identidad ocupará la
- * parte de arriba y este resumen pasará a ser secundario.
+ * parte de arriba y esto pasará a ser secundario.
  */
 export default function ProfileClient() {
   const { language, t } = useLanguage();
   const muted = useMuted();
   const textSize = useTextSize();
+  const [resetOpen, setResetOpen] = useState(false);
 
   const textSizeLabel = {
     normal: t("menuTextNormal"),
@@ -70,7 +77,47 @@ export default function ProfileClient() {
             {t("profilePreferencesSummary")}
           </p>
         </section>
+
+        {/*
+          Aparte y al final: borrar el progreso no es una acción del día a día,
+          así que no comparte tarjeta con las preferencias ni se parece a ellas.
+        */}
+        <section className="mt-8" aria-labelledby="data-heading">
+          <h2
+            id="data-heading"
+            className="px-1 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45"
+          >
+            {t("profileData")}
+          </h2>
+          <div className="mt-2 rounded-3xl border border-ink/10 bg-white p-4 shadow-sm sm:p-5">
+            <p className="text-sm font-semibold leading-snug text-ink/55">
+              {t("profileResetDescription")}
+            </p>
+            <button
+              type="button"
+              onClick={() => setResetOpen(true)}
+              className="mt-3 min-h-12 w-full rounded-2xl border-2 border-coral bg-white px-4 text-base font-extrabold text-ink transition-colors active:bg-coralsoft sm:w-auto sm:px-6"
+            >
+              {t("profileReset")}
+            </button>
+          </div>
+        </section>
       </div>
+
+      <ConfirmDialog
+        open={resetOpen}
+        ariaLabel={t("resetDialogAria")}
+        title={t("resetDialogTitle")}
+        description={t("resetDialogMessage")}
+        confirmLabel={t("profileReset")}
+        cancelLabel={t("cancel")}
+        destructive
+        onConfirm={() => {
+          clearProgress();
+          setResetOpen(false);
+        }}
+        onCancel={() => setResetOpen(false)}
+      />
     </main>
   );
 }

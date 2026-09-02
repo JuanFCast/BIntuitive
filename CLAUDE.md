@@ -41,7 +41,7 @@ src/app/
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
 src/components/         BrandMark, MuteButton, HexagonCard, AppShell, AppMenu, GameShell,
-                        GameIntro, GameHelp, ResultActions, ResultStat...
+                        GameIntro, GameHelp, ResultActions, ResultStat, ConfirmDialog...
 src/data/
   categories.ts         Category[] + GameHexagon[] → hexagons[] (fuente de verdad del panal)
   questions.ts          Banco de preguntas en español (fuente)
@@ -165,6 +165,19 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
 
 ## Cosas a tener en cuenta
 
+- **Progress solo enseña lo que ya está guardado.** `/progress` lee `getProgress()` y no
+  persiste nada nuevo: resumen, nivel por actividad, mejores marcas y las últimas sesiones.
+  Agilidad visual y Type Rush no guardan progreso a propósito y aparecen sin métricas, igual
+  que una actividad todavía sin jugar. Añadir una métrica a esa pantalla empieza por guardarla,
+  no al revés.
+- **`getProgress()` devuelve siempre un objeto nuevo.** `saveSession` y las dos de palabras
+  escriben sobre lo que devuelve, así que compartir una constante vacía la ensuciaría en la
+  primera partida de un dispositivo sin datos.
+- **Un solo diálogo de confirmación**: `ConfirmDialog` (título, descripción, confirmar,
+  cancelar, `destructive`), con Escape y devolución del foco. `ExitDialog` es una capa fina
+  sobre él. No crear un modal nuevo para la siguiente confirmación.
+- **Borrar progreso**: `clearProgress()` quita solo `bintuitive-progress`. Nunca
+  `localStorage.clear()`: las preferencias viven en sus propias claves y no se tocan.
 - `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
   (`wordScramble`) y el de Word Search (`wordSearch`), cada uno en su propio campo opcional y
   sin compartir datos. `visual` y `typing` no persisten nada. Para añadir persistencia a un
