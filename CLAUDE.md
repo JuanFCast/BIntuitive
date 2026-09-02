@@ -52,6 +52,8 @@ src/lib/
   wordScramble.ts       Banco bilingüe, fichas y dificultad de Word Scramble
   wordSearch.ts         Banco bilingüe, generador de tablero y selección de Word Search
   letters.ts            getWordLetters: partir palabras en letras respetando Unicode/NFC
+  clockPause.ts         useClockPause: parar el reloj de un juego mientras la ayuda está abierta
+  gameTimers.ts         useGameTimers: esperas cortas congelables (destellos, pausas, transiciones)
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
@@ -71,9 +73,23 @@ src/lib/
   `/hexagons` desde `next.config.ts`. Un enlace global que signifique "volver al principio"
   apunta a `/hexagons`, nunca a `/`, para no encadenar un redirect de más.
 - **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve `/hexagons`, `/progress`
-  y `/profile`. Un juego se envuelve en `<GameShell>`, que pone el `<main>` y el encabezado
-  común: casa a `/hexagons` a la izquierda y `<MuteButton />` a la derecha. `GameShell` no
-  tiene nada que ver con `AppShell`; la salida de un juego siempre es Explore.
+  y `/profile`. Un juego se envuelve en `<GameShell>`, que pone el `<main>`, el encabezado
+  común (casa a `/hexagons`, ayuda y `<MuteButton />`), la pantalla de introducción y la
+  ayuda. `GameShell` no tiene nada que ver con `AppShell`; la salida de un juego siempre es
+  Explore.
+- **Una sola explicación por juego**: el objeto `intro` que recibe `GameShell` es la única
+  fuente de contenido, y de ahí salen tanto la pantalla previa a jugar como la ayuda. No
+  escribir una segunda explicación en ningún sitio: divergirían.
+- **Ayuda no es reiniciar**: la ayuda se superpone a la partida y no toca `phase`. Volver a
+  `"intro"` reiniciaría ronda, tablero, letras colocadas y estadísticas. Un juego con reloj
+  pasa `onHelpOpenChange` y usa `useClockPause`: leer la explicación no puede costar tiempo.
+- **Con la ayuda abierta la partida está quieta**: las esperas cortas de un juego van por
+  `useGameTimers` (`later`, no `setTimeout` suelto), y `onHelpOpenChange` las congela y las
+  reanuda con el tiempo que les faltaba. Un `setTimeout` propio seguiría corriendo detrás del
+  overlay y cambiaría la carta, la palabra o el tablero mientras el niño lee.
+- **La voz nunca arranca sola**: en iOS SpeechSynthesis solo habla como consecuencia directa
+  de un gesto, así que el audio de la introducción es un botón, no una reproducción
+  automática. `AudioButton` comprueba `isMuted()` en los dos caminos.
 - **Paleta**: tokens `@theme` en `globals.css` — `cream` (fondo), `sun`/`sunsoft` (marca),
   `sky`/`skysoft`, `mint`/`mintsoft` (acierto), `coral`/`coralsoft` (error), `berry`/`berrysoft`, `ink`.
   Botones con `border-b-8` + `active:scale-95` + `active:border-b-4`.
@@ -90,9 +106,12 @@ src/lib/
    rondas y cálculo de estadísticas. Sin React.
 2. `src/app/game/<id>/page.tsx` — server component con `metadata` (`"<Nombre> · BIntuitive"`).
 3. `src/app/game/<id>/<Nombre>Game.tsx` — `"use client"`, fases intro/playing/results.
-   El render va dentro de `<GameShell>` (encabezado común) y la fase `intro` es un
-   `<GameIntro emoji title goal howTo startLabel onStart />`: no se vuelve a escribir a mano
-   ni el encabezado ni la pantalla de introducción.
+   Todo el render va dentro de `<GameShell intro={{ emoji, title, goal, howTo, example }}
+   showIntro={phase === "intro"} startLabel onStart />`, y los hijos son solo las fases de
+   juego y resultados: el encabezado, la introducción y la ayuda ya vienen dadas. El
+   `example` es un componente propio del juego, pequeño y estático, definido al final de su
+   propio archivo como los demás ayudantes de presentación; `GameIntro` solo lo enmarca y
+   nunca sabe de qué juego es.
 4. `src/data/categories.ts` — añadir el id al union de `GameHexagon["id"]` y una entrada en
    `gameHexagons` (nombre y descripción **en español**, emoji, `href: "/game/<id>"`).
    Con eso el juego ya aparece en Explore: **no hay ningún índice de juegos que actualizar**.

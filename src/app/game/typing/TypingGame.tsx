@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
-import GameIntro from "@/components/GameIntro";
 import GameShell from "@/components/GameShell";
+import { useClockPause } from "@/lib/clockPause";
 import { useLanguage } from "@/lib/i18n";
 import { playCelebrationSound } from "@/lib/sounds";
 import {
@@ -87,8 +87,31 @@ export default function TypingGame() {
     playCelebrationSound();
   }, []);
 
+  // La cuenta atrás se detiene mientras la ayuda está abierta: si siguiera
+  // corriendo, la ronda podría terminarse sola detrás de la explicación.
+  const [paused, handleHelpOpenChange] = useClockPause(
+    useCallback((pausedMs: number) => {
+      // En "ready" todavía no hay marca de inicio y no hay nada que desplazar.
+      if (!startedAtRef.current) return;
+      startedAtRef.current += pausedMs;
+      setStartedAt((current) => current + pausedMs);
+      setNow(Date.now());
+    }, []),
+  );
+  const pausedRef = useRef(false);
+
   useEffect(() => {
-    if (phase !== "playing") return;
+    pausedRef.current = paused;
+    // Al abrir la ayuda el teclado estorba; al cerrarla vuelve el foco para
+    // seguir escribiendo donde se dejó.
+    if (paused) inputRef.current?.blur();
+    else if (phaseRef.current === "ready" || phaseRef.current === "playing") {
+      inputRef.current?.focus({ preventScroll: true });
+    }
+  }, [paused]);
+
+  useEffect(() => {
+    if (phase !== "playing" || paused) return;
     const timer = setInterval(() => {
       const current = Date.now();
       setNow(current);
@@ -100,7 +123,7 @@ export default function TypingGame() {
       }
     }, 100);
     return () => clearInterval(timer);
-  }, [phase, finishRound]);
+  }, [phase, paused, finishRound]);
 
   const prepareRound = () => {
     const nextPassage = buildTypingPassage(language);
@@ -121,6 +144,9 @@ export default function TypingGame() {
 
   const handleInput = (value: string) => {
     if (phaseRef.current === "results" || phaseRef.current === "intro") return;
+    // Con la ayuda abierta no se escribe: ni cuenta el tiempo ni cuentan las
+    // pulsaciones que llegasen desde un teclado físico.
+    if (pausedRef.current) return;
     const clipped = value.slice(0, passageRef.current.length);
     let nextMistakes = mistakesRef.current;
 
@@ -190,18 +216,19 @@ export default function TypingGame() {
   );
 
   return (
-    <GameShell>
-      {phase === "intro" && (
-        <GameIntro
-          emoji="⌨️"
-          title={t("typingTitle")}
-          goal={t("typingIntro")}
-          howTo={t("typingHowTo")}
-          startLabel={t("typingStart")}
-          onStart={prepareRound}
-        />
-      )}
-
+    <GameShell
+      intro={{
+        emoji: "⌨️",
+        title: t("typingTitle"),
+        goal: t("typingIntro"),
+        howTo: t("typingHowTo"),
+        example: <TypingExample />,
+      }}
+      showIntro={phase === "intro"}
+      startLabel={t("typingStart")}
+      onStart={prepareRound}
+      onHelpOpenChange={handleHelpOpenChange}
+    >
       {(phase === "ready" || phase === "playing") && (
         <section className="mx-auto flex w-full max-w-4xl flex-col gap-2 pb-3 pt-2 sm:gap-4 sm:pb-5 sm:pt-5">
           <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm sm:items-end sm:gap-4 sm:px-4 sm:py-3">
@@ -349,6 +376,37 @@ function CompactStat({ label, value }: { label: string; value: string | number }
       </p>
       <p className="text-[0.6rem] font-bold uppercase tracking-wide text-ink/45 sm:text-xs">
         {label}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Ejemplo estático de la intro: la frase a copiar y el cuadro donde se escribe,
+ * con las primeras letras ya tecleadas. No es interactivo.
+ */
+function TypingExample() {
+  const { t } = useLanguage();
+  const text = t("typingExampleText");
+  const typed = t("typingExampleTyped");
+  const pending = text.startsWith(typed) ? text.slice(typed.length) : text;
+
+  return (
+    <div
+      className="w-full"
+      role="img"
+      aria-label={t("typingExampleAria")}
+    >
+      <p className="font-mono text-base font-extrabold" aria-hidden="true">
+        <span className="text-ink">{typed}</span>
+        <span className="text-ink/30">{pending}</span>
+      </p>
+      <p
+        className="mt-2 rounded-xl border-2 border-ink/15 bg-cream px-3 py-2 text-left font-mono text-base font-bold text-ink"
+        aria-hidden="true"
+      >
+        {typed}
+        <span className="text-sun">|</span>
       </p>
     </div>
   );

@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
-import GameIntro from "@/components/GameIntro";
 import GameShell from "@/components/GameShell";
+import { useClockPause } from "@/lib/clockPause";
+import { useGameTimers } from "@/lib/gameTimers";
 import { useLanguage } from "@/lib/i18n";
+import { getWordLetters } from "@/lib/letters";
 import {
   playCelebrationSound,
   playCorrectSound,
@@ -77,7 +79,7 @@ export default function WordSearchGame() {
   const missesRef = useRef(0);
   const boardMissesRef = useRef(0);
   const startedAtRef = useRef(0);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const timers = useGameTimers();
   const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionLanguageRef = useRef(language);
 
@@ -91,18 +93,19 @@ export default function WordSearchGame() {
   const lockedRef = useRef(false);
   const boardDataRef = useRef<Board | null>(null);
 
-  const clearTimers = useCallback(() => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
+  const clearSpeakTimer = useCallback(() => {
     if (speakTimerRef.current) {
       clearTimeout(speakTimerRef.current);
       speakTimerRef.current = null;
     }
   }, []);
 
-  const later = useCallback((fn: () => void, ms: number) => {
-    timersRef.current.push(setTimeout(fn, ms));
-  }, []);
+  const clearTimers = useCallback(() => {
+    timers.clear();
+    clearSpeakTimer();
+  }, [timers, clearSpeakTimer]);
+
+  const { later } = timers;
 
   useEffect(
     () => () => {
@@ -118,11 +121,36 @@ export default function WordSearchGame() {
     warmUpVoices();
   }, []);
 
+  // El cronómetro se detiene mientras se lee la ayuda: las palabras ya
+  // encontradas, el tablero y la selección en curso siguen intactos.
+  const [paused, pauseClock] = useClockPause(
+    useCallback((pausedMs: number) => {
+      startedAtRef.current += pausedMs;
+      setNow(Date.now());
+    }, []),
+  );
+
+  // Con la ayuda abierta la partida queda quieta: se congelan el destello del
+  // fallo y la espera entre tableros, y se descarta la palabra que estuviera a
+  // punto de pronunciarse para no hablar por encima de la explicación.
+  const handleHelpOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        timers.freeze();
+        clearSpeakTimer();
+      } else {
+        timers.resume();
+      }
+      pauseClock(open);
+    },
+    [timers, clearSpeakTimer, pauseClock],
+  );
+
   useEffect(() => {
-    if (phase !== "playing") return;
+    if (phase !== "playing" || paused) return;
     const timer = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(timer);
-  }, [phase]);
+  }, [phase, paused]);
 
   const applyAnchor = useCallback((cell: Cell | null) => {
     anchorRef.current = cell;
@@ -431,18 +459,19 @@ export default function WordSearchGame() {
     phase === "playing" ? Math.max(0, now - startedAtRef.current) : finalTime;
 
   return (
-    <GameShell>
-      {phase === "intro" && (
-        <GameIntro
-          emoji="🔠"
-          title={t("searchTitle")}
-          goal={t("searchIntro")}
-          howTo={t("searchHowTo")}
-          startLabel={t("searchStart")}
-          onStart={startGame}
-        />
-      )}
-
+    <GameShell
+      intro={{
+        emoji: "🔠",
+        title: t("searchTitle"),
+        goal: t("searchIntro"),
+        howTo: t("searchHowTo"),
+        example: <SearchExample />,
+      }}
+      showIntro={phase === "intro"}
+      startLabel={t("searchStart")}
+      onStart={startGame}
+      onHelpOpenChange={handleHelpOpenChange}
+    >
       {phase === "playing" && board && (
         <section className="mx-auto flex w-full max-w-5xl flex-col items-center gap-3 pb-6 pt-3 sm:gap-4 sm:pt-5">
           <div className="flex w-full flex-wrap items-center justify-between gap-2">
@@ -667,6 +696,56 @@ export default function WordSearchGame() {
         </section>
       )}
     </GameShell>
+  );
+}
+
+/** Relleno de la cuadrícula del ejemplo. Son letras, no texto traducible. */
+const SEARCH_EXAMPLE_FILLER = ["RMB", "PLD"];
+
+/**
+ * Ejemplo estático de la intro: una cuadrícula mínima con la palabra resaltada
+ * en la primera fila. No usa el generador real de tableros.
+ */
+function SearchExample() {
+  const { t } = useLanguage();
+  const word = getWordLetters(t("searchExampleWord"));
+
+  return (
+    <div
+      className="flex flex-col gap-1"
+      role="img"
+      aria-label={t("searchExampleAria")}
+    >
+      <ExampleRow letters={word} found />
+      {SEARCH_EXAMPLE_FILLER.map((row) => (
+        <ExampleRow key={row} letters={getWordLetters(row)} />
+      ))}
+    </div>
+  );
+}
+
+function ExampleRow({
+  letters,
+  found = false,
+}: {
+  letters: string[];
+  found?: boolean;
+}) {
+  return (
+    <p className="flex gap-1" aria-hidden="true">
+      {letters.map((letter, index) => (
+        <span
+          key={index}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg text-base font-extrabold ${
+            found
+              ? "border-2 border-mint bg-mintsoft text-ink"
+              : "border-2 border-ink/10 bg-cream text-ink/45"
+          }`}
+        >
+          {letter}
+        </span>
+      ))}
+    </p>
   );
 }
 

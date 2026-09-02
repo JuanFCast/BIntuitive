@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import AudioButton from "@/components/AudioButton";
 import BrandMark from "@/components/BrandMark";
-import GameIntro from "@/components/GameIntro";
 import GameShell from "@/components/GameShell";
+import { useGameTimers } from "@/lib/gameTimers";
 import { useLanguage } from "@/lib/i18n";
 import {
   playCelebrationSound,
@@ -53,7 +53,7 @@ export default function WordScrambleGame() {
   const mistakesRef = useRef(0);
   const correctTapsRef = useRef(0);
   const perfectWordsRef = useRef(0);
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const timers = useGameTimers();
   const sessionLanguageRef = useRef(language);
 
   // Espejo en refs de las letras colocadas y de los bloqueos. Dos toques en el
@@ -73,14 +73,17 @@ export default function WordScrambleGame() {
     setLocked(next);
   }, []);
 
-  const clearTimers = useCallback(() => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
-  }, []);
+  const { later, clear: clearTimers } = timers;
 
-  const later = useCallback((fn: () => void, ms: number) => {
-    timersRef.current.push(setTimeout(fn, ms));
-  }, []);
+  // Con la ayuda abierta la partida queda quieta: la pausa tras resolver una
+  // palabra se congela, así que al cerrar sigue la misma palabra en pantalla.
+  const handleHelpOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) timers.freeze();
+      else timers.resume();
+    },
+    [timers],
+  );
 
   useEffect(() => clearTimers, [clearTimers]);
 
@@ -222,18 +225,19 @@ export default function WordScrambleGame() {
   const answerText = placed.map((tile) => tile.letter).join("");
 
   return (
-    <GameShell>
-      {phase === "intro" && (
-        <GameIntro
-          emoji="🧩"
-          title={t("scrambleTitle")}
-          goal={t("scrambleIntro")}
-          howTo={t("scrambleHowTo")}
-          startLabel={t("scrambleStart")}
-          onStart={startGame}
-        />
-      )}
-
+    <GameShell
+      intro={{
+        emoji: "🧩",
+        title: t("scrambleTitle"),
+        goal: t("scrambleIntro"),
+        howTo: t("scrambleHowTo"),
+        example: <ScrambleExample />,
+      }}
+      showIntro={phase === "intro"}
+      startLabel={t("scrambleStart")}
+      onStart={startGame}
+      onHelpOpenChange={handleHelpOpenChange}
+    >
       {phase === "playing" && word && (
         <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 pb-4 pt-3 sm:gap-6 sm:pt-6">
           <div className="flex w-full items-center justify-between gap-3">
@@ -425,6 +429,43 @@ export default function WordScrambleGame() {
         </section>
       )}
     </GameShell>
+  );
+}
+
+/**
+ * Ejemplo estático de la intro: las letras sueltas y, debajo, la palabra ya
+ * formada. La palabra es propia de cada idioma, no una traducción.
+ */
+function ScrambleExample() {
+  const { t } = useLanguage();
+  const word = t("scrambleExampleWord");
+
+  return (
+    <div
+      className="flex flex-col items-center gap-1"
+      role="img"
+      aria-label={t("scrambleExampleAria")}
+    >
+      <p
+        className="font-mono text-lg font-extrabold tracking-[0.15em] text-ink/50"
+        aria-hidden="true"
+      >
+        {t("scrambleExampleLetters")}
+      </p>
+      <span aria-hidden="true" className="text-base font-extrabold text-ink/35">
+        ↓
+      </span>
+      <p className="flex gap-1" aria-hidden="true">
+        {getWordLetters(word).map((letter, index) => (
+          <span
+            key={index}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-mint bg-mintsoft text-lg font-extrabold text-ink"
+          >
+            {letter}
+          </span>
+        ))}
+      </p>
+    </div>
   );
 }
 

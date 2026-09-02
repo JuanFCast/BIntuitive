@@ -43,6 +43,9 @@ export default function AudioButton({
       type="button"
       aria-label={label ?? t("listenAgain")}
       onClick={() => {
+        // Silencio es silencio: el botón calla igual que la reproducción
+        // automática, que ya comprobaba el mute.
+        if (isMuted()) return;
         setSpeaking(true);
         speak(text, language, () => setSpeaking(false));
       }}

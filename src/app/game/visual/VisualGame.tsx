@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
-import GameIntro from "@/components/GameIntro";
 import GameShell from "@/components/GameShell";
+import { useClockPause } from "@/lib/clockPause";
+import { useGameTimers } from "@/lib/gameTimers";
 import { useLanguage } from "@/lib/i18n";
 import { playCelebrationSound, playCorrectSound, playWrongSound } from "@/lib/sounds";
 import {
@@ -32,23 +33,36 @@ export default function VisualGame() {
   const [finalTime, setFinalTime] = useState(0);
   const [flash, setFlash] = useState<Flash>(null);
   const [locked, setLocked] = useState(false);
-  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timers = useGameTimers();
 
-  useEffect(() => {
-    if (phase !== "playing") return;
-    const timer = setInterval(() => setNow(Date.now()), 100);
-    return () => clearInterval(timer);
-  }, [phase]);
-
-  useEffect(
-    () => () => {
-      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
-    },
-    [],
+  // Leer la ayuda no puede costar tiempo: el cronómetro se detiene mientras
+  // está abierta y el instante de inicio se desplaza al reanudar.
+  const [paused, pauseClock] = useClockPause(
+    useCallback((pausedMs: number) => {
+      setStartedAt((current) => current + pausedMs);
+      setNow(Date.now());
+    }, []),
   );
 
+  // Con la ayuda abierta la partida queda quieta: además del cronómetro se
+  // congela la espera entre cartas, para que al cerrar siga la misma carta.
+  const handleHelpOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) timers.freeze();
+      else timers.resume();
+      pauseClock(open);
+    },
+    [timers, pauseClock],
+  );
+
+  useEffect(() => {
+    if (phase !== "playing" || paused) return;
+    const timer = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(timer);
+  }, [phase, paused]);
+
   const startGame = () => {
-    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    timers.clear();
     const firstCard = createFirstVisualCard();
     const nextCard = createNextVisualCard(firstCard, 2);
     const start = Date.now();
@@ -83,7 +97,7 @@ export default function VisualGame() {
       setFlash({ id: symbolId, type: "wrong" });
       setLocked(true);
       playWrongSound();
-      feedbackTimer.current = setTimeout(() => {
+      timers.later(() => {
         setFlash(null);
         setLocked(false);
       }, 350);
@@ -96,7 +110,7 @@ export default function VisualGame() {
     setLocked(true);
     playCorrectSound();
 
-    feedbackTimer.current = setTimeout(() => {
+    timers.later(() => {
       setFlash(null);
       if (nextCompleted >= VISUAL_ROUNDS) {
         finishGame(errors);
@@ -120,19 +134,20 @@ export default function VisualGame() {
   );
 
   return (
-    <GameShell>
-      {phase === "intro" && (
-        <GameIntro
-          emoji="👀"
-          title={t("visualTitle")}
-          goal={t("visualIntro")}
-          howTo={t("visualHowTo")}
-          startLabel={t("visualStart")}
-          onStart={startGame}
-          startVariant="round"
-        />
-      )}
-
+    <GameShell
+      intro={{
+        emoji: "👀",
+        title: t("visualTitle"),
+        goal: t("visualIntro"),
+        howTo: t("visualHowTo"),
+        example: <VisualExample />,
+      }}
+      showIntro={phase === "intro"}
+      startLabel={t("visualStart")}
+      onStart={startGame}
+      actionVariant="round"
+      onHelpOpenChange={handleHelpOpenChange}
+    >
       {phase === "playing" && baseCard && playerCard && (
         <section className="mx-auto w-full max-w-6xl pb-2 pt-2 text-center sm:pt-4">
           <div className="flex min-w-0 flex-col gap-2 sm:gap-3">
@@ -339,6 +354,55 @@ function SideMetric({
       <p className="mt-0.5 max-w-full overflow-hidden text-[0.42rem] font-extrabold uppercase leading-none tracking-[-0.04em] text-ink/50 sm:text-[0.55rem]">
         {label}
       </p>
+    </div>
+  );
+}
+
+/**
+ * Ejemplo estático de la intro: dos cartas que comparten un único símbolo, el
+ * sol, resaltado en la segunda. No usa el generador real de cartas; solo
+ * enseña la mecánica antes de la primera partida.
+ */
+function VisualExample() {
+  const { t } = useLanguage();
+
+  return (
+    <div
+      className="flex items-center gap-2"
+      role="img"
+      aria-label={t("visualExampleAria")}
+    >
+      <ExampleCard symbols={["🌙", "☀️", "🍎"]} />
+      <span aria-hidden="true" className="text-xl font-extrabold text-ink/35">
+        →
+      </span>
+      <ExampleCard symbols={["🌈", "🥕", "☀️"]} highlight="☀️" />
+    </div>
+  );
+}
+
+function ExampleCard({
+  symbols,
+  highlight,
+}: {
+  symbols: string[];
+  highlight?: string;
+}) {
+  return (
+    <div
+      className="flex items-center gap-1 rounded-2xl border-2 border-ink/10 bg-cream px-2 py-1.5"
+      aria-hidden="true"
+    >
+      {symbols.map((symbol, index) => (
+        <span
+          key={index}
+          className={`flex h-8 w-8 items-center justify-center rounded-full text-lg ${
+            symbol === highlight ? "border-2 border-mint bg-mintsoft" : ""
+          }`}
+        >
+          {symbol}
+        </span>
+      ))}
     </div>
   );
 }
