@@ -6,6 +6,7 @@ import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
 import { useClockPause } from "@/lib/clockPause";
 import { useGameTimers } from "@/lib/gameTimers";
+import { useSpeakAfterSound } from "@/lib/speakAfterSound";
 import { useLanguage } from "@/lib/i18n";
 import { getWordLetters } from "@/lib/letters";
 import {
@@ -14,10 +15,8 @@ import {
   playTapSound,
   playWrongSound,
 } from "@/lib/sounds";
-import { cancelSpeech, speak, warmUpVoices } from "@/lib/speech";
 import {
   getWordSearchProgress,
-  isMuted,
   saveWordSearchProgress,
 } from "@/lib/storage";
 import {
@@ -42,14 +41,6 @@ type Phase = "intro" | "playing" | "results";
 
 const BOARD_PAUSE_MS = 1400;
 const MISS_FLASH_MS = 400;
-
-/**
- * Espera entre el sonido de acierto y la voz. En iOS el AudioContext que suena
- * el acorde se traga la locucion si las dos arrancan a la vez, asi que la
- * palabra se dice cuando el sonido ya ha terminado. Es el mismo retraso que
- * usa AudioButton para su reproduccion automatica.
- */
-const SPEAK_DELAY_MS = 350;
 
 export default function WordSearchGame() {
   const { language, t } = useLanguage();
@@ -80,7 +71,6 @@ export default function WordSearchGame() {
   const boardMissesRef = useRef(0);
   const startedAtRef = useRef(0);
   const timers = useGameTimers();
-  const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionLanguageRef = useRef(language);
 
   // Espejo en refs del gesto y del bloqueo: los eventos de puntero llegan
@@ -93,33 +83,17 @@ export default function WordSearchGame() {
   const lockedRef = useRef(false);
   const boardDataRef = useRef<Board | null>(null);
 
-  const clearSpeakTimer = useCallback(() => {
-    if (speakTimerRef.current) {
-      clearTimeout(speakTimerRef.current);
-      speakTimerRef.current = null;
-    }
-  }, []);
+  const { speakAfterSound, cancel: cancelWordSpeech } =
+    useSpeakAfterSound(language);
 
   const clearTimers = useCallback(() => {
     timers.clear();
-    clearSpeakTimer();
-  }, [timers, clearSpeakTimer]);
+    cancelWordSpeech();
+  }, [timers, cancelWordSpeech]);
 
   const { later } = timers;
 
-  useEffect(
-    () => () => {
-      clearTimers();
-      cancelSpeech();
-    },
-    [clearTimers],
-  );
-
-  // En iOS las voces cargan de forma asíncrona: precalentar la lista para que
-  // la primera palabra encontrada ya suene con la voz del idioma correcto.
-  useEffect(() => {
-    warmUpVoices();
-  }, []);
+  useEffect(() => clearTimers, [clearTimers]);
 
   // El cronómetro se detiene mientras se lee la ayuda: las palabras ya
   // encontradas, el tablero y la selección en curso siguen intactos.
@@ -137,13 +111,13 @@ export default function WordSearchGame() {
     (open: boolean) => {
       if (open) {
         timers.freeze();
-        clearSpeakTimer();
+        cancelWordSpeech();
       } else {
         timers.resume();
       }
       pauseClock(open);
     },
-    [timers, clearSpeakTimer, pauseClock],
+    [timers, cancelWordSpeech, pauseClock],
   );
 
   useEffect(() => {
@@ -168,24 +142,6 @@ export default function WordSearchGame() {
     draggingRef.current = false;
     pointerIdRef.current = null;
   }, [applyAnchor, applyHead]);
-
-  /**
-   * Dice la palabra encontrada, justo despues del sonido de acierto.
-   * Solo hay un temporizador de voz a la vez: si el nino encuentra otra
-   * palabra antes de que hable, la anterior se descarta y suena la ultima, de
-   * modo que nunca se acumulan ni se pisan. El mute se comprueba al disparar,
-   * no al programar, para que silenciar entre medias tambien calle esta.
-   */
-  const speakWord = useCallback(
-    (word: string) => {
-      if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
-      speakTimerRef.current = setTimeout(() => {
-        speakTimerRef.current = null;
-        if (!isMuted()) speak(word, language);
-      }, SPEAK_DELAY_MS);
-    },
-    [language],
-  );
 
   const loadBoard = useCallback(() => {
     const next = generateBoard(
@@ -236,7 +192,6 @@ export default function WordSearchGame() {
     if (sessionLanguageRef.current === language) return;
     sessionLanguageRef.current = language;
     clearTimers();
-    cancelSpeech();
     lockedRef.current = false;
     setPhase("intro");
   }, [clearTimers, language]);
@@ -321,11 +276,11 @@ export default function WordSearchGame() {
       playCorrectSound();
 
       // Primero el sonido de acierto, y la palabra en voz alta justo despues.
-      speakWord(match.word);
+      speakAfterSound(match.word);
 
       if (nextFound.length >= current.placements.length) completeBoard();
     },
-    [clearSelection, completeBoard, later, speakWord],
+    [clearSelection, completeBoard, later, speakAfterSound],
   );
 
   const cellFromPoint = (clientX: number, clientY: number): Cell | null => {

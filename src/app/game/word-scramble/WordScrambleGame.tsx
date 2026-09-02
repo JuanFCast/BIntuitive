@@ -6,6 +6,7 @@ import AudioButton from "@/components/AudioButton";
 import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
 import { useGameTimers } from "@/lib/gameTimers";
+import { useSpeakAfterSound } from "@/lib/speakAfterSound";
 import { useLanguage } from "@/lib/i18n";
 import {
   playCelebrationSound,
@@ -73,16 +74,30 @@ export default function WordScrambleGame() {
     setLocked(next);
   }, []);
 
-  const { later, clear: clearTimers } = timers;
+  const { later } = timers;
+  const { speakAfterSound, cancel: cancelWordSpeech } =
+    useSpeakAfterSound(language);
+
+  const clearTimers = useCallback(() => {
+    timers.clear();
+    cancelWordSpeech();
+  }, [timers, cancelWordSpeech]);
 
   // Con la ayuda abierta la partida queda quieta: la pausa tras resolver una
   // palabra se congela, así que al cerrar sigue la misma palabra en pantalla.
+  // La locución pendiente se descarta en vez de aplazarse: al volver, el niño
+  // ya ha visto la palabra y repetirla tarde confunde más que ayuda.
   const handleHelpOpenChange = useCallback(
     (open: boolean) => {
-      if (open) timers.freeze();
-      else timers.resume();
+      if (open) {
+        timers.freeze();
+        // La palabra recién resuelta no debe hablar sobre las instrucciones.
+        cancelWordSpeech();
+      } else {
+        timers.resume();
+      }
     },
-    [timers],
+    [timers, cancelWordSpeech],
   );
 
   useEffect(() => clearTimers, [clearTimers]);
@@ -144,7 +159,7 @@ export default function WordScrambleGame() {
     playCelebrationSound();
   }, []);
 
-  const completeWord = useCallback(() => {
+  const completeWord = useCallback((solvedWord: string) => {
     // Blindaje: la palabra solo puede completarse una vez, aunque dos toques
     // simultáneos alcancen la última letra en el mismo tick.
     if (solvedRef.current) return;
@@ -165,6 +180,11 @@ export default function WordScrambleGame() {
     applyLocked(true);
     playCorrectSound();
 
+    // Primero el sonido de acierto, y la palabra en voz alta justo después: se
+    // envía con su ortografía real, así que BEBÉ, PIÑA o PINGÜINO se
+    // pronuncian como se escriben.
+    speakAfterSound(solvedWord);
+
     later(() => {
       const nextIndex = wordIndex + 1;
       setWordIndex(nextIndex);
@@ -173,7 +193,7 @@ export default function WordScrambleGame() {
         finishGame(nextIndex);
       }
     }, SOLVED_PAUSE_MS);
-  }, [applyLocked, finishGame, later, loadWord, wordIndex]);
+  }, [applyLocked, finishGame, later, loadWord, speakAfterSound, wordIndex]);
 
   // Letras reales de la palabra: `Ñ`, `Ü` y las vocales con tilde cuentan como una.
   const letters = word ? getWordLetters(word.word) : [];
@@ -203,7 +223,7 @@ export default function WordScrambleGame() {
     const nextPlaced = [...current, tile];
     applyPlaced(nextPlaced);
     playTapSound();
-    if (nextPlaced.length === letters.length) completeWord();
+    if (nextPlaced.length === letters.length) completeWord(word.word);
   };
 
   const handleUndo = () => {

@@ -54,6 +54,7 @@ src/lib/
   letters.ts            getWordLetters: partir palabras en letras respetando Unicode/NFC
   clockPause.ts         useClockPause: parar el reloj de un juego mientras la ayuda está abierta
   gameTimers.ts         useGameTimers: esperas cortas congelables (destellos, pausas, transiciones)
+  speakAfterSound.ts    useSpeakAfterSound: decir una palabra tras el sonido de acierto
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
@@ -166,9 +167,13 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
   `nextLevel` de `gameEngine.ts`. Cualquier otra cosa en común es señal de acoplamiento.
 - Ningún juego independiente suma a `totalStars` ni a `sessions`: esas métricas son de las
   lecciones de preguntas y `/progress` solo muestra esas.
-- `speech.ts` (Web Speech API) lo usan la ruta `/game` de preguntas y Word Search, que pronuncia
-  cada palabra encontrada. En iOS conviene programar la locución con un pequeño retraso tras el
-  sonido de acierto (el `AudioContext` de `sounds.ts` se traga la voz si arrancan a la vez) y
-  comprobar `isMuted()` al disparar, no al programar. Quien programe un temporizador de voz debe
-  cancelarlo al desmontar y al cambiar de idioma, junto con `cancelSpeech()`.
+- `speech.ts` (Web Speech API) lo usan la ruta `/game` de preguntas y los dos juegos de
+  palabras, que pronuncian la palabra encontrada o completada. Nadie programa esa locución a
+  mano: se usa `useSpeakAfterSound`, que ya trae el retraso tras el sonido de acierto (el
+  `AudioContext` de `sounds.ts` se traga la voz si arrancan a la vez), la comprobación de
+  `isMuted()` al disparar y no al programar, una sola locución pendiente a la vez y el corte al
+  desmontar. Su `cancel()` entra en el `clearTimers` del juego, así que empezar sesión, cambiar
+  de idioma, abrir la ayuda o salir callan lo pendiente. Es la única cosa que comparten Word
+  Scramble y Word Search además de `getWordLetters` y `nextLevel`, y lo comparten porque el
+  problema es de iOS, no de la mecánica.
 - Los comentarios existentes en el código están en español; mantener ese idioma en el código.
