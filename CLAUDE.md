@@ -180,6 +180,26 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
 - **`getProgress()` devuelve siempre un objeto nuevo.** `saveSession` y las dos de palabras
   escriben sobre lo que devuelve, así que compartir una constante vacía la ensuciaría en la
   primera partida de un dispositivo sin datos.
+- **El documento es el que se desplaza.** `.app-shell` es una columna flex con
+  `min-height: 100svh`, el encabezado y la barra inferior son `position: sticky` y el contenido
+  crece con su contenido. **No volver a `height: 100dvh` + `overflow: hidden` + hijos
+  `position: fixed` con un scroll interior**: en iOS los elementos fijos se colocan contra el
+  viewport de disposición, que no encoge cuando el navegador enseña sus barras, y el resultado
+  era encabezado cortado, barra inferior flotando sobre una franja vacía y scroll congelado
+  hasta recargar. `svh` y no `dvh` para dimensionar: el viewport pequeño es el único que no
+  cambia mientras se desplaza, así que nada se redimensiona bajo el dedo.
+- **Los overlays se montan en el `body`**, con `createPortal`: el menú de ajustes, la ayuda de
+  los juegos y `ConfirmDialog`. Un antepasado con `filter` o `backdrop-filter` —`.app-header`
+  tiene uno— convierte `position: fixed` en relativo a ese antepasado, así que un panel escrito
+  dentro del encabezado se mediría contra una franja de 60px. Desde el `body` se mide contra la
+  ventana en cualquier motor, y con `z-[60]` queda por encima del encabezado y de la barra
+  inferior, que son `z-index: 50` y si no se pintarían sobre el diálogo y seguirían pulsables.
+  Por lo mismo, los altos del marco (`--app-header-height`, `--app-navigation-height`) viven en
+  `:root` y no en `.app-shell`: desde el `body` no se heredarían.
+- **Texto largo en español antes que letra pequeña**: las etiquetas de tarjeta envuelven con
+  `break-words` y `leading-snug`, y el espaciado entre letras de las mayúsculas se reserva para
+  `sm:`. En un móvil de 360px una tarjeta crece a lo alto; nunca se aprieta el texto ni se
+  reduce la escala.
 - **Un solo diálogo de confirmación**: `ConfirmDialog` (título, descripción, confirmar,
   cancelar, `destructive`), con Escape y devolución del foco. `ExitDialog` es una capa fina
   sobre él. No crear un modal nuevo para la siguiente confirmación.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import GameIntro, { type GameIntroContent } from "./GameIntro";
 import { useLanguage } from "@/lib/i18n";
 import { cancelSpeech } from "@/lib/speech";
@@ -80,23 +81,30 @@ export default function GameHelp({
         <span aria-hidden="true">?</span>
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/40 px-4 py-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label={intro.title}
-        >
-          <div className="my-auto w-full max-w-md rounded-3xl border-4 border-sky bg-cream p-5 shadow-2xl sm:p-6">
-            <GameIntro
-              {...intro}
-              layout="dialog"
-              actionLabel={t("helpClose")}
-              onAction={close}
-            />
-          </div>
-        </div>
-      )}
+      {open &&
+        createPortal(
+          /*
+           * Fuera del árbol donde se escribe: un antepasado con `filter` o
+           * `backdrop-filter` haría que `position: fixed` se midiera contra él
+           * y no contra la ventana.
+           */
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-ink/40 px-4 py-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label={intro.title}
+          >
+            <div className="my-auto w-full max-w-md rounded-3xl border-4 border-sky bg-cream p-5 shadow-2xl sm:p-6">
+              <GameIntro
+                {...intro}
+                layout="dialog"
+                actionLabel={t("helpClose")}
+                onAction={close}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { createPortal } from "react-dom";
 import { useFocusTrap } from "@/lib/focusTrap";
 
 type ConfirmDialogProps = {
@@ -24,6 +25,14 @@ type ConfirmDialogProps = {
 
 /**
  * Diálogo de confirmación único de la aplicación.
+ *
+ * Se monta en `document.body`, no donde se escribe. Un diálogo a pantalla
+ * completa tiene que medirse contra la ventana, y desde dentro del árbol no
+ * siempre puede: basta un antepasado con `filter` o `backdrop-filter` —el
+ * encabezado de la aplicación tiene uno— para que `position: fixed` pase a
+ * medirse contra ese antepasado en vez de contra la ventana. Además así queda
+ * por encima de la barra inferior, que si no seguiría pintada sobre el fondo
+ * oscuro y se podría pulsar con el diálogo abierto.
  *
  * Antes solo existía el de salir de una lección; al aparecer el borrado de
  * progreso hacían falta dos, y dos modales son dos comportamientos de foco y
@@ -52,7 +61,7 @@ export default function ConfirmDialog({
       key="confirm"
       type="button"
       onClick={onConfirm}
-      className={`min-h-14 w-full rounded-full border-b-8 px-6 py-2 text-xl font-extrabold text-ink transition-transform active:scale-95 active:border-b-4 ${
+      className={`min-h-14 w-full break-words rounded-full border-b-8 px-4 py-2 text-xl font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-4 sm:px-6 ${
         destructive
           ? "border-coral/70 bg-coral"
           : "border-coral bg-coralsoft"
@@ -67,15 +76,15 @@ export default function ConfirmDialog({
       key="cancel"
       type="button"
       onClick={onCancel}
-      className="min-h-14 w-full rounded-full border-b-8 border-mint bg-mintsoft px-6 py-2 text-xl font-extrabold text-ink transition-transform active:scale-95 active:border-b-4"
+      className="min-h-14 w-full break-words rounded-full border-b-8 border-mint bg-mintsoft px-4 py-2 text-xl font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-4 sm:px-6"
     >
       {cancelLabel}
     </button>
   );
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/40 px-6 py-6"
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-ink/40 px-6 py-6"
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}
@@ -91,6 +100,7 @@ export default function ConfirmDialog({
           {destructive ? [cancel, confirm] : [confirm, cancel]}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

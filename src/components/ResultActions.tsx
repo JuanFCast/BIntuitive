@@ -28,13 +28,13 @@ export default function ResultActions({
       <button
         type="button"
         onClick={onPlayAgain}
-        className="min-h-14 flex-1 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-6 py-3 text-xl font-extrabold text-black shadow-lg transition-transform active:scale-95 active:border-b-4"
+        className="min-h-14 flex-1 break-words rounded-2xl border-b-8 border-[#9b7600] bg-sun px-4 py-3 text-xl font-extrabold leading-snug text-black shadow-lg transition-transform active:scale-95 active:border-b-4 sm:px-6"
       >
         {playAgainLabel}
       </button>
       <Link
         href="/hexagons"
-        className="flex min-h-14 flex-1 items-center justify-center rounded-2xl border-b-8 border-ink/15 bg-white px-6 py-3 text-xl font-extrabold text-ink shadow-lg transition-transform active:scale-95 active:border-b-4"
+        className="flex min-h-14 flex-1 items-center justify-center break-words rounded-2xl border-b-8 border-ink/15 bg-white px-4 py-3 text-center text-xl font-extrabold leading-snug text-ink shadow-lg transition-transform active:scale-95 active:border-b-4 sm:px-6"
       >
         {t("backToHexagons")}
       </Link>

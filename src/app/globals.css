@@ -99,7 +99,12 @@
 
 html,
 body {
-  height: 100%;
+  /*
+   * Sin altura fija: el documento es el que se desplaza. Atarlo al viewport
+   * obligaba a que todo lo de dentro fuese `position: fixed`, y en iOS eso se
+   * mide contra el viewport de disposición —el de las barras plegadas—, no
+   * contra lo que se ve.
+   */
   background-color: var(--color-cream);
   color: var(--color-ink);
   -webkit-tap-highlight-color: transparent;
@@ -111,20 +116,50 @@ button {
   font-family: inherit;
 }
 
-.app-shell {
+/*
+ * Altos del marco de la aplicación. Van en la raíz y no en `.app-shell` porque
+ * el panel de ajustes se monta en el `body`, fuera de ese contenedor, y desde
+ * allí no heredaría las variables: caería en su valor de reserva y en un móvil
+ * con muesca se colocaría por debajo del encabezado.
+ */
+:root {
   --app-header-height: calc(3.75rem + env(safe-area-inset-top));
   --app-navigation-height: calc(4.25rem + env(safe-area-inset-bottom));
-  height: 100dvh;
-  overflow: hidden;
+}
+
+/*
+ * El marco de la aplicación: una columna en el flujo normal, no una caja
+ * clavada al viewport.
+ *
+ * Antes era `height: 100dvh` con `overflow: hidden` y tres hijos `position:
+ * fixed`, uno de ellos con su propio `overflow-y: auto`. En iOS ese patrón se
+ * rompe: los elementos fijos se colocan contra el viewport de disposición, que
+ * no encoge cuando el navegador enseña sus barras, así que la barra inferior
+ * quedaba flotando sobre una franja vacía y el contenedor interior se quedaba
+ * con una altura vieja hasta recargar.
+ *
+ * `min-height` en vez de `height`: si el contenido es más alto —el panal en un
+ * teléfono pequeño— la página crece y se desplaza como cualquier otra.
+ * `svh` y no `dvh`: el viewport pequeño es el único que no cambia mientras se
+ * desplaza, así que la altura no se recalcula bajo el dedo. `100vh` queda
+ * delante como reserva para quien no entienda `svh`.
+ */
+.app-shell {
+  min-height: 100vh;
+  min-height: 100svh;
   background: var(--color-cream);
 }
 
 .app-header {
-  position: fixed;
+  /*
+   * `sticky` y no `fixed`: se coloca respecto al desplazamiento real, así que
+   * sigue a las barras del navegador en lugar de quedarse en una posición que
+   * ya no se ve. Y al estar en el flujo, el contenido empieza debajo sin tener
+   * que reservarle sitio a mano.
+   */
+  position: sticky;
   z-index: 50;
   top: 0;
-  right: 0;
-  left: 0;
   height: var(--app-header-height);
   padding-top: env(safe-area-inset-top);
   border-bottom: 1px solid rgb(23 23 23 / 0.07);
@@ -175,29 +210,47 @@ button {
   color: var(--color-ink);
 }
 
+/*
+ * Ya no es un contenedor de scroll propio: crece con su contenido y deja que
+ * se desplace la página. Un scroll dentro de otro es justo lo que se atascaba.
+ *
+ * Su alto mínimo es lo que queda del viewport pequeño entre el encabezado y la
+ * barra: con eso, en una página corta la barra cae exactamente en el borde
+ * inferior de la pantalla, sin que el marco tenga que ser un contenedor flex.
+ */
 .app-shell-content {
-  position: fixed;
-  top: var(--app-header-height);
-  right: 0;
-  bottom: var(--app-navigation-height);
-  left: 0;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
+  display: flex;
+  min-width: 0;
+  min-height: calc(
+    100vh - var(--app-header-height) - var(--app-navigation-height)
+  );
+  min-height: calc(
+    100svh - var(--app-header-height) - var(--app-navigation-height)
+  );
+  flex-direction: column;
 }
 
 .app-shell-content > main {
-  min-height: 100%;
+  flex: 1;
 }
 
 .bottom-navigation {
-  position: fixed;
+  /*
+   * También `sticky`, con `bottom: 0`. Al revés que un `sticky` de arriba, este
+   * se despega *antes* de llegar a él: mientras su sitio natural queda por
+   * debajo de lo que se ve, el navegador lo sube hasta el borde inferior, así
+   * que se ve desde el primer render sin llegar al final del panal. Cuando se
+   * llega abajo del todo vuelve a su sitio, y por eso la última fila del
+   * contenido se ve entera: la barra nunca la tapa de forma permanente.
+   *
+   * Es hijo directo de `.app-shell`, que es un bloque normal y no un
+   * contenedor flex: `position: sticky` sobre un elemento flex es justo el
+   * caso que WebKit ha tenido roto durante años, y este marco tiene que
+   * funcionar en iOS antes que en ningún otro sitio.
+   */
+  position: sticky;
   z-index: 50;
-  right: 0;
   bottom: 0;
-  left: 0;
   height: var(--app-navigation-height);
   padding-bottom: env(safe-area-inset-bottom);
   border-top: 1px solid rgb(23 23 23 / 0.09);
@@ -514,9 +567,9 @@ button {
  */
 .app-menu-panel {
   /* `--app-header-height` ya incluye el área segura superior: no se suma dos veces. */
-  top: calc(var(--app-header-height, 4rem) + 0.5rem);
+  top: calc(var(--app-header-height) + 0.5rem);
   max-height: calc(
-    100dvh - var(--app-header-height, 4rem) - env(safe-area-inset-bottom) - 1.5rem
+    100svh - var(--app-header-height) - env(safe-area-inset-bottom) - 1.5rem
   );
 }
 
@@ -524,7 +577,11 @@ button {
   /*
    * El panal movil es una columna alta: el ancho lo manda la altura de la
    * ventana, no al reves, para que las cinco filas quepan enteras entre la
-   * cabecera y la barra inferior sin hacer scroll.
+   * cabecera y la barra inferior sin hacer scroll. Se mide contra `svh`, el
+   * viewport pequeno: es el que no cambia al plegarse las barras del navegador,
+   * asi que el panal no se redimensiona bajo el dedo. Si aun asi no cupiera
+   * —texto muy grande, pantalla muy baja— la pagina se desplaza; los hexagonos
+   * no se encogen para forzar que quepa.
    *
    * Geometria: la rejilla mide dos fichas de ancho, la ficha es un hexagono
    * pointy-top de aspect-ratio 0.8660254 (raiz de 3 partido por 2) y las filas
@@ -532,7 +589,7 @@ button {
    * teselado. Cinco filas dan una altura de 4 pasos mas una ficha, es decir
    * 2.3094011 anchos de rejilla, de ahi el aspect-ratio 0.4330127.
    */
-  width: min(100%, calc((100dvh - 17rem) * 0.4330127));
+  width: min(100%, calc((100svh - 17rem) * 0.4330127));
   max-width: 24rem;
   aspect-ratio: 0.4330127;
   filter: drop-shadow(0 6px 10px rgb(120 88 0 / 0.08));
@@ -592,7 +649,7 @@ button {
 @media (min-width: 640px) {
   /* Fila de 4 y fila de 3 desplazada media ficha: 4 fichas de ancho. */
   .hexagons-grid {
-    width: min(100%, calc((100dvh - 13rem) * 1.9794867));
+    width: min(100%, calc((100svh - 13rem) * 1.9794867));
     max-width: 48rem;
     aspect-ratio: 1.9794867;
   }
@@ -651,7 +708,7 @@ button {
 
   /*
    * Estos tres tamaños NO escalan a propósito. En pantallas bajas el panal
-   * ocupa el alto que le queda (`100dvh - 14rem`), así que un título más alto
+   * ocupa el alto que le queda (`100svh - 14rem`), así que un título más alto
    * dejaría los hexágonos fuera de la pantalla, y el emoji y el nombre del
    * hexágono son geometría de la ficha, no texto de lectura.
    */
@@ -662,7 +719,7 @@ button {
 
   .hexagons-grid {
     margin-top: 0.75rem;
-    width: min(100%, calc((100dvh - 14rem) * 0.4330127));
+    width: min(100%, calc((100svh - 14rem) * 0.4330127));
   }
 
   .hexagon-emoji {

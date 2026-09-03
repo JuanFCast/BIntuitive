@@ -29,8 +29,17 @@ export default function ResultStat({
     <div
       className={`rounded-2xl border-2 bg-white px-2 py-4 text-center shadow-sm ${TONES[tone]}`}
     >
-      <p className="text-2xl font-extrabold text-ink sm:text-3xl">{value}</p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-ink/50 sm:text-sm">
+      <p className="text-2xl font-extrabold tabular-nums text-ink sm:text-3xl">
+        {value}
+      </p>
+      {/*
+        La etiqueta puede ser larga en español —"Palabras encontradas"— y la
+        columna es estrecha en un móvil. El espaciado entre letras se reserva
+        para pantallas anchas, se le da interlineado cómodo para cuando ocupe
+        dos o tres líneas, y se le permite partir palabras: antes que
+        apretarlas, la tarjeta crece a lo alto.
+      */}
+      <p className="mt-1 hyphens-auto break-words text-xs font-bold uppercase leading-snug text-ink/50 sm:tracking-wide sm:text-sm">
         {label}
       </p>
     </div>

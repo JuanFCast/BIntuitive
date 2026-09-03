@@ -188,7 +188,9 @@ function SummaryStat({
         {icon}
       </span>
       <p className="mt-2 text-4xl font-extrabold tabular-nums">{value}</p>
-      <p className="mt-1 text-sm font-bold text-ink/55 sm:text-base">{label}</p>
+      <p className="mt-1 hyphens-auto break-words text-sm font-bold leading-snug text-ink/55 sm:text-base">
+        {label}
+      </p>
     </div>
   );
 }
@@ -260,7 +262,7 @@ function ActivityRow({
 
   return (
     <div
-      className={`flex items-center gap-3 p-4 sm:gap-4 sm:p-5 ${
+      className={`flex items-start gap-3 p-4 sm:items-center sm:gap-4 sm:p-5 ${
         first ? "" : "border-t border-ink/8"
       }`}
     >
@@ -270,22 +272,31 @@ function ActivityRow({
       >
         {localized.emoji}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-lg font-extrabold">{localized.name}</span>
-        {activity?.best && (
-          <span className="mt-0.5 block text-sm font-semibold text-ink/50">
-            {activity.best}
+      {/*
+        En un móvil estrecho el nivel se coloca debajo del nombre: como chip a
+        la derecha le robaba el ancho, y con el texto en grande el nombre se
+        partía en trocitos. A partir de 640px vuelven a la misma línea.
+      */}
+      <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <span className="min-w-0">
+          <span className="block break-words text-lg font-extrabold">
+            {localized.name}
           </span>
-        )}
-      </span>
-      <span
-        className={`shrink-0 rounded-full px-3 py-1 text-sm font-extrabold ${
-          activity
-            ? "border-2 border-mint bg-mintsoft text-ink"
-            : "border border-ink/10 bg-cream text-ink/45"
-        }`}
-      >
-        {activity ? activity.level : t("progressKeepPlaying")}
+          {activity?.best && (
+            <span className="mt-0.5 block break-words text-sm font-semibold leading-snug text-ink/50">
+              {activity.best}
+            </span>
+          )}
+        </span>
+        <span
+          className={`w-fit shrink-0 rounded-full px-3 py-1 text-sm font-extrabold ${
+            activity
+              ? "border-2 border-mint bg-mintsoft text-ink"
+              : "border border-ink/10 bg-cream text-ink/45"
+          }`}
+        >
+          {activity ? activity.level : t("progressKeepPlaying")}
+        </span>
       </span>
     </div>
   );
@@ -329,7 +340,11 @@ function SessionRow({
       >
         {localized?.emoji ?? "🎯"}
       </span>
-      <span className="min-w-0 flex-1 truncate text-lg font-extrabold">
+      {/*
+        Sin recortar: el nombre de la categoría envuelve antes que perder
+        letras, que con el texto en grande dejaba "Núme…" en pantalla.
+      */}
+      <span className="min-w-0 flex-1 break-words text-lg font-extrabold leading-snug">
         {localized?.name ?? session.category}
       </span>
       {day && (

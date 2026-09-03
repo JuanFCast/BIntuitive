@@ -139,8 +139,13 @@ function PreferenceRow({
       >
         {icon}
       </span>
-      <span className="min-w-0 flex-1 text-lg font-extrabold">{title}</span>
-      <span className="shrink-0 text-base font-bold text-ink/55">{value}</span>
+      {/* "Desactivado" o "Muy grande" no se aprietan: envuelven si hace falta. */}
+      <span className="min-w-0 flex-1 break-words text-lg font-extrabold">
+        {title}
+      </span>
+      <span className="min-w-0 break-words text-right text-base font-bold leading-snug text-ink/55">
+        {value}
+      </span>
     </div>
   );
 }

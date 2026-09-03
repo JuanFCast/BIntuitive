@@ -90,7 +90,12 @@ export default function GameIntro({
         </figure>
       )}
 
-      <div className="flex items-center justify-center gap-4">
+      {/*
+        A 360px el altavoz ocupa 64px fijos y el botón, con "Empezar a jugar"
+        y relleno de escritorio, se salía de la pantalla. En móvil el botón
+        adelgaza y puede encoger; a partir de 640px queda como estaba.
+      */}
+      <div className="flex w-full max-w-sm items-center justify-center gap-3 sm:max-w-none sm:gap-4">
         {/*
           Escuchar es siempre a petición: en iOS la voz solo arranca como
           consecuencia directa de un gesto, así que una locución automática al
@@ -100,7 +105,7 @@ export default function GameIntro({
         <button
           type="button"
           onClick={onAction}
-          className="min-h-16 rounded-2xl border-b-8 border-[#9b7600] bg-sun px-10 py-3 text-2xl font-extrabold text-black shadow-xl transition-transform active:scale-95 active:border-b-4"
+          className="min-h-16 min-w-0 flex-1 break-words rounded-2xl border-b-8 border-[#9b7600] bg-sun px-4 py-3 text-xl font-extrabold leading-snug text-black shadow-xl transition-transform active:scale-95 active:border-b-4 sm:flex-none sm:px-10 sm:text-2xl"
         >
           {actionLabel}
         </button>
