@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { siteDescription, siteName, siteUrl } from "./siteMetadata";
 import AppShell from "@/components/AppShell";
 import TextSizePreference from "@/components/TextSizePreference";
+import ViewportDebug from "@/components/ViewportDebug";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -82,6 +83,9 @@ export default function RootLayout({
           <TextSizePreference />
           <AppShell>{children}</AppShell>
         </LanguageProvider>
+        {/* TEMPORAL: solo mide, con `?viewportDebug=1`. Fuera del proveedor
+            porque no debe depender de nada de la aplicación. */}
+        <ViewportDebug />
       </body>
     </html>
   );
