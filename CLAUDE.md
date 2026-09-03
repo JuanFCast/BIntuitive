@@ -33,6 +33,8 @@ Un juego nuevo casi siempre es del tipo 2.
 ```
 src/app/
   layout.tsx            LanguageProvider + AppShell + metadata/OG
+  siteMetadata.ts       Nombre, descripción y URL: los comparten layout y manifest
+  manifest.ts           Manifest de la app instalable (Next lo sirve y lo enlaza)
   (sin page.tsx)        La raíz redirige a /hexagons desde next.config.ts
   hexagons/             Explore: panal con todos los Hexagon (única vía de entrada)
   game/                 Todas las rutas de juego
@@ -74,6 +76,11 @@ src/lib/
   (Type Rush añade `"ready"`), con una sección JSX por fase. La ruta de preguntas tiene las
   mismas tres: entra por la explicación y la sesión —nivel guardado incluido— arranca al
   pulsar Comenzar, no al montar.
+- **Instalable**: `manifest.ts` arranca en `/hexagons`, no en `/`, para que abrir desde el
+  icono no pase por el redirect. El icono grande es el mismo `app/icon.png` que sirve de
+  favicon; el de 192 vive en `public/`. Ninguno se declara `maskable`: el logo llega cerca del
+  borde y una máscara circular le cortaría el birrete. iOS no lee `display` del manifest, así
+  que el modo standalone en Safari depende de las metas `appleWebApp` de `layout.tsx`.
 - **No hay Home**: Explore es la entrada de la aplicación y la barra inferior tiene exactamente
   tres destinos (Explore, Progress, Profile). La raíz `/` no tiene pantalla: redirige a
   `/hexagons` desde `next.config.ts`. Un enlace global que signifique "volver al principio"
