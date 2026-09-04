@@ -65,10 +65,29 @@ export const metadata: Metadata = {
   },
 };
 
+/*
+ * Sin `viewportFit: "cover"` a propósito.
+ *
+ * `cover` es exactamente la petición de que el viewport de disposición cubra
+ * toda la pantalla incluyendo lo que tapa la interfaz del sistema, dejando que
+ * la página lo compense con `env(safe-area-inset-*)`. Es decir: es el
+ * interruptor que autoriza a que el espacio de coordenadas del documento no
+ * coincida con lo que se ve, que es justo el fallo que aparece en Chrome de
+ * iPhone al abrir el mismo enlace por segunda vez desde otra aplicación.
+ *
+ * Quitarlo no cambia nada en el navegador: medido en iPhone, las áreas seguras
+ * ya valían cero ahí —el encabezado medía sus 3.75rem exactos y la barra sus
+ * 4.25rem—. Sí cambia en modo instalado, donde el marco pasa a quedarse dentro
+ * del área segura en vez de meterse bajo la muesca. Se acepta ese cambio: la
+ * aplicación se abre casi siempre desde un enlace, en el navegador.
+ *
+ * Los `env(safe-area-inset-*)` de `globals.css` se quedan donde están. Ahora
+ * resuelven a cero y no estorban, y siguen siendo correctos si algún día se
+ * vuelve a `cover`.
+ */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover",
   themeColor: "#ffc400",
 };
 
