@@ -181,13 +181,22 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
   escriben sobre lo que devuelve, así que compartir una constante vacía la ensuciaría en la
   primera partida de un dispositivo sin datos.
 - **El documento es el que se desplaza.** `.app-shell` es una columna flex con
-  `min-height: 100svh`, el encabezado y la barra inferior son `position: sticky` y el contenido
+  `min-height: 100vh`, el encabezado y la barra inferior son `position: sticky` y el contenido
   crece con su contenido. **No volver a `height: 100dvh` + `overflow: hidden` + hijos
   `position: fixed` con un scroll interior**: en iOS los elementos fijos se colocan contra el
   viewport de disposición, que no encoge cuando el navegador enseña sus barras, y el resultado
   era encabezado cortado, barra inferior flotando sobre una franja vacía y scroll congelado
-  hasta recargar. `svh` y no `dvh` para dimensionar: el viewport pequeño es el único que no
-  cambia mientras se desplaza, así que nada se redimensiona bajo el dedo.
+  hasta recargar.
+- **El marco nunca mide exactamente el viewport.** `vh` y no `svh` en `.app-shell` y
+  `.app-shell-content`. No es una preferencia de estilo: con `svh` el documento medía justo lo
+  visible y `scrollHeight == clientHeight`, es decir cero holgura para desplazarse. Al abrir el
+  mismo enlace por segunda vez desde otra aplicación, Chrome de iPhone presenta el documento en
+  una región de pantalla distinta de la que le ha declarado; el layout es correcto —medido: los
+  rects son idénticos a los de una carga sana— pero se ve corrido. Con holgura la pantalla se
+  puede desplazar y se llega a todo, como ya pasaba en `/progress`; sin ella queda inalcanzable
+  hasta recargar. `dvh` sigue prohibido en el marco: es el único que se recalcula bajo el dedo.
+  `vh` es tan estático como `svh`, y la barra inferior no se esconde tras la barra del navegador
+  porque el scrollport coincide con lo visible.
 - **Los overlays se montan en el `body`**, con `createPortal`: el menú de ajustes, la ayuda de
   los juegos y `ConfirmDialog`. Un antepasado con `filter` o `backdrop-filter` —`.app-header`
   tiene uno— convierte `position: fixed` en relativo a ese antepasado, así que un panel escrito

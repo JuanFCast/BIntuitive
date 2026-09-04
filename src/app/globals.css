@@ -140,13 +140,30 @@ button {
  *
  * `min-height` en vez de `height`: si el contenido es más alto —el panal en un
  * teléfono pequeño— la página crece y se desplaza como cualquier otra.
- * `svh` y no `dvh`: el viewport pequeño es el único que no cambia mientras se
- * desplaza, así que la altura no se recalcula bajo el dedo. `100vh` queda
- * delante como reserva para quien no entienda `svh`.
+ *
+ * `vh` y NO `svh`, aunque `svh` sea el que mide justo lo visible. Medido en
+ * iPhone: `vh` = 874, `svh` = 766 = lo visible, y la diferencia son los 108px
+ * de las barras de Chrome. Con `svh` el documento medía exactamente el
+ * viewport y `scrollHeight == clientHeight`: cero holgura de desplazamiento.
+ *
+ * Esa holgura es lo que separa una pantalla rota de una pantalla recuperable.
+ * Al volver por el mismo enlace desde otra aplicación, Chrome de iPhone
+ * presenta el documento en una región de pantalla que no es la que le ha dicho
+ * al documento que tiene: el layout es correcto —los rects miden lo mismo que
+ * en una carga sana, comprobado— pero se ve corrido, con el encabezado cortado
+ * y una franja de fondo debajo. En `/progress`, que sí tiene contenido de
+ * sobra, el desplazamiento también ocurre y sin embargo la pantalla se sigue
+ * pudiendo usar: se desplaza y se llega a todo. En Explore no había nada que
+ * desplazar, así que lo que quedaba fuera era inalcanzable hasta recargar.
+ *
+ * `vh` tampoco reintroduce el problema por el que en su día se eligió `svh`
+ * frente a `dvh`: el que se recalcula bajo el dedo es `dvh`. `vh` es tan
+ * estático como `svh`. Y la barra inferior no se esconde detrás de la barra
+ * del navegador, porque el scrollport coincide con lo visible (`cliH - vvH`
+ * medido = 0): `sticky` la ancla al borde que se ve, no al de disposición.
  */
 .app-shell {
   min-height: 100vh;
-  min-height: 100svh;
   background: var(--color-cream);
 }
 
@@ -214,18 +231,15 @@ button {
  * Ya no es un contenedor de scroll propio: crece con su contenido y deja que
  * se desplace la página. Un scroll dentro de otro es justo lo que se atascaba.
  *
- * Su alto mínimo es lo que queda del viewport pequeño entre el encabezado y la
- * barra: con eso, en una página corta la barra cae exactamente en el borde
- * inferior de la pantalla, sin que el marco tenga que ser un contenedor flex.
+ * Su alto mínimo es lo que queda entre el encabezado y la barra. Se mide
+ * contra `vh` por lo mismo que `.app-shell`: que el documento sea algo más
+ * alto que lo visible y siempre quede holgura para desplazarse.
  */
 .app-shell-content {
   display: flex;
   min-width: 0;
   min-height: calc(
     100vh - var(--app-header-height) - var(--app-navigation-height)
-  );
-  min-height: calc(
-    100svh - var(--app-header-height) - var(--app-navigation-height)
   );
   flex-direction: column;
 }
