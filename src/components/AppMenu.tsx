@@ -24,7 +24,7 @@ import { setMuted, setTextSize, type TextSize } from "@/lib/storage";
  * detrás mientras está abierto.
  *
  * El panel se monta en `document.body`, no dentro del encabezado. El
- * encabezado lleva `backdrop-filter`, y un antepasado con filtro convierte
+ * encabezado podria llevar un filtro, y un antepasado con filtro convierte
  * `position: fixed` en "relativo a ese antepasado": el panel se mediría contra
  * una franja de sesenta píxeles y el fondo oscuro no taparía la página. Desde
  * el `body` se mide contra la ventana en cualquier navegador, y además queda

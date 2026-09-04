@@ -28,7 +28,7 @@ type ConfirmDialogProps = {
  *
  * Se monta en `document.body`, no donde se escribe. Un diálogo a pantalla
  * completa tiene que medirse contra la ventana, y desde dentro del árbol no
- * siempre puede: basta un antepasado con `filter` o `backdrop-filter` —el
+ * siempre puede: basta un antepasado con `filter` o `backdrop-filter` —un
  * encabezado de la aplicación tiene uno— para que `position: fixed` pase a
  * medirse contra ese antepasado en vez de contra la ventana. Además así queda
  * por encima de la barra inferior, que si no seguiría pintada sobre el fondo
