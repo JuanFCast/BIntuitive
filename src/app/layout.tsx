@@ -44,10 +44,14 @@ html.bintuitive-ios-booting::before {
   background: url("/brand-mark.png") center / contain no-repeat;
   box-shadow: 0 0.75rem 2.5rem rgb(74 56 0 / 0.16);
   content: "";
-  opacity: 1;
+  opacity: 0;
   transform: translate3d(-50%, -50%, 0);
   transition: opacity 180ms ease;
   will-change: opacity;
+}
+
+html.bintuitive-ios-booting.bintuitive-ios-logo-visible::before {
+  opacity: 1;
 }
 
 html.bintuitive-ios-booting.bintuitive-ios-ready body {
@@ -86,18 +90,25 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
   var lastEntryKey = "bintuitive:ios-chrome-last-entry";
   var entry = location.href;
   var bootClass = "bintuitive-ios-booting";
+  var logoClass = "bintuitive-ios-logo-visible";
   var readyClass = "bintuitive-ios-ready";
   var root = document.documentElement;
 
-  function revealAfterLoad(delay) {
+  function revealAfterLoad(settleDelay) {
     addEventListener("load", function () {
       setTimeout(function () {
-        root.classList.add(readyClass);
+        // Chrome ya terminó de cambiar el tamaño y la posición de su lienzo.
+        // El logo solo se pinta a partir de este punto, nunca mientras se mueve.
+        root.classList.add(logoClass);
         setTimeout(function () {
-          root.classList.remove(readyClass);
-          root.classList.remove(bootClass);
-        }, 220);
-      }, delay);
+          root.classList.add(readyClass);
+          setTimeout(function () {
+            root.classList.remove(readyClass);
+            root.classList.remove(logoClass);
+            root.classList.remove(bootClass);
+          }, 220);
+        }, 550);
+      }, settleDelay);
     }, { once: true });
   }
 
@@ -105,7 +116,7 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
     if (sessionStorage.getItem(guard) === entry) {
       sessionStorage.removeItem(guard);
       root.classList.add(bootClass);
-      revealAfterLoad(150);
+      revealAfterLoad(350);
       return;
     }
 
@@ -121,7 +132,7 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
     // Una entrada aislada nace bien. El fallo aparece al abrir otro enlace
     // desde WhatsApp mientras Chrome conserva la superficie de la anterior.
     if (!lastEntry || now - lastEntry > 24 * 60 * 60 * 1000) {
-      revealAfterLoad(450);
+      revealAfterLoad(700);
       return;
     }
 
