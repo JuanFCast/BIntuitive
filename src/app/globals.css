@@ -163,14 +163,7 @@ button {
   height: var(--app-header-height);
   padding-top: env(safe-area-inset-top);
   border-bottom: 1px solid rgb(23 23 23 / 0.07);
-  /*
-   * Fondo opaco y SIN `backdrop-filter`. El desenfoque obligaba a WebKit a
-   * sacar esta barra a una capa de composición propia, y `sticky` sobre una
-   * capa así es un caso que iOS tiene roto: la barra deja de pegarse y se va
-   * con el desplazamiento, que es el "encabezado cortado" del fallo de Chrome
-   * de iPhone. Como el fondo ya no es traslúcido, no hay nada que desenfocar
-   * y la barra se ve igual. No reintroducir el desenfoque.
-   */
+  /* Fondo opaco: evita una capa de composición innecesaria en WebKit. */
   background: var(--color-cream);
   box-shadow: 0 0.2rem 0.8rem rgb(74 56 0 / 0.035);
 }
@@ -308,9 +301,12 @@ button {
   content: "";
 }
 
-.bottom-navigation-item:hover {
-  color: var(--color-ink);
-  background: rgb(255 196 0 / 0.08);
+/* iOS emula `:hover` después de un toque y puede dejar marcada otra pestaña. */
+@media (hover: hover) and (pointer: fine) {
+  .bottom-navigation-item:hover {
+    color: var(--color-ink);
+    background: rgb(255 196 0 / 0.08);
+  }
 }
 
 .bottom-navigation-item:active {
