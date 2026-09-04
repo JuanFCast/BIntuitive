@@ -16,6 +16,43 @@ const title = siteName;
 const description = siteDescription;
 const socialImageUrl = `${siteUrl}/bintuitive-og.png`;
 
+/*
+ * Chrome/iOS puede presentar una navegación abierta desde otra aplicación en
+ * un WKWebView cuyo lienzo conserva el inset de la pestaña anterior. La página
+ * no puede detectarlo: sus rectángulos, scrollY y visualViewport siguen siendo
+ * correctos, aunque Chrome pinte todo detrás de sus barras. Una recarga sí
+ * obliga al navegador a crear la superficie con los insets actuales.
+ *
+ * El script corre antes de pintar, solo en CriOS y solo al entrar mediante una
+ * navegación nueva. sessionStorage sobrevive a la recarga y se consume en el
+ * segundo documento, por lo que cada entrada se recarga una vez y nunca forma
+ * un bucle. Las navegaciones internas y las partidas no se tocan.
+ */
+const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
+(function () {
+  if (!/CriOS\//.test(navigator.userAgent)) return;
+  if (!/^\/(hexagons|progress|profile)\/?$/.test(location.pathname)) return;
+
+  var guard = "bintuitive:ios-chrome-viewport-reload";
+  var entry = location.href;
+
+  try {
+    if (sessionStorage.getItem(guard) === entry) {
+      sessionStorage.removeItem(guard);
+      return;
+    }
+
+    var navigations = performance.getEntriesByType("navigation");
+    if (navigations.length && navigations[0].type !== "navigate") return;
+
+    sessionStorage.setItem(guard, entry);
+    location.reload();
+  } catch (_) {
+    // Sin sessionStorage no es posible garantizar que la recarga no se repita.
+  }
+})();
+`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title,
@@ -77,6 +114,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={baloo.variable}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: IOS_CHROME_VIEWPORT_RECOVERY }}
+        />
+      </head>
       <body className="font-sans antialiased">
         <LanguageProvider>
           <TextSizePreference />

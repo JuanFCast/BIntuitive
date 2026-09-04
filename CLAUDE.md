@@ -187,11 +187,12 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
   viewport de disposición, que no encoge cuando el navegador enseña sus barras, y el resultado
   era encabezado cortado, barra inferior flotando sobre una franja vacía y scroll congelado
   hasta recargar. `svh` y no `dvh` para dimensionar: el viewport pequeño es el único que no
-  cambia mientras se desplaza, así que nada se redimensiona bajo el dedo. `ViewportSync` cubre
-  otro fallo de Chrome/iOS: al abrir otra vez un enlace, el `UIScrollView` nativo puede conservar
-  un offset que no aparece en `window.scrollY`. Le da dos píxeles temporales de recorrido, hace
-  un avance/regreso de uno y los retira; no sustituirlo por altura `100vh` permanente, porque
-  esa diferencia es precisamente la franja vacía que se ve bajo la barra.
+  cambia mientras se desplaza, así que nada se redimensiona bajo el dedo. El script temprano
+  `IOS_CHROME_VIEWPORT_RECOVERY` cubre otro fallo de Chrome/iOS: al abrir otra vez un enlace desde
+  una aplicación, el `WKWebView` puede conservar un inset nativo que no aparece en `scrollY`, en
+  `visualViewport` ni en los rectángulos del DOM. Por eso recarga una vez, antes de pintar, cada
+  navegación nueva de CriOS hacia una pantalla principal; `sessionStorage` evita el bucle. No
+  sustituirlo por altura `100vh` permanente: esa diferencia es la franja vacía bajo la barra.
 - **Los overlays se montan en el `body`**, con `createPortal`: el menú de ajustes, la ayuda de
   los juegos y `ConfirmDialog`. Un antepasado con `filter` o `backdrop-filter` convierte
   `position: fixed` en relativo a ese antepasado, así que un panel escrito
