@@ -3,6 +3,7 @@ import { Baloo_2 } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n";
 import { siteDescription, siteName, siteUrl } from "./siteMetadata";
 import AppShell from "@/components/AppShell";
+import ScrollAnchor from "@/components/ScrollAnchor";
 import TextSizePreference from "@/components/TextSizePreference";
 import "./globals.css";
 
@@ -99,6 +100,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <LanguageProvider>
           <TextSizePreference />
+          <ScrollAnchor />
           <AppShell>{children}</AppShell>
         </LanguageProvider>
       </body>
