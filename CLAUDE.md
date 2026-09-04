@@ -195,7 +195,9 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
   funde con la aplicación después de `load`; una entrada posterior espera 1,5 s para que Chrome
   termine de animar sus barras y recarga una vez, conservando la marca hasta que el documento
   corregido está listo. Así el layout desplazado nunca se pinta y `sessionStorage` evita el
-  bucle. El metadato `google=notranslate` impide además que el panel redundante de traducción
+  bucle. El logo se ancla en `50svh` (no en `50%`) y no se anima: así su posición no sigue la
+  altura dinámica de las barras de Chrome durante la carga. El metadato `google=notranslate`
+  impide además que el panel redundante de traducción
   cambie esos insets durante la apertura. No sustituirlo por altura `100vh` permanente: esa
   diferencia es la franja vacía bajo la barra.
 - **Los overlays se montan en el `body`**, con `createPortal`: el menú de ajustes, la ayuda de

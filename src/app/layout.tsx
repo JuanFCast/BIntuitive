@@ -30,8 +30,14 @@ html.bintuitive-ios-booting body {
 html.bintuitive-ios-booting::before {
   position: fixed;
   z-index: 2147483647;
+  /*
+   * El porcentaje de un elemento fixed sigue el viewport dinámico de Chrome y
+   * salta cuando sus barras cambian de tamaño. svh conserva la altura del
+   * viewport pequeño durante toda la transición.
+   */
   top: 50%;
-  left: 50%;
+  top: 50svh;
+  left: 50vw;
   width: 5.5rem;
   height: 5.5rem;
   border-radius: 1.25rem;
@@ -39,9 +45,9 @@ html.bintuitive-ios-booting::before {
   box-shadow: 0 0.75rem 2.5rem rgb(74 56 0 / 0.16);
   content: "";
   opacity: 1;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
   transition: opacity 180ms ease;
-  animation: bintuitive-recovery-pulse 900ms ease-in-out infinite alternate;
+  will-change: opacity;
 }
 
 html.bintuitive-ios-booting.bintuitive-ios-ready body {
@@ -53,13 +59,6 @@ html.bintuitive-ios-booting.bintuitive-ios-ready::before {
   opacity: 0;
 }
 
-@keyframes bintuitive-recovery-pulse {
-  to { transform: translate(-50%, -50%) scale(1.06); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html.bintuitive-ios-booting::before { animation: none; }
-}
 `;
 
 /*
