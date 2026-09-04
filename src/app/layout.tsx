@@ -17,16 +17,17 @@ const description = siteDescription;
 const socialImageUrl = `${siteUrl}/bintuitive-og.png`;
 
 const IOS_CHROME_RECOVERY_STYLE = `
-html.bintuitive-ios-recovering,
-html.bintuitive-ios-recovering body {
+html.bintuitive-ios-booting,
+html.bintuitive-ios-booting body {
   background: #f7f4ea !important;
 }
 
-html.bintuitive-ios-recovering body {
-  visibility: hidden !important;
+html.bintuitive-ios-booting body {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-html.bintuitive-ios-recovering::before {
+html.bintuitive-ios-booting::before {
   position: fixed;
   z-index: 2147483647;
   top: 50%;
@@ -37,8 +38,19 @@ html.bintuitive-ios-recovering::before {
   background: url("/brand-mark.png") center / contain no-repeat;
   box-shadow: 0 0.75rem 2.5rem rgb(74 56 0 / 0.16);
   content: "";
+  opacity: 1;
   transform: translate(-50%, -50%);
+  transition: opacity 180ms ease;
   animation: bintuitive-recovery-pulse 900ms ease-in-out infinite alternate;
+}
+
+html.bintuitive-ios-booting.bintuitive-ios-ready body {
+  opacity: 1 !important;
+  transition: opacity 180ms ease;
+}
+
+html.bintuitive-ios-booting.bintuitive-ios-ready::before {
+  opacity: 0;
 }
 
 @keyframes bintuitive-recovery-pulse {
@@ -46,7 +58,7 @@ html.bintuitive-ios-recovering::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.bintuitive-ios-recovering::before { animation: none; }
+  html.bintuitive-ios-booting::before { animation: none; }
 }
 `;
 
@@ -58,13 +70,13 @@ html.bintuitive-ios-recovering::before {
  * obliga al navegador a crear la superficie con los insets actuales.
  *
  * El script se instala antes de pintar, solo en CriOS y solo al entrar mediante
- * una navegación nueva. La primera apertura reciente se recuerda en
- * localStorage; solo una apertura posterior activa la recuperación. Mientras
- * Chrome termina de animar su barra se oculta el documento tras una pantalla de
- * marca, de modo que nunca se enseña el layout desplazado. sessionStorage
- * sobrevive a la recarga y se consume en el segundo documento, por lo que cada
- * entrada se recarga una vez y nunca forma un bucle. Las navegaciones internas
- * y las partidas no se tocan.
+ * una navegación nueva. Todas las aperturas enseñan la misma pantalla de marca:
+ * una primera entrada la funde con la aplicación al terminar de cargar y solo
+ * una apertura posterior activa la recuperación. Mientras Chrome termina de
+ * animar su barra se oculta el documento, de modo que nunca se enseña el layout
+ * desplazado. sessionStorage sobrevive a la recarga y se consume en el segundo
+ * documento, por lo que cada entrada se recarga una vez y nunca forma un bucle.
+ * Las navegaciones internas y las partidas no se tocan.
  */
 const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
 (function () {
@@ -74,16 +86,34 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
   var guard = "bintuitive:ios-chrome-viewport-reload";
   var lastEntryKey = "bintuitive:ios-chrome-last-entry";
   var entry = location.href;
-  var recoveryClass = "bintuitive-ios-recovering";
+  var bootClass = "bintuitive-ios-booting";
+  var readyClass = "bintuitive-ios-ready";
+  var root = document.documentElement;
+
+  function revealAfterLoad(delay) {
+    addEventListener("load", function () {
+      setTimeout(function () {
+        root.classList.add(readyClass);
+        setTimeout(function () {
+          root.classList.remove(readyClass);
+          root.classList.remove(bootClass);
+        }, 220);
+      }, delay);
+    }, { once: true });
+  }
 
   try {
     if (sessionStorage.getItem(guard) === entry) {
       sessionStorage.removeItem(guard);
+      root.classList.add(bootClass);
+      revealAfterLoad(150);
       return;
     }
 
     var navigations = performance.getEntriesByType("navigation");
     if (navigations.length && navigations[0].type !== "navigate") return;
+
+    root.classList.add(bootClass);
 
     var now = Date.now();
     var lastEntry = Number(localStorage.getItem(lastEntryKey) || 0);
@@ -91,9 +121,10 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
 
     // Una entrada aislada nace bien. El fallo aparece al abrir otro enlace
     // desde WhatsApp mientras Chrome conserva la superficie de la anterior.
-    if (!lastEntry || now - lastEntry > 24 * 60 * 60 * 1000) return;
-
-    document.documentElement.classList.add(recoveryClass);
+    if (!lastEntry || now - lastEntry > 24 * 60 * 60 * 1000) {
+      revealAfterLoad(450);
+      return;
+    }
 
     addEventListener("load", function () {
       setTimeout(function () {
@@ -101,12 +132,13 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
           sessionStorage.setItem(guard, entry);
           location.reload();
         } catch (_) {
-          document.documentElement.classList.remove(recoveryClass);
+          root.classList.remove(bootClass);
         }
       }, 1500);
     }, { once: true });
   } catch (_) {
     // Sin sessionStorage no es posible garantizar que la recarga no se repita.
+    root.classList.remove(bootClass);
   }
 })();
 `;

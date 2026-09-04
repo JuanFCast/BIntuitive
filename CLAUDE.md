@@ -191,10 +191,11 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
   `IOS_CHROME_VIEWPORT_RECOVERY` cubre otro fallo de Chrome/iOS: al abrir otra vez un enlace desde
   una aplicación, el `WKWebView` puede conservar un inset nativo que no aparece en `scrollY`, en
   `visualViewport` ni en los rectángulos del DOM. La primera entrada reciente se registra en
-  `localStorage`; una entrada posterior muestra la pantalla de marca
-  `.bintuitive-ios-recovering`, espera 1,5 s después de `load` para que Chrome termine de animar
-  sus barras y recarga una vez. Así el layout desplazado nunca se pinta y `sessionStorage` evita
-  el bucle. El metadato `google=notranslate` impide además que el panel redundante de traducción
+  `localStorage`. Toda entrada nueva de CriOS muestra `.bintuitive-ios-booting`: en la primera se
+  funde con la aplicación después de `load`; una entrada posterior espera 1,5 s para que Chrome
+  termine de animar sus barras y recarga una vez, conservando la marca hasta que el documento
+  corregido está listo. Así el layout desplazado nunca se pinta y `sessionStorage` evita el
+  bucle. El metadato `google=notranslate` impide además que el panel redundante de traducción
   cambie esos insets durante la apertura. No sustituirlo por altura `100vh` permanente: esa
   diferencia es la franja vacía bajo la barra.
 - **Los overlays se montan en el `body`**, con `createPortal`: el menú de ajustes, la ayuda de
