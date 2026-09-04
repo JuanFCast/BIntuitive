@@ -16,6 +16,40 @@ const title = siteName;
 const description = siteDescription;
 const socialImageUrl = `${siteUrl}/bintuitive-og.png`;
 
+const IOS_CHROME_RECOVERY_STYLE = `
+html.bintuitive-ios-recovering,
+html.bintuitive-ios-recovering body {
+  background: #f7f4ea !important;
+}
+
+html.bintuitive-ios-recovering body {
+  visibility: hidden !important;
+}
+
+html.bintuitive-ios-recovering::before {
+  position: fixed;
+  z-index: 2147483647;
+  top: 50%;
+  left: 50%;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 1.25rem;
+  background: url("/brand-mark.png") center / contain no-repeat;
+  box-shadow: 0 0.75rem 2.5rem rgb(74 56 0 / 0.16);
+  content: "";
+  transform: translate(-50%, -50%);
+  animation: bintuitive-recovery-pulse 900ms ease-in-out infinite alternate;
+}
+
+@keyframes bintuitive-recovery-pulse {
+  to { transform: translate(-50%, -50%) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.bintuitive-ios-recovering::before { animation: none; }
+}
+`;
+
 /*
  * Chrome/iOS puede presentar una navegación abierta desde otra aplicación en
  * un WKWebView cuyo lienzo conserva el inset de la pestaña anterior. La página
@@ -24,12 +58,13 @@ const socialImageUrl = `${siteUrl}/bintuitive-og.png`;
  * obliga al navegador a crear la superficie con los insets actuales.
  *
  * El script se instala antes de pintar, solo en CriOS y solo al entrar mediante
- * una navegación nueva. La recarga espera después de `load`: hacerla de
- * inmediato repite el fallo porque Chrome aún está animando su barra y creando
- * la pestaña abierta por la aplicación externa. sessionStorage sobrevive a la
- * recarga y se consume en el segundo documento, por lo que cada entrada se
- * recarga una vez y nunca forma un bucle. Las navegaciones internas y las
- * partidas no se tocan.
+ * una navegación nueva. La primera apertura reciente se recuerda en
+ * localStorage; solo una apertura posterior activa la recuperación. Mientras
+ * Chrome termina de animar su barra se oculta el documento tras una pantalla de
+ * marca, de modo que nunca se enseña el layout desplazado. sessionStorage
+ * sobrevive a la recarga y se consume en el segundo documento, por lo que cada
+ * entrada se recarga una vez y nunca forma un bucle. Las navegaciones internas
+ * y las partidas no se tocan.
  */
 const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
 (function () {
@@ -37,7 +72,9 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
   if (!/^\/(hexagons|progress|profile)\/?$/.test(location.pathname)) return;
 
   var guard = "bintuitive:ios-chrome-viewport-reload";
+  var lastEntryKey = "bintuitive:ios-chrome-last-entry";
   var entry = location.href;
+  var recoveryClass = "bintuitive-ios-recovering";
 
   try {
     if (sessionStorage.getItem(guard) === entry) {
@@ -48,12 +85,24 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
     var navigations = performance.getEntriesByType("navigation");
     if (navigations.length && navigations[0].type !== "navigate") return;
 
+    var now = Date.now();
+    var lastEntry = Number(localStorage.getItem(lastEntryKey) || 0);
+    localStorage.setItem(lastEntryKey, String(now));
+
+    // Una entrada aislada nace bien. El fallo aparece al abrir otro enlace
+    // desde WhatsApp mientras Chrome conserva la superficie de la anterior.
+    if (!lastEntry || now - lastEntry > 24 * 60 * 60 * 1000) return;
+
+    document.documentElement.classList.add(recoveryClass);
+
     addEventListener("load", function () {
       setTimeout(function () {
         try {
           sessionStorage.setItem(guard, entry);
           location.reload();
-        } catch (_) {}
+        } catch (_) {
+          document.documentElement.classList.remove(recoveryClass);
+        }
       }, 1500);
     }, { once: true });
   } catch (_) {
@@ -128,6 +177,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={baloo.variable}>
       <head>
+        <style dangerouslySetInnerHTML={{ __html: IOS_CHROME_RECOVERY_STYLE }} />
         <script
           dangerouslySetInnerHTML={{ __html: IOS_CHROME_VIEWPORT_RECOVERY }}
         />
