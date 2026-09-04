@@ -23,10 +23,13 @@ const socialImageUrl = `${siteUrl}/bintuitive-og.png`;
  * correctos, aunque Chrome pinte todo detrás de sus barras. Una recarga sí
  * obliga al navegador a crear la superficie con los insets actuales.
  *
- * El script corre antes de pintar, solo en CriOS y solo al entrar mediante una
- * navegación nueva. sessionStorage sobrevive a la recarga y se consume en el
- * segundo documento, por lo que cada entrada se recarga una vez y nunca forma
- * un bucle. Las navegaciones internas y las partidas no se tocan.
+ * El script se instala antes de pintar, solo en CriOS y solo al entrar mediante
+ * una navegación nueva. La recarga espera después de `load`: hacerla de
+ * inmediato repite el fallo porque Chrome aún está animando su barra y creando
+ * la pestaña abierta por la aplicación externa. sessionStorage sobrevive a la
+ * recarga y se consume en el segundo documento, por lo que cada entrada se
+ * recarga una vez y nunca forma un bucle. Las navegaciones internas y las
+ * partidas no se tocan.
  */
 const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
 (function () {
@@ -45,8 +48,14 @@ const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
     var navigations = performance.getEntriesByType("navigation");
     if (navigations.length && navigations[0].type !== "navigate") return;
 
-    sessionStorage.setItem(guard, entry);
-    location.reload();
+    addEventListener("load", function () {
+      setTimeout(function () {
+        try {
+          sessionStorage.setItem(guard, entry);
+          location.reload();
+        } catch (_) {}
+      }, 1500);
+    }, { once: true });
   } catch (_) {
     // Sin sessionStorage no es posible garantizar que la recarga no se repita.
   }
@@ -99,6 +108,10 @@ export const metadata: Metadata = {
      * Duplicarlo no cuesta nada: quien entiende el nuevo ignora este.
      */
     "apple-mobile-web-app-capable": "yes",
+    // La aplicación ya ofrece español e inglés. Además de ser redundante, el
+    // panel nativo de traducción cambia los insets del viewport mientras
+    // Chrome/iOS termina de abrir una pestaña desde WhatsApp.
+    google: "notranslate",
   },
 };
 

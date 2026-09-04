@@ -190,9 +190,12 @@ publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`
   cambia mientras se desplaza, así que nada se redimensiona bajo el dedo. El script temprano
   `IOS_CHROME_VIEWPORT_RECOVERY` cubre otro fallo de Chrome/iOS: al abrir otra vez un enlace desde
   una aplicación, el `WKWebView` puede conservar un inset nativo que no aparece en `scrollY`, en
-  `visualViewport` ni en los rectángulos del DOM. Por eso recarga una vez, antes de pintar, cada
-  navegación nueva de CriOS hacia una pantalla principal; `sessionStorage` evita el bucle. No
-  sustituirlo por altura `100vh` permanente: esa diferencia es la franja vacía bajo la barra.
+  `visualViewport` ni en los rectángulos del DOM. Por eso recarga una vez cada navegación nueva
+  de CriOS hacia una pantalla principal; espera 1,5 s después de `load` para que Chrome termine
+  de animar sus barras antes de reconstruir el documento, y `sessionStorage` evita el bucle. El
+  metadato `google=notranslate` impide además que el panel redundante de traducción cambie esos
+  insets durante la apertura. No sustituirlo por altura `100vh` permanente: esa diferencia es
+  la franja vacía bajo la barra.
 - **Los overlays se montan en el `body`**, con `createPortal`: el menú de ajustes, la ayuda de
   los juegos y `ConfirmDialog`. Un antepasado con `filter` o `backdrop-filter` convierte
   `position: fixed` en relativo a ese antepasado, así que un panel escrito
