@@ -72,22 +72,9 @@ export default function AppMenu() {
         aria-label={t("menuAria")}
         aria-expanded={open}
         aria-controls={panelId}
-        className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink/15 bg-white text-ink shadow-sm transition-transform active:scale-90"
+        className="flex h-12 w-12 items-center justify-center rounded-2xl text-ink transition-transform active:scale-90"
       >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-5 w-5"
-          role="presentation"
-          aria-hidden="true"
-        >
-          <path
-            d="M4 7h16M4 12h16M4 17h16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-        </svg>
+        <MenuHexagons open={open} />
       </button>
 
       {open &&
@@ -249,5 +236,65 @@ function Segmented<T extends string | boolean>({
         );
       })}
     </>
+  );
+}
+
+/**
+ * Un hexágono pointy-top de radio 3 centrado en x = 12 dentro del `viewBox`
+ * de 24: la misma figura del panal de Explore, en miniatura.
+ */
+function hexagonPoints(cy: number) {
+  const radius = 3;
+  const half = (radius * Math.sqrt(3)) / 2;
+  return [
+    [12, cy - radius],
+    [12 + half, cy - radius / 2],
+    [12 + half, cy + radius / 2],
+    [12, cy + radius],
+    [12 - half, cy + radius / 2],
+    [12 - half, cy - radius / 2],
+  ]
+    .map(([x, y]) => `${x.toFixed(3)},${y.toFixed(3)}`)
+    .join(" ");
+}
+
+/*
+ * Cerrado, los tres hexágonos forman una columna: se lee "menú" como las tres
+ * rayas de siempre. Abierto, las filas se desplazan media ficha y la columna
+ * se convierte en un trozo de panal, el teselado de Explore. El
+ * desplazamiento va en unidades del `viewBox`, así que es el mismo a cualquier
+ * tamaño y no depende de la preferencia de texto.
+ */
+const MENU_HEXAGONS = [
+  { cy: 4.5, fill: "fill-sun", shift: -1.3 },
+  { cy: 12, fill: "fill-sky", shift: 1.3 },
+  { cy: 19.5, fill: "fill-berry", shift: -1.3 },
+];
+
+/**
+ * El icono del botón de ajustes. No lleva círculo blanco detrás: las piezas
+ * van sueltas sobre el fondo del encabezado y el área táctil la da el botón,
+ * que sigue midiendo 3rem aunque no se vea.
+ */
+function MenuHexagons({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-7 w-7"
+      role="presentation"
+      aria-hidden="true"
+    >
+      {MENU_HEXAGONS.map(({ cy, fill, shift }) => (
+        <polygon
+          key={cy}
+          points={hexagonPoints(cy)}
+          className={`${fill} transition-transform duration-200 ease-out`}
+          style={{ transform: `translateX(${open ? shift : 0}px)` }}
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeLinejoin="round"
+        />
+      ))}
+    </svg>
   );
 }
