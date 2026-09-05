@@ -266,15 +266,19 @@ function hexagonPoints(cy: number) {
  * tamaño y no depende de la preferencia de texto.
  */
 const MENU_HEXAGONS = [
-  { cy: 4.5, fill: "fill-sun", shift: -1.3 },
-  { cy: 12, fill: "fill-sky", shift: 1.3 },
-  { cy: 19.5, fill: "fill-berry", shift: -1.3 },
+  { cy: 4.5, shift: -1.3 },
+  { cy: 12, shift: 1.3 },
+  { cy: 19.5, shift: -1.3 },
 ];
 
 /**
  * El icono del botón de ajustes. No lleva círculo blanco detrás: las piezas
  * van sueltas sobre el fondo del encabezado y el área táctil la da el botón,
  * que sigue midiendo 3rem aunque no se vea.
+ *
+ * Las tres del mismo `sun` que las fichas de Explore: son un trozo del panal,
+ * no tres cosas distintas, y el contorno de `ink` es lo que las despega del
+ * cream del encabezado.
  */
 function MenuHexagons({ open }: { open: boolean }) {
   return (
@@ -284,11 +288,11 @@ function MenuHexagons({ open }: { open: boolean }) {
       role="presentation"
       aria-hidden="true"
     >
-      {MENU_HEXAGONS.map(({ cy, fill, shift }) => (
+      {MENU_HEXAGONS.map(({ cy, shift }) => (
         <polygon
           key={cy}
           points={hexagonPoints(cy)}
-          className={`${fill} transition-transform duration-200 ease-out`}
+          className="fill-sun transition-transform duration-200 ease-out"
           style={{ transform: `translateX(${open ? shift : 0}px)` }}
           stroke="currentColor"
           strokeWidth="1"
