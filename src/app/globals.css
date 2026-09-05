@@ -576,41 +576,43 @@ button {
 
 .hexagons-grid {
   /*
-   * El panal movil es una columna alta: el ancho lo manda la altura de la
-   * ventana, no al reves, para que las cinco filas quepan enteras entre la
+   * El panal movil son dos columnas, no una: en un telefono el ancho lo manda
+   * la altura de la ventana, para que las cuatro filas quepan enteras entre la
    * cabecera y la barra inferior sin hacer scroll. Se mide contra `svh`, el
-   * viewport pequeno: es el que no cambia al plegarse las barras del navegador,
-   * asi que el panal no se redimensiona bajo el dedo. Si aun asi no cupiera
-   * —texto muy grande, pantalla muy baja— la pagina se desplaza; los hexagonos
-   * no se encogen para forzar que quepa.
+   * viewport pequeno: es el que no cambia al plegarse las barras del
+   * navegador, asi que el panal no se redimensiona bajo el dedo. Si aun asi no
+   * cupiera —texto muy grande, pantalla muy baja— la pagina se desplaza; los
+   * hexagonos no se encogen para forzar que quepa.
    *
-   * Geometria: la rejilla mide dos fichas de ancho, la ficha es un hexagono
-   * pointy-top de aspect-ratio 0.8660254 (raiz de 3 partido por 2) y las filas
-   * se solapan con el paso vertical de 3/4 de la altura de ficha propio del
-   * teselado. Cinco filas dan una altura de 4 pasos mas una ficha, es decir
-   * 2.3094011 anchos de rejilla, de ahi el aspect-ratio 0.4330127.
+   * Geometria: la ficha es un hexagono pointy-top de aspect-ratio 0.8660254
+   * (raiz de 3 partido por 2) y las filas se solapan con el paso vertical de
+   * 3/4 de la altura de ficha propio del teselado. Las filas alternan entre
+   * pegadas al borde y corridas media ficha, asi que la rejilla mide dos
+   * fichas y media de ancho: la ficha es el 40% de la rejilla. Cuatro filas
+   * dan una altura de 3 pasos mas una ficha —3.25 alturas de ficha—, de ahi el
+   * aspect-ratio 2.5 * 0.8660254 / 3.25 = 0.6661734.
    */
-  width: min(100%, calc((100svh - 17rem) * 0.4330127));
-  max-width: 24rem;
-  aspect-ratio: 0.4330127;
+  width: min(100%, calc((100svh - 17rem) * 0.6661734));
+  max-width: 30rem;
+  aspect-ratio: 0.6661734;
   filter: drop-shadow(0 6px 10px rgb(120 88 0 / 0.08));
 }
 
 .hexagon-card {
-  width: 50%;
+  width: 40%;
   aspect-ratio: 0.8660254;
 }
 
 /*
- * Panal vertical de 7 hexagonos en movil: filas 2-1-2-1-1.
- * Todas las filas caen en el mismo teselado, alternando columnas a ras de la
- * rejilla (izquierda 0 y 50%) y columnas desplazadas media ficha (25%), con el
- * paso constante de 3/4 de altura: 0, 18.75%, 37.5%, 56.25% y 75% de la altura
- * total, que es justo un paso entre filas consecutivas.
+ * Panal de 7 hexagonos en movil: filas 2-2-2-1, de dos en dos.
+ * Las filas impares nacen en el borde izquierdo (0 y 40%) y las pares van
+ * corridas media ficha (20% y 60%), con el paso constante de 3/4 de altura:
+ * 0, 23.0769%, 46.1538% y 69.2308% de la altura total.
  *
- * El septimo NO va centrado bajo el sexto: ocupa la posicion lateral que le
- * toca en el teselado, como si empezara una fila de dos y faltase su pareja a
- * la derecha. Asi el panal se lee incompleto en vez de terminar en columna.
+ * El septimo abre la ultima fila y deja su pareja vacia a la derecha: el panal
+ * se lee incompleto, que es lo que es. Un octavo cae justo en ese hueco
+ * (left: 60%, top: 69.2308%) y no cambia ni el numero de filas ni el
+ * `aspect-ratio` de la rejilla.
  */
 .hexagon-card:nth-child(1) {
   left: 0;
@@ -618,33 +620,33 @@ button {
 }
 
 .hexagon-card:nth-child(2) {
-  left: 50%;
+  left: 40%;
   top: 0;
 }
 
 .hexagon-card:nth-child(3) {
-  left: 25%;
-  top: 18.75%;
+  left: 20%;
+  top: 23.0769%;
 }
 
 .hexagon-card:nth-child(4) {
-  left: 0;
-  top: 37.5%;
+  left: 60%;
+  top: 23.0769%;
 }
 
 .hexagon-card:nth-child(5) {
-  left: 50%;
-  top: 37.5%;
+  left: 0;
+  top: 46.1538%;
 }
 
 .hexagon-card:nth-child(6) {
-  left: 25%;
-  top: 56.25%;
+  left: 40%;
+  top: 46.1538%;
 }
 
 .hexagon-card:nth-child(7) {
-  left: 0;
-  top: 75%;
+  left: 20%;
+  top: 69.2308%;
 }
 
 @media (min-width: 640px) {
@@ -720,7 +722,7 @@ button {
 
   .hexagons-grid {
     margin-top: 0.75rem;
-    width: min(100%, calc((100svh - 14rem) * 0.4330127));
+    width: min(100%, calc((100svh - 14rem) * 0.6661734));
   }
 
   .hexagon-emoji {

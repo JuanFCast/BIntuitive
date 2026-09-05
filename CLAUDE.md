@@ -155,11 +155,14 @@ src/lib/
 6. `src/lib/i18n.tsx` — añadir todas las claves nuevas a `messages.en` **y** `messages.es`
    (el tipo `MessageKey` sale de `en`, así que faltar en `es` rompe el build).
 7. `src/app/globals.css` — **importante**: el panal de `/hexagons` posiciona cada hexágono con
-   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-1-2-1-1 y ≥640px 4-3). Hoy está
-   cableado para 7 hexágonos; un octavo exige rehacer esas posiciones en ambos breakpoints.
-   En móvil el séptimo va en la columna lateral que le toca en el teselado (no centrado), para
-   que el panal se lea incompleto en vez de terminar en columna; un octavo ocuparía justo el
-   hueco a su derecha y ahí el `aspect-ratio` ya no cambiaría.
+   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2-1 y ≥640px 4-3). Hoy está
+   cableado para 7 hexágonos. En móvil van de dos en dos: las filas impares nacen en el borde
+   izquierdo (0 y 40%) y las pares van corridas media ficha (20% y 60%), así que la rejilla
+   mide dos fichas y media de ancho y cada ficha es el 40%. El séptimo abre la última fila y
+   deja su pareja vacía a la derecha, para que el panal se lea incompleto; un octavo cae justo
+   en ese hueco (`left: 60%`, `top: 69.2308%`) y no cambia ni el número de filas ni el
+   `aspect-ratio`. En ≥640px sí lo cambia: la fila de 3 pasaría a 4 y hay que rehacer la
+   rejilla.
    La geometría: hexágono pointy-top con `aspect-ratio` 0.8660254 (√3/2), las filas se
    solapan con paso vertical de 3/4 de la altura de la ficha y desplazamiento horizontal de
    media ficha. El `aspect-ratio` de `.hexagons-grid` debe recalcularse con el nuevo número
