@@ -14,30 +14,28 @@ const nextConfig: NextConfig = {
         destination: "https://bintuitive.aumcrsp.com/:path*",
         permanent: true,
       },
-      // Explore es la entrada de la aplicación y vive en /hexagons. La raíz ya
-      // no tiene pantalla propia: se resuelve aquí, en el servidor, igual que
-      // el resto de rutas retiradas, para no servir una página que solo
-      // redirige desde el cliente.
-      {
-        source: "/",
-        destination: "/hexagons",
-        permanent: true,
-      },
+      // El panal es la pantalla de entrada y vive en la raíz, así que "/" ya no
+      // redirige a ningún sitio. `/hexagons` tampoco redirige aquí: sirve la
+      // misma pantalla con un 200. Durante meses "/" devolvió un 308 permanente
+      // hacia `/hexagons` y ese salto sigue en la caché del navegador de quien
+      // ya abrió la aplicación; darle la vuelta encadenaría "/" guardado →
+      // `/hexagons` → "/" y el navegador cortaría con "demasiadas
+      // redirecciones". Ver `src/app/hexagons/page.tsx`.
       {
         source: "/categorias",
-        destination: "/hexagons",
+        destination: "/",
         permanent: true,
       },
       {
         source: "/worlds",
-        destination: "/hexagons",
+        destination: "/",
         permanent: true,
       },
-      // La sección "games" se absorbió en Explore: el índice va al panal y
+      // La sección "games" se absorbió en el panal: el índice va a la raíz y
       // cada juego conserva su enlace bajo la ruta de juego singular.
       {
         source: "/games",
-        destination: "/hexagons",
+        destination: "/",
         permanent: true,
       },
       // El juego se llamaba "Word Puzzle" antes de distinguirlo de la futura

@@ -2,16 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { HEXAGON_WIDTH_RATIO, hexagonPoints } from "@/lib/hexagon";
 import { useLanguage } from "@/lib/i18n";
 
 type IconProps = {
   active: boolean;
 };
 
-// Explore, Progress y Profile: los tres únicos destinos de la barra. No hay
-// entrada de inicio, porque Explore es la entrada.
+// Home, Progress y Profile: los tres únicos destinos de la barra. Home es el
+// panal, y el panal vive en la raíz.
+//
+// `legacyHref` es la dirección anterior del panal, que sigue sirviendo la
+// misma pantalla mientras dure el redirect antiguo en las cachés (ver
+// `next.config.ts`). Quien entre por ahí tiene que ver su pestaña encendida.
 const navItems = [
-  { href: "/hexagons", labelKey: "navExplore", icon: ExploreIcon },
+  { href: "/", legacyHref: "/hexagons", labelKey: "navHome", icon: HomeIcon },
   { href: "/progress", labelKey: "navProgress", icon: ProgressIcon },
   { href: "/profile", labelKey: "navProfile", icon: ProfileIcon },
 ] as const;
@@ -24,7 +29,9 @@ export default function BottomNavigation() {
     <nav className="bottom-navigation" aria-label={t("navAria")}>
       <div className="bottom-navigation-inner">
         {navItems.map((item) => {
-          const active = pathname === item.href;
+          const active =
+            pathname === item.href ||
+            ("legacyHref" in item && pathname === item.legacyHref);
           const Icon = item.icon;
 
           return (
@@ -50,16 +57,56 @@ export default function BottomNavigation() {
   );
 }
 
-function ExploreIcon({ active }: IconProps) {
+/*
+ * La casa del panal: un tejado sobre cuatro celdas de dos en dos.
+ *
+ * No es la casita genérica de cualquier aplicación ni el panal a secas: las
+ * celdas son las fichas de la pantalla —el mismo hexagono pointy-top, con su
+ * fila de abajo corrida media ficha— y el tejado dice que aquí se entra. Se
+ * dibujan al 80% de su celda para que el hueco entre vecinas sobreviva al
+ * relleno del estado activo, que es cuando dos siluetas pegadas se leerían
+ * como una mancha.
+ */
+const HOME_HEX_RADIUS = 3.7;
+const HOME_HEX_WIDTH = HOME_HEX_RADIUS * HEXAGON_WIDTH_RATIO;
+const HOME_HEX_LEFT = (24 - 2.5 * HOME_HEX_WIDTH) / 2 + HOME_HEX_WIDTH / 2;
+// La primera fila empieza dos unidades por debajo del alero: el hueco tiene
+// que sobrevivir a los dos trazos que lo muerden cuando la pestaña se enciende.
+const HOME_HEX_FIRST_ROW = 10 + HOME_HEX_RADIUS;
+
+const HOME_HEXAGONS = [0, 1].flatMap((row) =>
+  [0, 1].map((column) => ({
+    cx: HOME_HEX_LEFT + row * (HOME_HEX_WIDTH / 2) + column * HOME_HEX_WIDTH,
+    cy: HOME_HEX_FIRST_ROW + row * HOME_HEX_RADIUS * 1.5,
+  })),
+);
+
+function HomeIcon({ active }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" role="presentation">
-      <path
-        d="m8.2 3.25 3.25 1.88v3.74L8.2 10.75 4.95 8.87V5.13L8.2 3.25Zm7.6 10 3.25 1.88v3.74l-3.25 1.88-3.25-1.88v-3.74l3.25-1.88ZM8.2 13.25l3.25 1.88v3.74L8.2 20.75l-3.25-1.88v-3.74l3.25-1.88Zm7.6-10 3.25 1.88v3.74l-3.25 1.88-3.25-1.88V5.13l3.25-1.88Z"
+      {/* El tejado, un poco mas ancho que el panal que cubre. */}
+      <polygon
+        points="12,2.6 21,8 3,8"
         fill={active ? "currentColor" : "none"}
         stroke="currentColor"
-        strokeWidth="1.55"
+        strokeWidth="1.5"
         strokeLinejoin="round"
       />
+      {/*
+        Encendidas, las celdas van rellenas y SIN trazo: el contorno crece
+        hacia fuera y se comeria el hueco que las separa, y cuatro hexagonos
+        pegados dejan de leerse como panal para leerse como mancha.
+      */}
+      {HOME_HEXAGONS.map(({ cx, cy }) => (
+        <polygon
+          key={`${cx}-${cy}`}
+          points={hexagonPoints(cx, cy, HOME_HEX_RADIUS * 0.78)}
+          fill={active ? "currentColor" : "none"}
+          stroke={active ? "none" : "currentColor"}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      ))}
     </svg>
   );
 }

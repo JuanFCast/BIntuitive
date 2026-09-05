@@ -3,6 +3,7 @@
 import { useCallback, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFocusTrap } from "@/lib/focusTrap";
+import { hexagonPoints } from "@/lib/hexagon";
 import { useLanguage } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
 import { useMuted, useTextSize } from "@/lib/preferences";
@@ -239,25 +240,6 @@ function Segmented<T extends string | boolean>({
   );
 }
 
-/**
- * Un hexágono pointy-top de radio 3 centrado en x = 12 dentro del `viewBox`
- * de 24: la misma figura del panal de Explore, en miniatura.
- */
-function hexagonPoints(cy: number) {
-  const radius = 3;
-  const half = (radius * Math.sqrt(3)) / 2;
-  return [
-    [12, cy - radius],
-    [12 + half, cy - radius / 2],
-    [12 + half, cy + radius / 2],
-    [12, cy + radius],
-    [12 - half, cy + radius / 2],
-    [12 - half, cy - radius / 2],
-  ]
-    .map(([x, y]) => `${x.toFixed(3)},${y.toFixed(3)}`)
-    .join(" ");
-}
-
 /*
  * Cerrado, los tres hexágonos forman una columna: se lee "menú" como las tres
  * rayas de siempre. Abierto, las filas se desplazan media ficha y la columna
@@ -291,7 +273,7 @@ function MenuHexagons({ open }: { open: boolean }) {
       {MENU_HEXAGONS.map(({ cy, shift }) => (
         <polygon
           key={cy}
-          points={hexagonPoints(cy)}
+          points={hexagonPoints(12, cy, 3)}
           className="fill-sun transition-transform duration-200 ease-out"
           style={{ transform: `translateX(${open ? shift : 0}px)` }}
           stroke="currentColor"

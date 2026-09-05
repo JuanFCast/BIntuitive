@@ -15,7 +15,9 @@ esos dos comandos son la verificación.
 
 ## Arquitectura
 
-**Explore (`/hexagons`) es la única superficie de descubrimiento.** Renderiza
+**El panal (`/`) es la única superficie de descubrimiento.** Es la pantalla de entrada —la
+pestaña se llama Home— y vive en la raíz: la dirección que se comparte es
+`https://bintuitive.aumcrsp.com`, sin nada detrás. Renderiza
 `hexagons = [...categories, ...gameHexagons]`, es decir lecciones y juegos en el mismo panal.
 No existe una sección `games`: hubo una (`/games`, de la etapa "worlds", commit `9f1d81d`) que
 quedó como superficie duplicada al llegar el panal en `94bc7df`, y se eliminó. Si vuelve a
@@ -35,8 +37,9 @@ src/app/
   layout.tsx            LanguageProvider + AppShell + metadata/OG
   siteMetadata.ts       Nombre, descripción y URL: los comparten layout y manifest
   manifest.ts           Manifest de la app instalable (Next lo sirve y lo enlaza)
-  (sin page.tsx)        La raíz redirige a /hexagons desde next.config.ts
-  hexagons/             Explore: panal con todos los Hexagon (única vía de entrada)
+  page.tsx              Home: el panal, la pantalla de entrada (renderiza HomeClient)
+  HomeClient.tsx        El panal con todos los Hexagon (única vía de entrada)
+  hexagons/             Dirección anterior del panal: misma pantalla, 200 y canonical a /
   game/                 Todas las rutas de juego
     page.tsx            Categorías de preguntas: /game?hexagon=<slug>
     <id>/page.tsx       Server component: solo metadata + render del cliente
@@ -76,27 +79,33 @@ src/lib/
   (Type Rush añade `"ready"`), con una sección JSX por fase. La ruta de preguntas tiene las
   mismas tres: entra por la explicación y la sesión —nivel guardado incluido— arranca al
   pulsar Comenzar, no al montar.
-- **Instalable**: `manifest.ts` arranca en `/hexagons`, no en `/`, para que abrir desde el
-  icono no pase por el redirect. El icono grande es el mismo `app/icon.png` que sirve de
+- **Instalable**: `manifest.ts` arranca en `/`, que ya es el panal y no redirige. El icono grande es el mismo `app/icon.png` que sirve de
   favicon; el de 192 vive en `public/`. Ninguno se declara `maskable`: el logo llega cerca del
   borde y una máscara circular le cortaría el birrete. iOS no lee `display` del manifest, así
   que el modo standalone en Safari depende de las metas `appleWebApp` de `layout.tsx`.
-- **No hay Home**: Explore es la entrada de la aplicación y la barra inferior tiene exactamente
-  tres destinos (Explore, Progress, Profile). La raíz `/` no tiene pantalla: redirige a
-  `/hexagons` desde `next.config.ts`. Un enlace global que signifique "volver al principio"
-  apunta a `/hexagons`, nunca a `/`, para no encadenar un redirect de más.
-- **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve `/hexagons`, `/progress`
-  y `/profile`. Un juego se envuelve en `<GameShell>`, que pone el `<main>`, el encabezado
-  común (casa a `/hexagons`, ayuda y `<MuteButton />`), la pantalla de introducción y la
+- **El panal es Home**: la barra inferior tiene exactamente tres destinos (Home, Progress,
+  Profile) y Home es el panal, servido desde `/`. Un enlace global que signifique "volver al
+  principio" apunta a `/`, nunca a `/hexagons`.
+- **`/hexagons` sigue viva y no redirige**: sirve la misma pantalla con un 200 desde
+  `src/app/hexagons/page.tsx`, con `canonical` a la raíz. Durante meses `/` devolvió un 308
+  permanente hacia `/hexagons`, y ese salto vive en la caché del navegador de cualquiera que ya
+  haya abierto la aplicación: hacer que `/hexagons` redirija a `/` encadenaría `/` guardado →
+  `/hexagons` → `/` y el navegador cortaría con "demasiadas redirecciones". No convertirla en
+  redirect mientras esa caché pueda existir. `BottomNavigation` la lleva como `legacyHref` para
+  encender la pestaña de quien entre por ahí, y `AppShell` la cuenta como ruta principal.
+- **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve el panal (`/` y su dirección
+  anterior `/hexagons`), `/progress` y `/profile`. Un juego se envuelve en `<GameShell>`, que
+  pone el `<main>`, el encabezado
+  común (casa a `/`, ayuda y `<MuteButton />`), la pantalla de introducción y la
   ayuda. `GameShell` no tiene nada que ver con `AppShell`; la salida de un juego siempre es
-  Explore.
+  el panal.
 - **Una sola explicación por juego**: el objeto `intro` que recibe `GameShell` es la única
   fuente de contenido, y de ahí salen tanto la pantalla previa a jugar como la ayuda. No
   escribir una segunda explicación en ningún sitio: divergirían.
 - **Los resultados hablan el mismo idioma visual**: cada actividad enseña sus propias métricas
   —estrellas en las lecciones, estadísticas en los juegos—, pero la tarjeta (`ResultStat`, con
-  un `tone` por juego) y el par de botones del final (`ResultActions`: repetir y volver a
-  Explore) se definen una sola vez. No duplicar esos botones en un juego nuevo.
+  un `tone` por juego) y el par de botones del final (`ResultActions`: repetir y volver al
+  panal) se definen una sola vez. No duplicar esos botones en un juego nuevo.
 - **Dos superficies, la misma plantilla**: los juegos independientes usan `GameShell` entero.
   La ruta de preguntas tiene encabezado propio (marca, estrellas, pie con progreso y salida
   con confirmación), así que usa `GameShell` solo en su fase `intro` —allí la casa no
@@ -149,12 +158,12 @@ src/lib/
    nunca sabe de qué juego es.
 4. `src/data/categories.ts` — añadir el id al union de `GameHexagon["id"]` y una entrada en
    `gameHexagons` (nombre y descripción **en español**, emoji, `href: "/game/<id>"`).
-   Con eso el juego ya aparece en Explore: **no hay ningún índice de juegos que actualizar**.
+   Con eso el juego ya aparece en el panal: **no hay ningún índice de juegos que actualizar**.
 5. `src/data/localization.ts` — añadir la entrada en inglés a `englishHexagons` (el `Record` es
    exhaustivo sobre `Hexagon["id"]`: si falta, TypeScript falla).
 6. `src/lib/i18n.tsx` — añadir todas las claves nuevas a `messages.en` **y** `messages.es`
    (el tipo `MessageKey` sale de `en`, así que faltar en `es` rompe el build).
-7. `src/app/globals.css` — **importante**: el panal de `/hexagons` posiciona cada hexágono con
+7. `src/app/globals.css` — **importante**: el panal de `/` posiciona cada hexágono con
    `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2-1 y ≥640px 4-3). Hoy está
    cableado para 7 hexágonos. En móvil van de dos en dos: las filas impares nacen en el borde
    izquierdo (0 y 40%) y las pares van corridas media ficha (20% y 60%), así que la rejilla
@@ -171,7 +180,10 @@ src/lib/
 9. `npm run build` para validar tipos y contenido.
 
 Al mover o renombrar una ruta de juego, añadir su `redirect` en `next.config.ts`: la app está
-publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`, `/games`).
+publicada y hay enlaces vivos. Ya hay precedentes ahí (`/worlds`, `/categorias`, `/games`, todos
+al panal de la raíz). Un redirect `permanent` se queda meses en la caché del navegador: antes de
+darle la vuelta a uno, comprobar que no se cierra un ciclo con el que ya está publicado —es justo
+lo que obliga a `/hexagons` a servir la página en vez de redirigir.
 
 ## Cosas a tener en cuenta
 

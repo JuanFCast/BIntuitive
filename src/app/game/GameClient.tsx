@@ -114,7 +114,7 @@ export default function GameClient() {
   }, [category, loadQuestion, timers]);
 
   useEffect(() => {
-    if (!category) router.replace("/hexagons");
+    if (!category) router.replace("/");
   }, [category, router]);
 
   // Se entra por la explicación, no por la primera pregunta. La sesión —y con

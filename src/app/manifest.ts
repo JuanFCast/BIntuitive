@@ -24,9 +24,9 @@ export default function manifest(): MetadataRoute.Manifest {
     description: siteDescription,
     lang: "en",
     dir: "ltr",
-    // Explore es la entrada y vive en /hexagons. Arrancar en "/" costaría un
-    // redirect en cada apertura desde el icono.
-    start_url: "/hexagons",
+    // El panal es la entrada y vive en la raíz, así que abrir desde el icono
+    // no pasa por ningún redirect.
+    start_url: "/",
     scope: "/",
     display: "standalone",
     // Los colores de la marca: crema es el fondo de la aplicación, así que la

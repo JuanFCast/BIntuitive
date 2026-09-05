@@ -4,7 +4,7 @@ import HexagonCard from "@/components/HexagonCard";
 import { hexagons } from "@/data/categories";
 import { useLanguage } from "@/lib/i18n";
 
-export default function HexagonsClient() {
+export default function HomeClient() {
   const { language, t } = useLanguage();
 
   return (
@@ -24,7 +24,7 @@ export default function HexagonsClient() {
 
       <header className="hexagons-header relative z-10 mt-1 text-center sm:mt-3">
         <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#9b7400] sm:text-sm">
-          {t("navExplore")}
+          {t("navHome")}
         </p>
         <h1 className="mt-0.5 text-3xl font-extrabold leading-tight sm:text-5xl">
           {t("hexagonsHeading")}

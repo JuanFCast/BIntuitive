@@ -8,7 +8,7 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
-- **Explore as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the Explore honeycomb. There is no separate games section.
+- **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which is the Home screen and lives at the site root. There is no separate games section.
 - **7 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, and Word Search.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
@@ -67,8 +67,10 @@ The production build validates TypeScript, generates the application routes, and
 
 ```text
 src/
-  app/                  # Explore, play routes, metadata, social cards, and icons
-    hexagons/           # Explore: the honeycomb that lists every hexagon
+  app/                  # Home, play routes, metadata, social cards, and icons
+    page.tsx            # Home: the honeycomb that lists every hexagon
+    HomeClient.tsx      # The honeycomb itself
+    hexagons/           # The honeycomb's former address: same screen, canonical to /
     game/               # Play routes
       page.tsx          #   Question categories: /game?hexagon=<slug>
       visual/           #   Visual Agility

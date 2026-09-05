@@ -60,7 +60,7 @@ export default function ProgressClient() {
             {t("progressEmptyText")}
           </p>
           <Link
-            href="/hexagons"
+            href="/"
             className="mt-6 inline-flex min-h-14 items-center justify-center rounded-2xl border-b-8 border-[#9b7600] bg-sun px-8 py-3 text-xl font-extrabold text-black shadow-lg transition-transform active:scale-95 active:border-b-4"
           >
             {t("progressEmptyCta")}

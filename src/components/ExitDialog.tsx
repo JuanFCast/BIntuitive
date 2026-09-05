@@ -26,7 +26,7 @@ export default function ExitDialog({ open, onClose }: ExitDialogProps) {
       description={t("exitMessage")}
       confirmLabel={t("leaveLesson")}
       cancelLabel={`⬅️ ${t("continuePlaying")}`}
-      onConfirm={() => router.push("/hexagons")}
+      onConfirm={() => router.push("/")}
       onCancel={onClose}
     />
   );

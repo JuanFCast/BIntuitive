@@ -1,9 +1,22 @@
-import HexagonsClient from "./HexagonsClient";
+import type { Metadata } from "next";
+import HomeClient from "../HomeClient";
+import { siteUrl } from "../siteMetadata";
 
-export const metadata = {
+/**
+ * La direccion anterior del panal, que sigue sirviendo la misma pantalla.
+ *
+ * No redirige a `/` a proposito. Durante meses `/` devolvio un 308 permanente
+ * hacia aqui, y ese salto vive en la cache del navegador de cualquiera que ya
+ * haya abierto la aplicacion: darle la vuelta ahora encadenaria `/` guardado →
+ * `/hexagons` → `/` y el navegador cortaria con "demasiadas redirecciones".
+ * Sirviendo la pagina con un 200, quien llegue con el salto viejo en la cache
+ * ve la aplicacion igual, y `canonical` manda a los buscadores a la raiz.
+ */
+export const metadata: Metadata = {
   title: "Choose a hexagon · BIntuitive",
+  alternates: { canonical: siteUrl },
 };
 
 export default function HexagonsPage() {
-  return <HexagonsClient />;
+  return <HomeClient />;
 }
