@@ -35,6 +35,10 @@ export const englishHexagons: Record<
     name: "Word Search",
     description: "Find the hidden words in the letter grid.",
   },
+  memory: {
+    name: "Memory",
+    description: "Turn the cards over and find the pairs.",
+  },
 };
 
 type QuestionCopy = {

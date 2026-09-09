@@ -2,7 +2,7 @@
  * Validación del contenido educativo del repositorio.
  *
  * Los bancos siguen siendo independientes —preguntas, Word Scramble, Word
- * Search, Typing y Agilidad visual— y este script no los unifica: comprueba las
+ * Search, Typing, Agilidad visual y Parejas— y este script no los unifica: comprueba las
  * invariantes que cada uno ya asume hoy, para que romperlas falle sola en vez
  * de llegar a producción como una pregunta sin respuesta o una palabra que no
  * cabe en su tablero.
@@ -22,6 +22,7 @@ import { questions, type CategoryId } from "../src/data/questions";
 import { ROUNDS_PER_SESSION } from "../src/lib/gameEngine";
 import { WORD_ALPHABET, getWordLetters } from "../src/lib/letters";
 import type { Language } from "../src/lib/language";
+import { MEMORY_PAIRS, MEMORY_SYMBOLS } from "../src/lib/memoryGame";
 import { getTypingPhrases } from "../src/lib/typingGame";
 import { VISUAL_SYMBOLS, VISUAL_SYMBOLS_PER_CARD } from "../src/lib/visualGame";
 import {
@@ -576,6 +577,54 @@ function validateVisual(): void {
   }
 }
 
+/* --------------------------------------------------------------------------
+ * Parejas
+ *
+ * Contenido neutro como el de Agilidad visual: el dibujo es un emoji igual en
+ * los dos idiomas y solo el nombre, que ademas se dice en voz alta al acertar,
+ * se traduce.
+ * ----------------------------------------------------------------------- */
+
+function validateMemory(): void {
+  const bank = "memory";
+
+  for (const id of duplicates(MEMORY_SYMBOLS.map((symbol) => symbol.id))) {
+    fail(bank, id, "id repetido");
+  }
+  // Aqui un emoji repetido es peor que en Agilidad visual: dos simbolos
+  // distintos con el mismo dibujo formarian una pareja que el juego no da por
+  // buena, y el niño la estaria viendo.
+  for (const emoji of duplicates(
+    MEMORY_SYMBOLS.map((symbol) => symbol.emoji),
+  )) {
+    fail(bank, emoji, "emoji repetido: seria una pareja que no cuenta");
+  }
+
+  for (const symbol of MEMORY_SYMBOLS) {
+    const at = symbol.id || "(simbolo sin id)";
+    if (isBlank(symbol.id)) fail(bank, at, "id vacio");
+    if (isBlank(symbol.emoji)) fail(bank, at, "emoji vacio");
+    for (const language of LANGUAGES) {
+      if (isBlank(symbol.label[language])) {
+        fail(bank, at, "etiqueta " + language + " vacia");
+      }
+    }
+  }
+
+  // Un tablero toma seis simbolos distintos del banco. Con justo seis, todas
+  // las partidas serian el mismo tablero.
+  if (MEMORY_SYMBOLS.length <= MEMORY_PAIRS) {
+    fail(
+      bank,
+      "banco",
+      MEMORY_SYMBOLS.length +
+        " simbolos para tableros de " +
+        MEMORY_PAIRS +
+        " parejas: hacen falta mas para que dos partidas no sean iguales",
+    );
+  }
+}
+
 /* ----------------------------------------------------------------------- */
 
 validateQuestions();
@@ -584,6 +633,7 @@ validateWordScramble();
 validateWordSearch();
 validateTyping();
 validateVisual();
+validateMemory();
 
 if (issues.length > 0) {
   console.error("Content validation failed — " + issues.length + " issue(s)\n");
@@ -609,6 +659,7 @@ const counts = [
   LANGUAGES.reduce((sum, l) => sum + getTypingPhrases(l).length, 0) +
     " typing phrases",
   VISUAL_SYMBOLS.length + " visual symbols",
+  MEMORY_SYMBOLS.length + " memory symbols",
 ].join(", ");
 
 console.log("Content validation passed — " + counts);

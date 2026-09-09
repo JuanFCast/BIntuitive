@@ -27,7 +27,7 @@ Dos tipos de contenido conviven en ese panal, y ambos se abren bajo la ruta sing
 
 1. **Categorías de preguntas** (`lugares`, `numeros`, `colores`) → todas comparten UNA ruta,
    `/game?hexagon=<slug>`, y el motor genérico `src/lib/gameEngine.ts` + banco `src/data/questions.ts`.
-2. **Juegos independientes** (`visual`, `typing`, `scramble`, `search`) → cada uno con su propia ruta
+2. **Juegos independientes** (`visual`, `typing`, `scramble`, `search`, `memory`) → cada uno con su propia ruta
    `/game/<id>`, su propio cliente y su propia lib de lógica pura en `src/lib/`.
 
 Un juego nuevo casi siempre es del tipo 2.
@@ -55,6 +55,7 @@ src/lib/
   i18n.tsx              LanguageProvider, useLanguage(), diccionario `messages` en/es
   gameEngine.ts         Selección de pregunta + dificultad adaptativa (categorías)
   visualGame.ts         Lógica pura de Agilidad visual
+  memoryGame.ts         Banco, tablero y estadísticas de Parejas
   typingGame.ts         Lógica pura de Type Rush
   wordScramble.ts       Banco bilingüe, fichas y dificultad de Word Scramble
   wordSearch.ts         Banco bilingüe, generador de tablero y selección de Word Search
@@ -173,14 +174,13 @@ src/lib/
 6. `src/lib/i18n.tsx` — añadir todas las claves nuevas a `messages.en` **y** `messages.es`
    (el tipo `MessageKey` sale de `en`, así que faltar en `es` rompe el build).
 7. `src/app/globals.css` — **importante**: el panal de `/` posiciona cada hexágono con
-   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2-1 y ≥640px 4-3). Hoy está
-   cableado para 7 hexágonos. En móvil van de dos en dos: las filas impares nacen en el borde
-   izquierdo (0 y 40%) y las pares van corridas media ficha (20% y 60%), así que la rejilla
-   mide dos fichas y media de ancho y cada ficha es el 40%. El séptimo abre la última fila y
-   deja su pareja vacía a la derecha, para que el panal se lea incompleto; un octavo cae justo
-   en ese hueco (`left: 60%`, `top: 69.2308%`) y no cambia ni el número de filas ni el
-   `aspect-ratio`. En ≥640px sí lo cambia: la fila de 3 pasaría a 4 y hay que rehacer la
-   rejilla.
+   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2-2 y ≥640px 4-4). Hoy está
+   cableado para 8 hexágonos y las dos rejillas están completas. En móvil van de dos en dos:
+   las filas impares nacen en el borde izquierdo (0 y 40%) y las pares van corridas media ficha
+   (20% y 60%), así que la rejilla mide dos fichas y media de ancho y cada ficha es el 40%. En
+   ≥640px son dos filas de cuatro, la de abajo corrida media ficha: cuatro fichas y media de
+   ancho, cada una el 22.2222%. Un noveno hexágono abre fila en los dos layouts y obliga a
+   recalcular los dos `aspect-ratio` (en móvil, cinco filas son 2.5 * 0.8660254 / 4).
    La geometría: hexágono pointy-top con `aspect-ratio` 0.8660254 (√3/2), las filas se
    solapan con paso vertical de 3/4 de la altura de la ficha y desplazamiento horizontal de
    media ficha. El `aspect-ratio` de `.hexagons-grid` debe recalcularse con el nuevo número
@@ -245,7 +245,7 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   tocan. Quien borra su progreso no pide cambiar de idioma ni dejar de llamarse como se llama.
 - `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
   (`wordScramble`) y el de Word Search (`wordSearch`), cada uno en su propio campo opcional y
-  sin compartir datos. `visual` y `typing` no persisten nada. Para añadir persistencia a un
+  sin compartir datos. `visual`, `typing` y `memory` no persisten nada. Para añadir persistencia a un
   juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hacen
   `normalizeWordScramble` y `normalizeWordSearch`: `getProgress` debe tolerar el campo
   ausente en datos ya guardados.
@@ -264,7 +264,8 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   de acoplamiento.
 - **Los bancos siguen separados**, y así deben seguir por ahora: preguntas (`questions.ts` en
   español + `localization.ts` en inglés), Word Scramble y Word Search (bilingües, cada uno el
-  suyo, sin correspondencia entre idiomas), frases de Typing y símbolos de Visual. No hay banco
+  suyo, sin correspondencia entre idiomas), frases de Typing, símbolos de Visual y dibujos de
+  Parejas. No hay banco
   central y no toca unificarlos hasta que estén decididos los rangos de edad y llegue el
   PowerPoint revisado.
 - **`npm run validate:content`** comprueba las invariantes que cada banco ya asume: ids únicos,
@@ -276,8 +277,9 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   la salida. Al añadir contenido, ejecutarlo antes de `npm run build`.
 - Ningún juego independiente suma a `totalStars` ni a `sessions`: esas métricas son de las
   lecciones de preguntas y `/progress` solo muestra esas.
-- `speech.ts` (Web Speech API) lo usan la ruta `/game` de preguntas y los dos juegos de
-  palabras, que pronuncian la palabra encontrada o completada. Nadie programa esa locución a
+- `speech.ts` (Web Speech API) lo usan la ruta `/game` de preguntas, los dos juegos de
+  palabras —que pronuncian la palabra encontrada o completada— y Parejas, que dice el nombre
+  del dibujo al descubrir una pareja. Nadie programa esa locución a
   mano: se usa `useSpeakAfterSound`, que ya trae el retraso tras el sonido de acierto (el
   `AudioContext` de `sounds.ts` se traga la voz si arrancan a la vez), la comprobación de
   `isMuted()` al disparar y no al programar, una sola locución pendiente a la vez y el corte al

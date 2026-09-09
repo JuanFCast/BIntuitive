@@ -8,11 +8,12 @@
  */
 
 /** Color del borde. Son tokens de la paleta, no colores nuevos. */
-export type ResultStatTone = "mint" | "berry" | "neutral";
+export type ResultStatTone = "mint" | "berry" | "sky" | "neutral";
 
 const TONES: Record<ResultStatTone, string> = {
   mint: "border-mint",
   berry: "border-berry",
+  sky: "border-sky",
   neutral: "border-ink/10",
 };
 

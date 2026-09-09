@@ -604,15 +604,14 @@ button {
 }
 
 /*
- * Panal de 7 hexagonos en movil: filas 2-2-2-1, de dos en dos.
+ * Panal de 8 hexagonos en movil: cuatro filas de dos.
  * Las filas impares nacen en el borde izquierdo (0 y 40%) y las pares van
  * corridas media ficha (20% y 60%), con el paso constante de 3/4 de altura:
  * 0, 23.0769%, 46.1538% y 69.2308% de la altura total.
  *
- * El septimo abre la ultima fila y deja su pareja vacia a la derecha: el panal
- * se lee incompleto, que es lo que es. Un octavo cae justo en ese hueco
- * (left: 60%, top: 69.2308%) y no cambia ni el numero de filas ni el
- * `aspect-ratio` de la rejilla.
+ * Con ocho las cuatro filas estan completas. Un noveno abriria una quinta fila
+ * (top: 92.3077%) y ahi si cambia el `aspect-ratio` de la rejilla: cinco filas
+ * son 4 pasos mas una ficha, 2.5 * 0.8660254 / 4 = 0.5412659.
  */
 .hexagon-card:nth-child(1) {
   left: 0;
@@ -649,16 +648,26 @@ button {
   top: 69.2308%;
 }
 
+.hexagon-card:nth-child(8) {
+  left: 60%;
+  top: 69.2308%;
+}
+
 @media (min-width: 640px) {
-  /* Fila de 4 y fila de 3 desplazada media ficha: 4 fichas de ancho. */
+  /*
+   * Dos filas de 4, la de abajo corrida media ficha: la rejilla mide cuatro
+   * fichas y media de ancho, asi que la ficha es el 22.2222%. Dos filas son un
+   * paso mas una ficha —1.75 alturas de ficha—, de ahi el aspect-ratio
+   * 4.5 * 0.8660254 / 1.75 = 2.2269225.
+   */
   .hexagons-grid {
-    width: min(100%, calc((100svh - 13rem) * 1.9794867));
+    width: min(100%, calc((100svh - 13rem) * 2.2269225));
     max-width: 48rem;
-    aspect-ratio: 1.9794867;
+    aspect-ratio: 2.2269225;
   }
 
   .hexagon-card {
-    width: 25%;
+    width: 22.2222%;
   }
 
   .hexagon-card:nth-child(1) {
@@ -667,32 +676,37 @@ button {
   }
 
   .hexagon-card:nth-child(2) {
-    left: 25%;
+    left: 22.2222%;
     top: 0;
   }
 
   .hexagon-card:nth-child(3) {
-    left: 50%;
+    left: 44.4444%;
     top: 0;
   }
 
   .hexagon-card:nth-child(4) {
-    left: 75%;
+    left: 66.6667%;
     top: 0;
   }
 
   .hexagon-card:nth-child(5) {
-    left: 12.5%;
+    left: 11.1111%;
     top: 42.8571%;
   }
 
   .hexagon-card:nth-child(6) {
-    left: 37.5%;
+    left: 33.3333%;
     top: 42.8571%;
   }
 
   .hexagon-card:nth-child(7) {
-    left: 62.5%;
+    left: 55.5556%;
+    top: 42.8571%;
+  }
+
+  .hexagon-card:nth-child(8) {
+    left: 77.7778%;
     top: 42.8571%;
   }
 }
