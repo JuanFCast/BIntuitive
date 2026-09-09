@@ -22,18 +22,21 @@ export default function HomeClient() {
         </div>
       </div>
 
+      {/*
+        Una sola línea, y es una invitación: el nombre de la pantalla ya lo
+        dice la pestaña encendida de la barra, y "elige un hexágono" sobraba
+        teniendo el panal debajo. Esa frase sigue siendo la etiqueta del panal
+        para quien lo escucha en vez de verlo.
+      */}
       <header className="hexagons-header relative z-10 mt-1 text-center sm:mt-3">
-        <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#9b7400] sm:text-sm">
-          {t("navHome")}
-        </p>
-        <h1 className="mt-0.5 text-3xl font-extrabold leading-tight sm:text-5xl">
-          {t("hexagonsHeading")}
+        <h1 className="text-3xl font-extrabold leading-tight sm:text-5xl">
+          {t("hexagonsCta")}
         </h1>
       </header>
 
       <section
         className="hexagons-grid relative z-10 mt-4 w-full shrink-0 sm:mt-5"
-        aria-label={t("hexagonsHeading")}
+        aria-label={t("hexagonsGridAria")}
       >
         {hexagons.map((hexagon) => (
           <HexagonCard

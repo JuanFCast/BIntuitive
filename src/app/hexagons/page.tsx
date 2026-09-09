@@ -12,8 +12,9 @@ import { siteUrl } from "../siteMetadata";
  * Sirviendo la pagina con un 200, quien llegue con el salto viejo en la cache
  * ve la aplicacion igual, y `canonical` manda a los buscadores a la raiz.
  */
+// Sin `title` propio: es la misma pantalla que la raiz, asi que hereda el
+// nombre del sitio del layout en vez de inventarse otro.
 export const metadata: Metadata = {
-  title: "Choose a hexagon · BIntuitive",
   alternates: { canonical: siteUrl },
 };
 
