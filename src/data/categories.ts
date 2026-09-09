@@ -9,7 +9,7 @@ export type Category = {
 };
 
 export type GameHexagon = {
-  id: "visual" | "typing" | "scramble" | "search" | "memory";
+  id: "visual" | "typing" | "scramble" | "search" | "memory" | "tracing";
   name: string;
   emoji: string;
   description: string;
@@ -77,6 +77,13 @@ export const gameHexagons: GameHexagon[] = [
     emoji: "🧠",
     description: "Destapa las fichas y encuentra las parejas.",
     href: "/game/memory",
+  },
+  {
+    id: "tracing",
+    name: "Trazos",
+    emoji: "✏️",
+    description: "Sigue el camino punteado con el dedo.",
+    href: "/game/tracing",
   },
 ];
 

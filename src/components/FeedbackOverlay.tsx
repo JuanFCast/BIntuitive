@@ -1,5 +1,6 @@
 "use client";
 
+import Confetti from "./Confetti";
 import { useLanguage } from "@/lib/i18n";
 
 export type FeedbackType = "correct" | "almost" | "reveal" | null;
@@ -8,8 +9,6 @@ type FeedbackOverlayProps = {
   type: FeedbackType;
   hint?: string;
 };
-
-const CONFETTI = ["⭐", "🌟", "✨", "🎉", "💛", "⭐", "✨", "🌟", "🎉", "💛", "⭐", "✨"];
 
 export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
   const { t } = useLanguage();
@@ -23,19 +22,7 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
         role="status"
         aria-live="polite"
       >
-        {CONFETTI.map((piece, i) => (
-          <span
-            key={i}
-            aria-hidden="true"
-            className="animate-fall absolute top-0 text-3xl sm:text-4xl"
-            style={{
-              left: `${6 + i * 8}%`,
-              animationDelay: `${(i % 5) * 0.12}s`,
-            }}
-          >
-            {piece}
-          </span>
-        ))}
+        <Confetti />
         <div className="animate-pop flex items-center gap-4 rounded-3xl border-4 border-black bg-white px-8 py-5 shadow-xl">
           <span
             className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sun text-4xl font-black text-black"

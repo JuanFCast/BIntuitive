@@ -27,7 +27,7 @@ Dos tipos de contenido conviven en ese panal, y ambos se abren bajo la ruta sing
 
 1. **Categorías de preguntas** (`lugares`, `numeros`, `colores`) → todas comparten UNA ruta,
    `/game?hexagon=<slug>`, y el motor genérico `src/lib/gameEngine.ts` + banco `src/data/questions.ts`.
-2. **Juegos independientes** (`visual`, `typing`, `scramble`, `search`, `memory`) → cada uno con su propia ruta
+2. **Juegos independientes** (`visual`, `typing`, `scramble`, `search`, `memory`, `tracing`) → cada uno con su propia ruta
    `/game/<id>`, su propio cliente y su propia lib de lógica pura en `src/lib/`.
 
 Un juego nuevo casi siempre es del tipo 2.
@@ -46,7 +46,8 @@ src/app/
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
 src/components/         BrandMark, MuteButton, HexagonCard, AppShell, AppMenu, GameShell,
-                        GameIntro, GameHelp, ResultActions, ResultStat, ConfirmDialog...
+                        GameIntro, GameHelp, ResultActions, ResultStat, Confetti,
+                        ConfirmDialog...
 src/data/
   categories.ts         Category[] + GameHexagon[] → hexagons[] (fuente de verdad del panal)
   questions.ts          Banco de preguntas en español (fuente)
@@ -56,6 +57,7 @@ src/lib/
   gameEngine.ts         Selección de pregunta + dificultad adaptativa (categorías)
   visualGame.ts         Lógica pura de Agilidad visual
   memoryGame.ts         Banco, tablero y estadísticas de Parejas
+  tracingGame.ts        Caminos, tolerancia, estrellas y banco de Trazos
   typingGame.ts         Lógica pura de Type Rush
   wordScramble.ts       Banco bilingüe, fichas y dificultad de Word Scramble
   wordSearch.ts         Banco bilingüe, generador de tablero y selección de Word Search
@@ -174,13 +176,15 @@ src/lib/
 6. `src/lib/i18n.tsx` — añadir todas las claves nuevas a `messages.en` **y** `messages.es`
    (el tipo `MessageKey` sale de `en`, así que faltar en `es` rompe el build).
 7. `src/app/globals.css` — **importante**: el panal de `/` posiciona cada hexágono con
-   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2-2 y ≥640px 4-4). Hoy está
-   cableado para 8 hexágonos y las dos rejillas están completas. En móvil van de dos en dos:
-   las filas impares nacen en el borde izquierdo (0 y 40%) y las pares van corridas media ficha
-   (20% y 60%), así que la rejilla mide dos fichas y media de ancho y cada ficha es el 40%. En
-   ≥640px son dos filas de cuatro, la de abajo corrida media ficha: cuatro fichas y media de
-   ancho, cada una el 22.2222%. Un noveno hexágono abre fila en los dos layouts y obliga a
-   recalcular los dos `aspect-ratio` (en móvil, cinco filas son 2.5 * 0.8660254 / 4).
+   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2-2-1 y ≥640px 4-4-1). Hoy
+   está cableado para 9 hexágonos. En móvil van de dos en dos: las filas impares nacen en el
+   borde izquierdo (0 y 40%) y las pares van corridas media ficha (20% y 60%), así que la
+   rejilla mide dos fichas y media de ancho y cada ficha es el 40%. En ≥640px son filas de
+   cuatro corridas media ficha: cuatro fichas y media de ancho, cada una el 22.2222%. El noveno
+   abre la última fila en los dos y deja el hueco a su derecha; un décimo cae en ese hueco
+   (móvil `left: 60%, top: 75%`; ≥640px `left: 22.2222%, top: 60%`) sin tocar ningún
+   `aspect-ratio`. El siguiente sí abre fila y hay que recalcularlos: la altura es una ficha
+   más 3/4 por cada fila de más.
    La geometría: hexágono pointy-top con `aspect-ratio` 0.8660254 (√3/2), las filas se
    solapan con paso vertical de 3/4 de la altura de la ficha y desplazamiento horizontal de
    media ficha. El `aspect-ratio` de `.hexagons-grid` debe recalcularse con el nuevo número
@@ -237,6 +241,11 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   `break-words` y `leading-snug`, y el espaciado entre letras de las mayúsculas se reserva para
   `sm:`. En un móvil de 360px una tarjeta crece a lo alto; nunca se aprieta el texto ni se
   reduce la escala.
+- **Arrastrar es un gesto de puntero, no de scroll**: la sopa de letras y Trazos escuchan
+  `pointerdown` / `pointermove` / `pointerup`, que cubren ratón y dedo con el mismo código, y
+  llaman a `setPointerCapture` para que el trazo siga aunque el dedo se salga del tablero. Su
+  contenedor lleva `touch-action: none` (`.word-search-board`, `.tracing-board`): sin eso el
+  navegador se queda el gesto vertical como scroll y no llega ni un `pointermove`.
 - **Un solo diálogo de confirmación**: `ConfirmDialog` (título, descripción, confirmar,
   cancelar, `destructive`), con Escape y devolución del foco. `ExitDialog` es una capa fina
   sobre él. No crear un modal nuevo para la siguiente confirmación.
@@ -244,8 +253,14 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   `localStorage.clear()`: las preferencias y el perfil viven en sus propias claves y no se
   tocan. Quien borra su progreso no pide cambiar de idioma ni dejar de llamarse como se llama.
 - `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
-  (`wordScramble`) y el de Word Search (`wordSearch`), cada uno en su propio campo opcional y
-  sin compartir datos. `visual`, `typing` y `memory` no persisten nada. Para añadir persistencia a un
+  (`wordScramble`), el de Word Search (`wordSearch`) y el de Trazos (`tracing`), cada uno en su
+  propio campo opcional y sin compartir datos. `visual`, `typing` y `memory` no persisten nada.
+  Trazos es el único que acumula —ejercicios, estrellas e intentos— y lo hace con
+  `saveTracingSession`, que recibe lo que pasó en una sesión y suma sobre lo guardado; el juego
+  no tiene que leer antes para escribir después. Sus estrellas son suyas y no tocan
+  `totalStars`. Cuántos niveles tiene Trazos lo sabe `tracingGame.ts` y solo él: `storage.ts`
+  guarda el nivel tal cual y el juego lo recorta con `clampTracingLevel` al empezar, para no
+  repetir el número en dos sitios. Para añadir persistencia a un
   juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hacen
   `normalizeWordScramble` y `normalizeWordSearch`: `getProgress` debe tolerar el campo
   ausente en datos ya guardados.
@@ -264,22 +279,29 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   de acoplamiento.
 - **Los bancos siguen separados**, y así deben seguir por ahora: preguntas (`questions.ts` en
   español + `localization.ts` en inglés), Word Scramble y Word Search (bilingües, cada uno el
-  suyo, sin correspondencia entre idiomas), frases de Typing, símbolos de Visual y dibujos de
-  Parejas. No hay banco
+  suyo, sin correspondencia entre idiomas), frases de Typing, símbolos de Visual, dibujos de
+  Parejas y ejercicios de Trazos. El de Trazos tiene la forma de una fila de base de datos
+  —id, nivel, categoría, salida, destino y tipo de camino— justamente para que mañana pueda
+  venir de una: lo único que habría que cambiar es de dónde sale la tabla, no el juego. No hay banco
   central y no toca unificarlos hasta que estén decididos los rangos de edad y llegue el
   PowerPoint revisado.
 - **`npm run validate:content`** comprueba las invariantes que cada banco ya asume: ids únicos,
   `answerId` existente, traducciones inglesas presentes y sin huérfanas, NFC y alfabeto por
-  idioma, longitud de palabra compatible con su nivel o con el tamaño de su tablero, y contenido
-  suficiente para formar una sesión. Es estructural y tarda menos de dos segundos: no genera
+  idioma, longitud de palabra compatible con su nivel o con el tamaño de su tablero, forma de
+  camino compatible con el nivel que dice tener en Trazos, y contenido suficiente para formar
+  una sesión. Compila sin `lib: ["DOM"]` a propósito: el validador solo alcanza contenido puro,
+  así que un banco no puede acabar importando código de navegador. Es estructural y tarda menos de dos segundos: no genera
   tableros ni simula partidas. Compila con `tsconfig.validate.json` a `.content-check/`
   (ignorado) y ejecuta con un resolutor mínimo del alias `@/`, porque `tsc` lo deja tal cual en
   la salida. Al añadir contenido, ejecutarlo antes de `npm run build`.
 - Ningún juego independiente suma a `totalStars` ni a `sessions`: esas métricas son de las
   lecciones de preguntas y `/progress` solo muestra esas.
 - `speech.ts` (Web Speech API) lo usan la ruta `/game` de preguntas, los dos juegos de
-  palabras —que pronuncian la palabra encontrada o completada— y Parejas, que dice el nombre
-  del dibujo al descubrir una pareja. Nadie programa esa locución a
+  palabras —que pronuncian la palabra encontrada o completada—, Parejas, que dice el nombre
+  del dibujo al descubrir una pareja, y Trazos, que dice la palabra de la figura al terminar el
+  camino. Trazos además la enseña escrita con su traducción pequeña debajo, y la locución va
+  en el idioma de la interfaz: la voz se elige por idioma, y decir Dog con voz española no
+  enseña a pronunciar nada. Nadie programa esa locución a
   mano: se usa `useSpeakAfterSound`, que ya trae el retraso tras el sonido de acierto (el
   `AudioContext` de `sounds.ts` se traga la voz si arrancan a la vez), la comprobación de
   `isMuted()` al disparar y no al programar, una sola locución pendiente a la vez y el corte al

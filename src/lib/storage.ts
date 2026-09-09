@@ -48,6 +48,23 @@ export type WordSearchProgress = {
   bestWordsFound: number;
 };
 
+/**
+ * Progreso local de Trazos. Es el único juego independiente que acumula: nivel
+ * alcanzado, ejercicios completados, estrellas ganadas, mejor precisión e
+ * intentos. Las estrellas son suyas y no tocan `totalStars`, que es de las
+ * lecciones de preguntas.
+ *
+ * La forma es la misma que tendría una fila remota, así que el día que haya
+ * base de datos solo cambia dónde se guarda, no qué se guarda.
+ */
+export type TracingProgress = {
+  level: number;
+  completed: number;
+  stars: number;
+  bestAccuracy: number;
+  attempts: number;
+};
+
 export type Progress = {
   sessions: SessionSummary[];
   totalStars: number;
@@ -55,6 +72,8 @@ export type Progress = {
   wordScramble?: WordScrambleProgress;
   /** Sopa de letras. Campo propio: no comparte nada con `wordScramble`. */
   wordSearch?: WordSearchProgress;
+  /** Trazos. Campo propio, opcional: los datos ya guardados no lo traen. */
+  tracing?: TracingProgress;
   /**
    * Nombre anterior del juego, cuando se llamaba "Word Puzzle". Se sigue
    * leyendo para no perder el progreso ya guardado, y se conserva al escribir
@@ -90,7 +109,8 @@ function normalizeWordScramble(
   return {
     level: clampLevel(stored?.level),
     bestPerfectWords:
-      typeof stored?.bestPerfectWords === "number" && stored.bestPerfectWords > 0
+      typeof stored?.bestPerfectWords === "number" &&
+      stored.bestPerfectWords > 0
         ? stored.bestPerfectWords
         : 0,
   };
@@ -105,6 +125,26 @@ function normalizeWordSearch(
       typeof stored?.bestWordsFound === "number" && stored.bestWordsFound > 0
         ? stored.bestWordsFound
         : 0,
+  };
+}
+
+function normalizeTracing(
+  stored: Partial<TracingProgress> | undefined,
+): TracingProgress {
+  const counter = (value: unknown) =>
+    typeof value === "number" && value > 0 ? Math.floor(value) : 0;
+  // Cuántos niveles tiene Trazos es cosa suya: aquí solo se guarda que sea un
+  // nivel y no un número raro, y el juego lo recorta con `clampTracingLevel`
+  // al empezar. Repetir el máximo aquí sería un segundo sitio que mantener.
+  const level =
+    typeof stored?.level === "number" ? Math.round(stored.level) : 1;
+
+  return {
+    level: Math.max(level, 1),
+    completed: counter(stored?.completed),
+    stars: counter(stored?.stars),
+    bestAccuracy: Math.min(counter(stored?.bestAccuracy), 100),
+    attempts: counter(stored?.attempts),
   };
 }
 
@@ -127,6 +167,7 @@ export function getProgress(): Progress {
       ...(parsed.wordSearch
         ? { wordSearch: normalizeWordSearch(parsed.wordSearch) }
         : {}),
+      ...(parsed.tracing ? { tracing: normalizeTracing(parsed.tracing) } : {}),
     };
   } catch {
     return createEmptyProgress();
@@ -213,6 +254,36 @@ export function saveWordSearchProgress(next: WordSearchProgress): void {
  * nunca se usa `localStorage.clear()`, que se llevaría también lo que no es
  * progreso.
  */
+export function getTracingProgress(): TracingProgress {
+  return normalizeTracing(getProgress().tracing);
+}
+
+/**
+ * Guarda una sesión de Trazos sobre lo que ya había: el nivel se sustituye, la
+ * mejor precisión se queda con la más alta y ejercicios, estrellas e intentos
+ * se suman. El juego cuenta lo que pasó en su sesión y no tiene que saber lo
+ * que había antes.
+ */
+export function saveTracingSession(session: {
+  level: number;
+  completed: number;
+  stars: number;
+  accuracy: number;
+  attempts: number;
+}): void {
+  const progress = getProgress();
+  const stored = normalizeTracing(progress.tracing);
+
+  progress.tracing = normalizeTracing({
+    level: session.level,
+    completed: stored.completed + session.completed,
+    stars: stored.stars + session.stars,
+    bestAccuracy: Math.max(stored.bestAccuracy, session.accuracy),
+    attempts: stored.attempts + session.attempts,
+  });
+  saveProgress(progress);
+}
+
 export function clearProgress(): void {
   try {
     window.localStorage.removeItem(PROGRESS_KEY);

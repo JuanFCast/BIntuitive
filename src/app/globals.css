@@ -577,7 +577,7 @@ button {
 .hexagons-grid {
   /*
    * El panal movil son dos columnas, no una: en un telefono el ancho lo manda
-   * la altura de la ventana, para que las cuatro filas quepan enteras entre la
+   * la altura de la ventana, para que las cinco filas quepan enteras entre la
    * cabecera y la barra inferior sin hacer scroll. Se mide contra `svh`, el
    * viewport pequeno: es el que no cambia al plegarse las barras del
    * navegador, asi que el panal no se redimensiona bajo el dedo. Si aun asi no
@@ -588,13 +588,13 @@ button {
    * (raiz de 3 partido por 2) y las filas se solapan con el paso vertical de
    * 3/4 de la altura de ficha propio del teselado. Las filas alternan entre
    * pegadas al borde y corridas media ficha, asi que la rejilla mide dos
-   * fichas y media de ancho: la ficha es el 40% de la rejilla. Cuatro filas
-   * dan una altura de 3 pasos mas una ficha —3.25 alturas de ficha—, de ahi el
-   * aspect-ratio 2.5 * 0.8660254 / 3.25 = 0.6661734.
+   * fichas y media de ancho: la ficha es el 40% de la rejilla. Cinco filas dan
+   * una altura de 4 pasos mas una ficha —4 alturas de ficha—, de ahi el
+   * aspect-ratio 2.5 * 0.8660254 / 4 = 0.5412659.
    */
-  width: min(100%, calc((100svh - 17rem) * 0.6661734));
+  width: min(100%, calc((100svh - 17rem) * 0.5412659));
   max-width: 30rem;
-  aspect-ratio: 0.6661734;
+  aspect-ratio: 0.5412659;
   filter: drop-shadow(0 6px 10px rgb(120 88 0 / 0.08));
 }
 
@@ -604,14 +604,15 @@ button {
 }
 
 /*
- * Panal de 8 hexagonos en movil: cuatro filas de dos.
+ * Panal de 9 hexagonos en movil: cuatro filas de dos y una novena ficha que
+ * abre la quinta.
  * Las filas impares nacen en el borde izquierdo (0 y 40%) y las pares van
  * corridas media ficha (20% y 60%), con el paso constante de 3/4 de altura:
- * 0, 23.0769%, 46.1538% y 69.2308% de la altura total.
+ * 0, 18.75%, 37.5%, 56.25% y 75% de la altura total.
  *
- * Con ocho las cuatro filas estan completas. Un noveno abriria una quinta fila
- * (top: 92.3077%) y ahi si cambia el `aspect-ratio` de la rejilla: cinco filas
- * son 4 pasos mas una ficha, 2.5 * 0.8660254 / 4 = 0.5412659.
+ * La novena deja su pareja vacia a la derecha: el panal se lee incompleto, que
+ * es lo que es. Una decima cae justo en ese hueco (left: 60%, top: 75%) y no
+ * cambia ni el numero de filas ni el `aspect-ratio`.
  */
 .hexagon-card:nth-child(1) {
   left: 0;
@@ -625,45 +626,50 @@ button {
 
 .hexagon-card:nth-child(3) {
   left: 20%;
-  top: 23.0769%;
+  top: 18.75%;
 }
 
 .hexagon-card:nth-child(4) {
   left: 60%;
-  top: 23.0769%;
+  top: 18.75%;
 }
 
 .hexagon-card:nth-child(5) {
   left: 0;
-  top: 46.1538%;
+  top: 37.5%;
 }
 
 .hexagon-card:nth-child(6) {
   left: 40%;
-  top: 46.1538%;
+  top: 37.5%;
 }
 
 .hexagon-card:nth-child(7) {
   left: 20%;
-  top: 69.2308%;
+  top: 56.25%;
 }
 
 .hexagon-card:nth-child(8) {
   left: 60%;
-  top: 69.2308%;
+  top: 56.25%;
+}
+
+.hexagon-card:nth-child(9) {
+  left: 0;
+  top: 75%;
 }
 
 @media (min-width: 640px) {
   /*
-   * Dos filas de 4, la de abajo corrida media ficha: la rejilla mide cuatro
-   * fichas y media de ancho, asi que la ficha es el 22.2222%. Dos filas son un
-   * paso mas una ficha —1.75 alturas de ficha—, de ahi el aspect-ratio
-   * 4.5 * 0.8660254 / 1.75 = 2.2269225.
+   * Dos filas de 4 y una novena ficha que abre la tercera, alineada con la
+   * primera. La rejilla mide cuatro fichas y media de ancho, asi que la ficha
+   * es el 22.2222%. Tres filas son dos pasos mas una ficha —2.5 alturas de
+   * ficha—, de ahi el aspect-ratio 4.5 * 0.8660254 / 2.5 = 1.5588457.
    */
   .hexagons-grid {
-    width: min(100%, calc((100svh - 13rem) * 2.2269225));
+    width: min(100%, calc((100svh - 13rem) * 1.5588457));
     max-width: 48rem;
-    aspect-ratio: 2.2269225;
+    aspect-ratio: 1.5588457;
   }
 
   .hexagon-card {
@@ -692,22 +698,27 @@ button {
 
   .hexagon-card:nth-child(5) {
     left: 11.1111%;
-    top: 42.8571%;
+    top: 30%;
   }
 
   .hexagon-card:nth-child(6) {
     left: 33.3333%;
-    top: 42.8571%;
+    top: 30%;
   }
 
   .hexagon-card:nth-child(7) {
     left: 55.5556%;
-    top: 42.8571%;
+    top: 30%;
   }
 
   .hexagon-card:nth-child(8) {
     left: 77.7778%;
-    top: 42.8571%;
+    top: 30%;
+  }
+
+  .hexagon-card:nth-child(9) {
+    left: 0;
+    top: 60%;
   }
 }
 
@@ -736,7 +747,7 @@ button {
 
   .hexagons-grid {
     margin-top: 0.75rem;
-    width: min(100%, calc((100svh - 14rem) * 0.6661734));
+    width: min(100%, calc((100svh - 14rem) * 0.5412659));
   }
 
   .hexagon-emoji {
@@ -747,6 +758,21 @@ button {
     margin-top: 0.125rem;
     font-size: 0.9rem;
   }
+}
+
+/*
+ * Trazos. El tablero es cuadrado —una unidad horizontal y una vertical tienen
+ * que medir lo mismo, o la tolerancia seria mas estrecha en un eje que en el
+ * otro— y `touch-action: none` es imprescindible: sin eso, arrastrar el dedo
+ * desplazaria la pagina en vez de trazar el camino, que es justo lo que hace
+ * el navegador con un gesto vertical.
+ */
+.tracing-board {
+  aspect-ratio: 1;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /*

@@ -39,6 +39,10 @@ export const englishHexagons: Record<
     name: "Memory",
     description: "Turn the cards over and find the pairs.",
   },
+  tracing: {
+    name: "Tracing",
+    description: "Follow the dotted path with your finger.",
+  },
 };
 
 type QuestionCopy = {

@@ -2,7 +2,8 @@
  * Validación del contenido educativo del repositorio.
  *
  * Los bancos siguen siendo independientes —preguntas, Word Scramble, Word
- * Search, Typing, Agilidad visual y Parejas— y este script no los unifica: comprueba las
+ * Search, Typing, Agilidad visual, Parejas y Trazos— y este script no los
+ * unifica: comprueba las
  * invariantes que cada uno ya asume hoy, para que romperlas falle sola en vez
  * de llegar a producción como una pregunta sin respuesta o una palabra que no
  * cabe en su tablero.
@@ -23,6 +24,12 @@ import { ROUNDS_PER_SESSION } from "../src/lib/gameEngine";
 import { WORD_ALPHABET, getWordLetters } from "../src/lib/letters";
 import type { Language } from "../src/lib/language";
 import { MEMORY_PAIRS, MEMORY_SYMBOLS } from "../src/lib/memoryGame";
+import {
+  TRACING_EXERCISES,
+  TRACING_EXERCISES_PER_SESSION,
+  TRACING_LEVELS,
+  type TracingLevel,
+} from "../src/lib/tracingGame";
 import { getTypingPhrases } from "../src/lib/typingGame";
 import { VISUAL_SYMBOLS, VISUAL_SYMBOLS_PER_CARD } from "../src/lib/visualGame";
 import {
@@ -625,6 +632,75 @@ function validateMemory(): void {
   }
 }
 
+/* --------------------------------------------------------------------------
+ * Trazos
+ *
+ * Un ejercicio es una pareja de figuras y una forma de camino. Lo que se
+ * comprueba es que la forma corresponda al nivel que dice tener —de eso
+ * dependen la dificultad y la tolerancia— y que haya bastantes ejercicios por
+ * nivel para armar una sesion sin repetir ninguno.
+ * ----------------------------------------------------------------------- */
+
+function validateTracing(): void {
+  const bank = "tracing";
+  const levels: TracingLevel[] = [1, 2, 3, 4, 5];
+
+  for (const id of duplicates(TRACING_EXERCISES.map((exercise) => exercise.id))) {
+    fail(bank, id, "id repetido");
+  }
+
+  for (const exercise of TRACING_EXERCISES) {
+    const at = exercise.id || "(ejercicio sin id)";
+    if (isBlank(exercise.id)) fail(bank, at, "id vacio");
+
+    for (const [side, figure] of [
+      ["salida", exercise.start],
+      ["destino", exercise.target],
+    ] as const) {
+      if (isBlank(figure.emoji)) fail(bank, at, side + " sin emoji");
+      for (const language of LANGUAGES) {
+        if (isBlank(figure.word[language])) {
+          fail(bank, at, side + " sin palabra en " + language);
+        }
+      }
+    }
+
+    if (exercise.start.emoji === exercise.target.emoji) {
+      fail(bank, at, "salida y destino con el mismo dibujo");
+    }
+
+    const allowed = TRACING_LEVELS[exercise.level].pathTypes;
+    if (!allowed.includes(exercise.pathType)) {
+      fail(
+        bank,
+        at,
+        "camino " +
+          exercise.pathType +
+          " en el nivel " +
+          exercise.level +
+          ": ese nivel usa " +
+          allowed.join(" o "),
+      );
+    }
+  }
+
+  for (const level of levels) {
+    const count = TRACING_EXERCISES.filter(
+      (exercise) => exercise.level === level,
+    ).length;
+    if (count < TRACING_EXERCISES_PER_SESSION) {
+      fail(
+        bank,
+        "nivel " + level,
+        count +
+          " ejercicios; una sesion son " +
+          TRACING_EXERCISES_PER_SESSION +
+          " y tendria que repetir o bajar de nivel",
+      );
+    }
+  }
+}
+
 /* ----------------------------------------------------------------------- */
 
 validateQuestions();
@@ -634,6 +710,7 @@ validateWordSearch();
 validateTyping();
 validateVisual();
 validateMemory();
+validateTracing();
 
 if (issues.length > 0) {
   console.error("Content validation failed — " + issues.length + " issue(s)\n");
@@ -660,6 +737,7 @@ const counts = [
     " typing phrases",
   VISUAL_SYMBOLS.length + " visual symbols",
   MEMORY_SYMBOLS.length + " memory symbols",
+  TRACING_EXERCISES.length + " tracing exercises",
 ].join(", ");
 
 console.log("Content validation passed — " + counts);

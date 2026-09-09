@@ -9,20 +9,21 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
 - **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which is the Home screen and lives at the site root. There is no separate games section.
-- **8 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, and Memory.
+- **9 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, and Tracing.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
 - **Visual Agility:** a local, touch-first matching challenge where two nine-symbol cards share exactly one symbol and mistakes add a one-second penalty.
 - **Type Rush:** a responsive 30-second typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish.
 - **Word Scramble:** a 10-word spelling challenge where players tap large letter tiles in order to build a word, with a picture clue, spoken word, undo and clear controls, and adaptive word length.
 - **Word Search:** a three-puzzle session where players trace hidden words with a finger across a generated letter grid, with words running across, down, diagonally, and backwards as the level rises.
+- **Tracing:** five levels of dotted paths — straight, diagonal, curved, zigzag and long — traced with a finger or a mouse through pointer events. A visible tolerance lane decides how well the path was followed, stars reward the accuracy, and the word of the picture is spoken and shown with its translation.
 - **Memory:** a vertical board of twelve cards where six pairs hide behind the honeycomb, tries and time are counted, and each pair is read out loud in the chosen language.
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
 - **Social sharing:** Open Graph and Twitter cards use the official BIntuitive brand mark, with favicon and Apple touch icon support.
 - **Local profile:** a name, an avatar and the date you started, saved on the device — no sign-in, no email, no password. The profile screen shows them next to your stars and lessons.
-- **Local progress:** total stars, recent sessions, per-category levels, language preference, and mute preference are stored in `localStorage`, each under its own key.
+- **Local progress:** total stars, recent sessions, per-category levels, the levels and best marks of the word games and Tracing, language preference, and mute preference are stored in `localStorage`, each under its own key.
 - **Exit confirmation:** a simple confirmation helps prevent accidental exits during a lesson.
 - **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
 
@@ -80,6 +81,7 @@ src/
       word-scramble/    #   Word Scramble
       word-search/      #   Word Search
       memory/           #   Memory
+      tracing/          #   Tracing
   components/           # Brand mark, hexagon cards, answers, feedback, results...
   data/
     categories.ts       # Base category definitions

@@ -7,6 +7,7 @@ import { localizeHexagon } from "@/data/localization";
 import { getProgress, type Progress, type SessionSummary } from "@/lib/storage";
 import { ROUNDS_PER_SESSION } from "@/lib/gameEngine";
 import { WORD_SCRAMBLE_MAX_LEVEL } from "@/lib/wordScramble";
+import { TRACING_MAX_LEVEL } from "@/lib/tracingGame";
 import { WORD_SEARCH_MAX_LEVEL } from "@/lib/wordSearch";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
@@ -33,6 +34,7 @@ export default function ProgressClient() {
       (progress.sessions.length > 0 ||
         progress.totalStars > 0 ||
         Object.keys(progress.levelByCategory).length > 0 ||
+        progress.tracing ||
         progress.wordScramble ||
         progress.wordPuzzle ||
         progress.wordSearch),
@@ -229,6 +231,18 @@ function readActivity(
         total: WORD_SEARCH_MAX_LEVEL,
       }),
       best: t("progressBestSearch", { count: stored.bestWordsFound }),
+    };
+  }
+
+  if (hexagon.id === "tracing") {
+    const stored = progress.tracing;
+    if (!stored) return null;
+    return {
+      level: t("progressLevel", {
+        level: stored.level,
+        total: TRACING_MAX_LEVEL,
+      }),
+      best: t("progressBestTracing", { accuracy: stored.bestAccuracy }),
     };
   }
 
