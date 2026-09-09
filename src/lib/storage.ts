@@ -207,9 +207,11 @@ export function saveWordSearchProgress(next: WordSearchProgress): void {
  * marcas y sesiones guardadas, incluido el campo heredado `wordPuzzle`.
  *
  * Quita solo la clave del progreso. Las preferencias —idioma, sonido y tamaño
- * de texto— viven en claves propias y no se tocan: quien borra su progreso no
- * pide que la aplicación vuelva a hablarle en otro idioma. Por eso nunca se usa
- * `localStorage.clear()`, que se llevaría también lo que no es progreso.
+ * de texto— y el perfil de quien juega (`bintuitive-profile`) viven en claves
+ * propias y no se tocan: quien borra su progreso no pide que la aplicación
+ * vuelva a hablarle en otro idioma ni dejar de llamarse como se llama. Por eso
+ * nunca se usa `localStorage.clear()`, que se llevaría también lo que no es
+ * progreso.
  */
 export function clearProgress(): void {
   try {

@@ -63,6 +63,7 @@ src/lib/
   gameTimers.ts         useGameTimers: esperas cortas congelables (destellos, pausas, transiciones)
   speakAfterSound.ts    useSpeakAfterSound: decir una palabra tras el sonido de acierto
   preferences.ts        useMuted / useTextSize: lectura reactiva de las preferencias
+  profile.ts            Nombre, avatar y fecha de inicio de quien juega en este dispositivo
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
@@ -133,9 +134,17 @@ src/lib/
 - **Preferencias**: idioma, sonido y tamaño de texto son globales y cada una tiene su clave
   propia en `localStorage` (`bintuitive-language`, `bintuitive-muted`, `bintuitive-text-size`),
   separadas del progreso educativo. Se editan en un único sitio, `AppMenu` (el menú de la
-  cabecera); `Profile` solo las muestra. La verdad sigue en `localStorage`: `storage.ts` avisa
-  a quien se suscriba y `useMuted` / `useTextSize` leen con `useSyncExternalStore`, así que no
-  hay un segundo estado que pueda desincronizarse.
+  cabecera), y **no se enseñan en ningún otro**: `Profile` las listaba en solo lectura y era
+  ruido, porque el menú está en todas las pantallas. La verdad sigue en `localStorage`:
+  `storage.ts` avisa a quien se suscriba y `useMuted` / `useTextSize` leen con
+  `useSyncExternalStore`, así que no hay un segundo estado que pueda desincronizarse.
+- **Perfil es identidad, no cuenta**: `src/lib/profile.ts` guarda nombre, avatar y fecha de
+  inicio en su propia clave (`bintuitive-profile`). No hay servidor, así que no hay correo,
+  contraseña ni sesión que gestionar, y la pantalla lo dice en su tarjeta de "Cuenta" en vez de
+  enseñar campos que no hacen nada. Ahí es donde entrará iniciar sesión el día que existan
+  cuentas. El avatar se guarda por `id`, no por emoji: el dibujo puede cambiar y quien eligió
+  zorro debe seguir teniendo zorro. `Profile` solo enseña estrellas y lecciones —las dos
+  métricas globales— y enlaza a `/progress` para el detalle, en vez de copiarlo.
 - **Tamaño de texto**: escala los tokens `--text-*` de Tailwind desde `[data-text-size]` en
   `<html>`. **Nunca** tocar el `font-size` de `html`: movería el panal, los tableros y todo lo
   calculado contra el viewport. La geometría es inmune porque dimensiona su letra con
@@ -232,7 +241,8 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   cancelar, `destructive`), con Escape y devolución del foco. `ExitDialog` es una capa fina
   sobre él. No crear un modal nuevo para la siguiente confirmación.
 - **Borrar progreso**: `clearProgress()` quita solo `bintuitive-progress`. Nunca
-  `localStorage.clear()`: las preferencias viven en sus propias claves y no se tocan.
+  `localStorage.clear()`: las preferencias y el perfil viven en sus propias claves y no se
+  tocan. Quien borra su progreso no pide cambiar de idioma ni dejar de llamarse como se llama.
 - `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
   (`wordScramble`) y el de Word Search (`wordSearch`), cada uno en su propio campo opcional y
   sin compartir datos. `visual` y `typing` no persisten nada. Para añadir persistencia a un

@@ -27,7 +27,7 @@ const messages = {
     profileData: "Data",
     profileReset: "Reset progress",
     profileResetDescription:
-      "Remove the progress saved on this device. Your preferences stay.",
+      "Remove the progress saved on this device. Your profile and your preferences stay.",
     resetDialogAria: "Confirmation to reset progress",
     resetDialogTitle: "Reset all progress?",
     resetDialogMessage:
@@ -48,8 +48,6 @@ const messages = {
     aboutTagline: "Learning is always fun.",
     aboutDescription:
       "BIntuitive is a learning hub built around microgames that turn short play sessions into opportunities to learn and grow.",
-    profilePreferencesSummary:
-      "Change them from the settings menu at the top right.",
     categoryStart: "Start playing",
     categoryLevel: "Level {level}",
     placesGoal: "Recognise places and pick the right one.",
@@ -115,8 +113,20 @@ const messages = {
     progressLessons: "Recent lessons",
     progressLocalNote: "Your progress is saved only on this device.",
     profileHeading: "Profile",
-    profileIntro: "Make BIntuitive feel right for you.",
-    profilePreferences: "Preferences",
+    profileNamePlaceholder: "Your name",
+    profileSince: "Playing since {date}",
+    profileEdit: "Edit profile",
+    profileSave: "Save",
+    profileNameLabel: "Name",
+    profileAvatarLabel: "Choose your avatar",
+    profileSummary: "Summary",
+    profileStatStars: "Stars",
+    profileStatLessons: "Lessons",
+    profileSeeProgress: "See all your progress",
+    profileAccount: "Account",
+    profileAccountTitle: "No account needed",
+    profileAccountText:
+      "There is no sign-in, no email and no password: your name, your avatar and your progress are saved on this device and never leave it.",
     visualTitle: "Visual Agility",
     visualIntro: "Find the one symbol shared by both cards.",
     visualHowTo: "Look at the reference card, then tap the matching symbol on your card. A wrong tap adds one second.",
@@ -208,7 +218,7 @@ const messages = {
     profileData: "Datos",
     profileReset: "Borrar progreso",
     profileResetDescription:
-      "Elimina el progreso guardado en este dispositivo. Tus preferencias se conservan.",
+      "Elimina el progreso guardado en este dispositivo. Tu perfil y tus preferencias se conservan.",
     resetDialogAria: "Confirmación para borrar el progreso",
     resetDialogTitle: "¿Borrar todo el progreso?",
     resetDialogMessage:
@@ -229,8 +239,6 @@ const messages = {
     aboutTagline: "Learning is always fun.",
     aboutDescription:
       "BIntuitive es un centro de aprendizaje basado en microjuegos diseñados para convertir sesiones cortas de juego en oportunidades para aprender y desarrollarse.",
-    profilePreferencesSummary:
-      "Cámbialas desde el menú de ajustes de la esquina superior derecha.",
     categoryStart: "Empezar a jugar",
     categoryLevel: "Nivel {level}",
     placesGoal: "Reconoce lugares y elige el correcto.",
@@ -296,8 +304,20 @@ const messages = {
     progressLessons: "Lecciones recientes",
     progressLocalNote: "Tu progreso se guarda solamente en este dispositivo.",
     profileHeading: "Perfil",
-    profileIntro: "Haz que BIntuitive se adapte a ti.",
-    profilePreferences: "Preferencias",
+    profileNamePlaceholder: "Tu nombre",
+    profileSince: "Jugando desde {date}",
+    profileEdit: "Editar perfil",
+    profileSave: "Guardar",
+    profileNameLabel: "Nombre",
+    profileAvatarLabel: "Elige tu avatar",
+    profileSummary: "Resumen",
+    profileStatStars: "Estrellas",
+    profileStatLessons: "Lecciones",
+    profileSeeProgress: "Ver todo tu progreso",
+    profileAccount: "Cuenta",
+    profileAccountTitle: "Sin cuenta que crear",
+    profileAccountText:
+      "No hay inicio de sesión, ni correo, ni contraseña: tu nombre, tu avatar y tu progreso se guardan en este dispositivo y no salen de él.",
     visualTitle: "Agilidad visual",
     visualIntro: "Encuentra el único símbolo que comparten las dos cartas.",
     visualHowTo: "Mira la carta de referencia y toca el símbolo igual en tu carta. Cada error suma un segundo.",

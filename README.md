@@ -20,7 +20,8 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
 - **Social sharing:** Open Graph and Twitter cards use the official BIntuitive brand mark, with favicon and Apple touch icon support.
-- **Local progress:** total stars, recent sessions, per-category levels, language preference, and mute preference are stored in `localStorage`.
+- **Local profile:** a name, an avatar and the date you started, saved on the device — no sign-in, no email, no password. The profile screen shows them next to your stars and lessons.
+- **Local progress:** total stars, recent sessions, per-category levels, language preference, and mute preference are stored in `localStorage`, each under its own key.
 - **Exit confirmation:** a simple confirmation helps prevent accidental exits during a lesson.
 - **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
 
@@ -204,5 +205,6 @@ outside this repository; no deployment-as-code configuration is currently
 tracked here.
 
 CloudFront currently delivers the application, but BIntuitive does not yet
-have a remote application backend, user authentication, or database. Progress
-and preferences continue to be stored locally in the browser.
+have a remote application backend, user authentication, or database. The
+profile, the progress and the preferences continue to be stored locally in the
+browser, each under its own key.
