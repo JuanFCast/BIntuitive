@@ -24,14 +24,18 @@ export default function manifest(): MetadataRoute.Manifest {
     description: siteDescription,
     lang: "en",
     dir: "ltr",
-    // Quien instaló la aplicación ya entró: abrir desde el icono lleva al
-    // panal, no a la portada pública, que es para quien todavía no conoce
-    // BIntuitive. `/explore` se sirve con un 200 y no pasa por ningún redirect.
+    // La aplicación instalada entra por la misma puerta que el dominio: la
+    // portada. Es una decisión de producto, no un descuido —cuesta un toque
+    // más en "Continuar como invitado" cada vez— y de momento se prefiere así,
+    // para que la presentación y las puertas de cuenta se vean también desde
+    // el icono. Por eso tampoco hay detección de `display-mode: standalone`
+    // que salte sola a Explore: sería justo lo contrario de lo que se quiere.
     //
-    // `id` se queda en "/" a propósito, que es lo que ya está instalado en los
-    // dispositivos: cambiarlo haría que el navegador lo tomara por otra
-    // aplicación distinta y dejara la instalada huérfana.
-    start_url: "/explore",
+    // La raíz se sirve con un 200 y no pasa por ningún redirect, así que el
+    // icono abre sin saltos. `id` coincide con ella y es lo que ya está
+    // instalado en los dispositivos: cambiarlo haría que el navegador la
+    // tomara por otra aplicación distinta y dejara la instalada huérfana.
+    start_url: "/",
     scope: "/",
     display: "standalone",
     // Los colores de la marca: crema es el fondo de la aplicación, así que la

@@ -97,10 +97,13 @@ src/lib/
   (Type Rush añade `"ready"`), con una sección JSX por fase. La ruta de preguntas tiene las
   mismas tres: entra por la explicación y la sesión —nivel guardado incluido— arranca al
   pulsar Comenzar, no al montar.
-- **Instalable**: `manifest.ts` arranca en `/explore`, no en la raíz: quien instaló la
-  aplicación ya entró, y abrir desde el icono tiene que llevar al panal y no a la portada de
-  presentación. `id` se queda en `/`, que es lo que está instalado en los dispositivos;
-  cambiarlo haría que el navegador lo tomara por otra aplicación. El icono grande es el mismo `app/icon.png` que sirve de
+- **Instalable**: `manifest.ts` arranca en `/`, la portada, igual que el dominio. Es una
+  decisión de producto tomada a propósito: la aplicación instalada enseña también la
+  presentación y las puertas de cuenta, al precio de un toque más en "Continuar como invitado"
+  cada vez. Por lo mismo **no** hay detección de `display-mode: standalone` que salte sola a
+  Explore; añadirla desharía la decisión. La raíz se sirve con un 200, así que el icono abre
+  sin redirects, y `id` coincide con ella: cambiarlo haría que el navegador la tomara por otra
+  aplicación y dejara huérfana la ya instalada. El icono grande es el mismo `app/icon.png` que sirve de
   favicon; el de 192 vive en `public/`. Ninguno se declara `maskable`: el logo llega cerca del
   borde y una máscara circular le cortaría el birrete. iOS no lee `display` del manifest, así
   que el modo standalone en Safari depende de las metas `appleWebApp` de `layout.tsx`.
