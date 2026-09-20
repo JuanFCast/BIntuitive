@@ -14,28 +14,33 @@ const nextConfig: NextConfig = {
         destination: "https://bintuitive.aumcrsp.com/:path*",
         permanent: true,
       },
-      // El panal es la pantalla de entrada y vive en la raíz, así que "/" ya no
-      // redirige a ningún sitio. `/hexagons` tampoco redirige aquí: sirve la
-      // misma pantalla con un 200. Durante meses "/" devolvió un 308 permanente
-      // hacia `/hexagons` y ese salto sigue en la caché del navegador de quien
-      // ya abrió la aplicación; darle la vuelta encadenaría "/" guardado →
-      // `/hexagons` → "/" y el navegador cortaría con "demasiadas
-      // redirecciones". Ver `src/app/hexagons/page.tsx`.
+      // "/" es la portada pública y no redirige a ningún sitio. El panal vive
+      // ahora en `/explore`, así que las direcciones antiguas que llevaban a un
+      // índice de juegos apuntan allí: quien guardó uno de esos enlaces quería
+      // el panal, no una pantalla de registro.
+      //
+      // `/hexagons` sigue SIN redirigir: sirve la misma pantalla con un 200.
+      // Durante meses "/" devolvió un 308 permanente hacia `/hexagons` y ese
+      // salto sigue en la caché del navegador de quien ya abrió la aplicación;
+      // darle la vuelta encadenaría "/" guardado → `/hexagons` → "/" y el
+      // navegador cortaría con "demasiadas redirecciones". Quien tenga ese
+      // salto en la caché entra directo al panal sin ver la portada, que es el
+      // mal menor: ya es alguien que juega. Ver `src/app/hexagons/page.tsx`.
       {
         source: "/categorias",
-        destination: "/",
+        destination: "/explore",
         permanent: true,
       },
       {
         source: "/worlds",
-        destination: "/",
+        destination: "/explore",
         permanent: true,
       },
       // La sección "games" se absorbió en el panal: el índice va a la raíz y
       // cada juego conserva su enlace bajo la ruta de juego singular.
       {
         source: "/games",
-        destination: "/",
+        destination: "/explore",
         permanent: true,
       },
       // El juego se llamaba "Word Puzzle" antes de distinguirlo de la futura

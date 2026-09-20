@@ -9,6 +9,7 @@ import GameIntro, { type GameIntroContent } from "./GameIntro";
 import MuteButton from "./MuteButton";
 import { useLanguage } from "@/lib/i18n";
 import { cancelSpeech } from "@/lib/speech";
+import { EXPLORE } from "@/lib/routes";
 
 type GameShellProps = {
   /** La explicación del juego, usada tanto por la intro como por la ayuda. */
@@ -111,7 +112,11 @@ export default function GameShell({
             {homeContent}
           </button>
         ) : (
-          <Link href="/" aria-label={t("backToHexagons")} className={homeClassName}>
+          <Link
+            href={EXPLORE}
+            aria-label={t("backToHexagons")}
+            className={homeClassName}
+          >
             {homeContent}
           </Link>
         )}

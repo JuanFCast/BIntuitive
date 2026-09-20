@@ -4,19 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HEXAGON_WIDTH_RATIO, hexagonPoints } from "@/lib/hexagon";
 import { useLanguage } from "@/lib/i18n";
+import { EXPLORE, LEGACY_EXPLORE } from "@/lib/routes";
 
 type IconProps = {
   active: boolean;
 };
 
-// Home, Progress y Profile: los tres únicos destinos de la barra. Home es el
-// panal, y el panal vive en la raíz.
+// Explore, Progress y Profile: los tres únicos destinos de la barra. Explore
+// es el panal, que desde que la raíz es la portada pública vive en `/explore`.
 //
-// `legacyHref` es la dirección anterior del panal, que sigue sirviendo la
+// `legacyHref` es una dirección anterior del panal, que sigue sirviendo la
 // misma pantalla mientras dure el redirect antiguo en las cachés (ver
-// `next.config.ts`). Quien entre por ahí tiene que ver su pestaña encendida.
+// `src/lib/routes.ts`). Quien entre por ahí tiene que ver su pestaña encendida.
 const navItems = [
-  { href: "/", legacyHref: "/hexagons", labelKey: "navHome", icon: HomeIcon },
+  {
+    href: EXPLORE,
+    legacyHref: LEGACY_EXPLORE,
+    labelKey: "navHome",
+    icon: HomeIcon,
+  },
   { href: "/progress", labelKey: "navProgress", icon: ProgressIcon },
   { href: "/profile", labelKey: "navProfile", icon: ProfileIcon },
 ] as const;

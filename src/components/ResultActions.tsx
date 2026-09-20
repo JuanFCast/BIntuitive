@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
+import { EXPLORE } from "@/lib/routes";
 
 /**
  * El par de botones con el que termina cualquier actividad: repetir y volver a
@@ -9,7 +10,7 @@ import { useLanguage } from "@/lib/i18n";
  *
  * Las siete superficies acaban igual, así que los botones se definen una vez.
  * Lo que cambia es la etiqueta de repetir, que cada juego escribe a su manera;
- * la salida es siempre la misma y siempre lleva al panal, en la raíz.
+ * la salida es siempre la misma y siempre lleva al panal.
  *
  * El secundario es blanco con borde de tinta, como la casa del encabezado: en
  * esta aplicación "salir" se ve así en todas partes.
@@ -33,7 +34,7 @@ export default function ResultActions({
         {playAgainLabel}
       </button>
       <Link
-        href="/"
+        href={EXPLORE}
         className="flex min-h-14 flex-1 items-center justify-center break-words rounded-2xl border-b-8 border-ink/15 bg-white px-4 py-3 text-center text-xl font-extrabold leading-snug text-ink shadow-lg transition-transform active:scale-95 active:border-b-4 sm:px-6"
       >
         {t("backToHexagons")}

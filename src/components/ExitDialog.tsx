@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import ConfirmDialog from "./ConfirmDialog";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
+import { EXPLORE } from "@/lib/routes";
 
 /**
  * Qué se está abandonando. Las dos superficies de juego pierden lo mismo —la
@@ -58,7 +59,7 @@ export default function ExitDialog({
       description={t(copy.message)}
       confirmLabel={t(copy.confirm)}
       cancelLabel={`⬅️ ${t("continuePlaying")}`}
-      onConfirm={() => router.push("/")}
+      onConfirm={() => router.push(EXPLORE)}
       onCancel={onClose}
     />
   );

@@ -798,3 +798,166 @@ button {
     width: min(100%, 32rem, calc(100dvh - 19rem));
   }
 }
+
+/* --------------------------------------------------------------------------
+ * Portada pública y pantallas de cuenta
+ *
+ * Son las únicas pantallas sin marco de aplicación: quien las ve todavía no ha
+ * entrado. Comparten fondo para que pasar de la portada al formulario no sea
+ * un salto, y el panal decorativo usa la misma geometría que el de `/explore`
+ * —pointy-top, filas solapadas a tres cuartos y corridas media ficha— para que
+ * la portada enseñe la forma de la aplicación antes de abrirla.
+ * ----------------------------------------------------------------------- */
+
+.landing-surface {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-cream);
+}
+
+/*
+ * Dos manchas de sol muy diluidas, una arriba a la izquierda y otra abajo a la
+ * derecha. Son gradientes y no elementos: no ocupan nodos, no se pueden pulsar
+ * y no cuestan una capa de pintado propia.
+ */
+.landing-surface::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      42rem 28rem at 12% -10%,
+      rgb(255 196 0 / 0.16),
+      transparent 65%
+    ),
+    radial-gradient(
+      34rem 26rem at 105% 108%,
+      rgb(255 196 0 / 0.13),
+      transparent 62%
+    );
+  content: "";
+  pointer-events: none;
+}
+
+.landing-hive {
+  position: relative;
+  /*
+   * Limitado también por el alto, y no solo por el ancho: en un teléfono de
+   * 360x640 un panal dimensionado solo con `vw` empuja la tarjeta de las
+   * acciones entera por debajo del borde, y lo que trae a alguien a esta
+   * pantalla es entrar, no mirar la decoración.
+   */
+  width: clamp(10rem, min(58vw, 26vh), 21rem);
+  /* Tres fichas de ancho por dos fichas y tres cuartos de alto. */
+  aspect-ratio: 1.0392;
+}
+
+/* En escritorio la columna de la izquierda tiene sitio de sobra y el panal se
+   dimensiona contra el alto disponible, no contra el ancho de la ventana. */
+@media (min-width: 1024px) {
+  .landing-hive {
+    width: clamp(12rem, min(30vw, 38vh), 22rem);
+  }
+}
+
+.landing-hive-cell {
+  position: absolute;
+  display: flex;
+  width: 33.3333%;
+  align-items: center;
+  justify-content: center;
+  /* √3/2: la misma ficha del panal, con el vértice arriba. */
+  aspect-ratio: 0.8660254;
+  background: var(--color-sun);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  font-size: clamp(1.4rem, 6vw, 2.2rem);
+  line-height: 1;
+  animation: landing-hive-float 7s ease-in-out infinite;
+}
+
+/*
+ * El relleno crema por dentro deja el amarillo como un borde de grosor
+ * constante, igual que hacen las fichas de fondo del panal.
+ */
+.landing-hive-cell::before {
+  position: absolute;
+  inset: 3px;
+  background: var(--color-sunsoft);
+  clip-path: inherit;
+  content: "";
+}
+
+.landing-hive-cell > span {
+  position: relative;
+}
+
+/* Filas 2-3-2: las de los extremos corridas media ficha. */
+.landing-hive-0 {
+  left: 16.6667%;
+  top: 0;
+}
+.landing-hive-1 {
+  left: 50%;
+  top: 0;
+}
+.landing-hive-2 {
+  left: 0;
+  top: 30%;
+}
+.landing-hive-3 {
+  left: 33.3333%;
+  top: 30%;
+}
+.landing-hive-4 {
+  left: 66.6667%;
+  top: 30%;
+}
+.landing-hive-5 {
+  left: 16.6667%;
+  top: 60%;
+}
+.landing-hive-6 {
+  left: 50%;
+  top: 60%;
+}
+
+/* Desfasadas para que el panal respire en vez de latir a la vez. */
+.landing-hive-1 {
+  animation-delay: -1s;
+}
+.landing-hive-2 {
+  animation-delay: -2s;
+}
+.landing-hive-3 {
+  animation-delay: -3s;
+}
+.landing-hive-4 {
+  animation-delay: -4s;
+}
+.landing-hive-5 {
+  animation-delay: -5s;
+}
+.landing-hive-6 {
+  animation-delay: -6s;
+}
+
+/*
+ * Tres píxeles de recorrido: se nota que está vivo y no se nota moverse. Es
+ * `transform`, así que el navegador lo resuelve sin volver a calcular la
+ * disposición de nada.
+ */
+@keyframes landing-hive-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Quien pide menos movimiento en su sistema ve el panal quieto. */
+@media (prefers-reduced-motion: reduce) {
+  .landing-hive-cell {
+    animation: none;
+  }
+}

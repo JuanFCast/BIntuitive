@@ -8,7 +8,8 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
-- **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which is the Home screen and lives at the site root. There is no separate games section.
+- **A public welcome page:** the site root introduces BIntuitive and offers three doors — sign in, create an account, or continue as a guest. The first two are honest visual prototypes: there is no identity provider, no database and no session yet, and the screens say so instead of pretending otherwise. Nothing is stored, and no fake account is ever written to the browser.
+- **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which lives at `/explore` and is where every house button, exit and "back to the start" inside the app leads. There is no separate games section.
 - **9 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, and Tracing.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
@@ -22,7 +23,7 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
 - **Social sharing:** Open Graph and Twitter cards use the official BIntuitive brand mark, with favicon and Apple touch icon support.
-- **Local profile:** a name, an avatar and the date you started, saved on the device — no sign-in, no email, no password. The profile screen shows them next to your stars and lessons.
+- **Local profile:** a name, an avatar and the date you started, saved on the device — no working sign-in yet, no email, no password. The profile screen shows them next to your stars and lessons.
 - **Local progress:** total stars, recent sessions, per-category levels, the levels and best marks of the word games and Tracing, language preference, and mute preference are stored in `localStorage`, each under its own key.
 - **Exit confirmation:** leaving a lesson or a game in progress asks first, so a stray tap cannot throw away the session. The introduction and the results screens leave straight away.
 - **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
@@ -71,9 +72,12 @@ The production build validates TypeScript, generates the application routes, and
 ```text
 src/
   app/                  # Home, play routes, metadata, social cards, and icons
-    page.tsx            # Home: the honeycomb that lists every hexagon
+    page.tsx            # The public welcome page
+    LandingClient.tsx   # Identity, and the three doors into the app
+    signin/, signup/, forgot-password/   # Visual account prototypes, no backend
+    explore/            # The honeycomb that lists every hexagon
     HomeClient.tsx      # The honeycomb itself
-    hexagons/           # The honeycomb's former address: same screen, canonical to /
+    hexagons/           # A former address of the honeycomb: same screen, canonical to /explore
     game/               # Play routes
       page.tsx          #   Question categories: /game?hexagon=<slug>
       visual/           #   Visual Agility

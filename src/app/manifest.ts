@@ -24,9 +24,14 @@ export default function manifest(): MetadataRoute.Manifest {
     description: siteDescription,
     lang: "en",
     dir: "ltr",
-    // El panal es la entrada y vive en la raíz, así que abrir desde el icono
-    // no pasa por ningún redirect.
-    start_url: "/",
+    // Quien instaló la aplicación ya entró: abrir desde el icono lleva al
+    // panal, no a la portada pública, que es para quien todavía no conoce
+    // BIntuitive. `/explore` se sirve con un 200 y no pasa por ningún redirect.
+    //
+    // `id` se queda en "/" a propósito, que es lo que ya está instalado en los
+    // dispositivos: cambiarlo haría que el navegador lo tomara por otra
+    // aplicación distinta y dejara la instalada huérfana.
+    start_url: "/explore",
     scope: "/",
     display: "standalone",
     // Los colores de la marca: crema es el fondo de la aplicación, así que la

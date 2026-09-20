@@ -16,9 +16,16 @@ que actualizar la aplicación no le pierde el progreso a nadie). No hay linter c
 
 ## Arquitectura
 
-**El panal (`/`) es la única superficie de descubrimiento.** Es la pantalla de entrada —la
-pestaña se llama Home— y vive en la raíz: la dirección que se comparte es
-`https://bintuitive.aumcrsp.com`, sin nada detrás. Renderiza
+**La raíz (`/`) es la portada pública.** Presenta BIntuitive y ofrece tres puertas: iniciar
+sesión, crear una cuenta y continuar como invitado. Las dos primeras son **prototipos
+visuales**: no hay proveedor de identidad, ni base de datos, ni sesión, y las pantallas lo
+dicen en vez de fingirlo. No guardan correos, ni contraseñas, ni cuentas falsas en
+`localStorage`. La tercera es la que lleva a la aplicación de verdad.
+
+**El panal (`/explore`) es la única superficie de descubrimiento.** Es la pantalla de entrada
+de la aplicación —la pestaña se llama Explore— y todo lo que dentro significa "volver al
+principio" apunta ahí, nunca a `/`. Las direcciones viven en `src/lib/routes.ts`: un
+`href="/"` suelto en un juego mandaría al niño a la pantalla de registro. Renderiza
 `hexagons = [...categories, ...gameHexagons]`, es decir lecciones y juegos en el mismo panal.
 No existe una sección `games`: hubo una (`/games`, de la etapa "worlds", commit `9f1d81d`) que
 quedó como superficie duplicada al llegar el panal en `94bc7df`, y se eliminó. Si vuelve a
@@ -38,15 +45,19 @@ src/app/
   layout.tsx            LanguageProvider + AppShell + metadata/OG
   siteMetadata.ts       Nombre, descripción y URL: los comparten layout y manifest
   manifest.ts           Manifest de la app instalable (Next lo sirve y lo enlaza)
-  page.tsx              Home: el panal, la pantalla de entrada (renderiza HomeClient)
-  HomeClient.tsx        El panal con todos los Hexagon (única vía de entrada)
-  hexagons/             Dirección anterior del panal: misma pantalla, 200 y canonical a /
+  page.tsx              Portada pública (renderiza LandingClient)
+  LandingClient.tsx     Identidad, y las tres puertas: sesión, cuenta e invitado
+  signin/, signup/, forgot-password/   Prototipos visuales de cuenta, sin backend
+  explore/page.tsx      El panal: pantalla de entrada de la aplicación
+  HomeClient.tsx        El panal con todos los Hexagon
+  hexagons/             Dirección anterior del panal: misma pantalla, 200, canonical a /explore
   game/                 Todas las rutas de juego
     page.tsx            Categorías de preguntas: /game?hexagon=<slug>
     <id>/page.tsx       Server component: solo metadata + render del cliente
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
 src/components/         BrandMark, MuteButton, HexagonCard, AppShell, AppMenu, GameShell,
+                        AuthShell, AuthField, LanguageSwitch, ComingSoonNotice,
                         GameIntro, GameHelp, ResultActions, ResultStat, Confetti,
                         ConfirmDialog...
 src/data/
@@ -68,6 +79,8 @@ src/lib/
   speakAfterSound.ts    useSpeakAfterSound: decir una palabra tras el sonido de acierto
   preferences.ts        useMuted / useTextSize: lectura reactiva de las preferencias
   profile.ts            Nombre, avatar y fecha de inicio de quien juega en este dispositivo
+  routes.ts             Las direcciones de la aplicación, escritas una sola vez
+  authForm.ts           Validación visual de los formularios de cuenta (sin backend)
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
@@ -84,23 +97,31 @@ src/lib/
   (Type Rush añade `"ready"`), con una sección JSX por fase. La ruta de preguntas tiene las
   mismas tres: entra por la explicación y la sesión —nivel guardado incluido— arranca al
   pulsar Comenzar, no al montar.
-- **Instalable**: `manifest.ts` arranca en `/`, que ya es el panal y no redirige. El icono grande es el mismo `app/icon.png` que sirve de
+- **Instalable**: `manifest.ts` arranca en `/explore`, no en la raíz: quien instaló la
+  aplicación ya entró, y abrir desde el icono tiene que llevar al panal y no a la portada de
+  presentación. `id` se queda en `/`, que es lo que está instalado en los dispositivos;
+  cambiarlo haría que el navegador lo tomara por otra aplicación. El icono grande es el mismo `app/icon.png` que sirve de
   favicon; el de 192 vive en `public/`. Ninguno se declara `maskable`: el logo llega cerca del
   borde y una máscara circular le cortaría el birrete. iOS no lee `display` del manifest, así
   que el modo standalone en Safari depende de las metas `appleWebApp` de `layout.tsx`.
-- **El panal es Home**: la barra inferior tiene exactamente tres destinos (Home, Progress,
-  Profile) y Home es el panal, servido desde `/`. Un enlace global que signifique "volver al
-  principio" apunta a `/`, nunca a `/hexagons`.
+- **El panal es Explore**: la barra inferior tiene exactamente tres destinos (Explore, Progress,
+  Profile) y Explore es el panal, servido desde `/explore`. Un enlace que dentro de la
+  aplicación signifique "volver al principio" apunta a `EXPLORE` de `src/lib/routes.ts`, nunca
+  a `/` ni a `/hexagons`. La portada, `/signin`, `/signup` y `/forgot-password` **no** llevan
+  barra inferior: quien las ve todavía no ha entrado, y se sale de ellas por su botón de volver.
 - **`/hexagons` sigue viva y no redirige**: sirve la misma pantalla con un 200 desde
-  `src/app/hexagons/page.tsx`, con `canonical` a la raíz. Durante meses `/` devolvió un 308
+  `src/app/hexagons/page.tsx`, con `canonical` a `/explore`. Durante meses `/` devolvió un 308
   permanente hacia `/hexagons`, y ese salto vive en la caché del navegador de cualquiera que ya
-  haya abierto la aplicación: hacer que `/hexagons` redirija a `/` encadenaría `/` guardado →
-  `/hexagons` → `/` y el navegador cortaría con "demasiadas redirecciones". No convertirla en
-  redirect mientras esa caché pueda existir. `BottomNavigation` la lleva como `legacyHref` para
-  encender la pestaña de quien entre por ahí, y `AppShell` la cuenta como ruta principal.
-- **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve el panal (`/` y su dirección
-  anterior `/hexagons`), `/progress` y `/profile`. Un juego se envuelve en `<GameShell>`, que
-  pone el `<main>`, el encabezado común (casa a `/` —que pregunta si hay partida en curso—,
+  haya abierto la aplicación: hacer que `/hexagons` redirija encadenaría `/` guardado →
+  `/hexagons` → destino y podría cortar con "demasiadas redirecciones". No convertirla en
+  redirect mientras esa caché pueda existir. Quien la tenga guardada entra directo al panal sin
+  ver la portada, que es el mal menor: ya es alguien que juega. `BottomNavigation` la lleva como
+  `legacyHref` para encender la pestaña de quien entre por ahí, y `AppShell` la cuenta como ruta
+  principal. La raíz tampoco redirige: sirve la portada con un 200.
+- **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve el panal (`/explore` y su
+  dirección anterior `/hexagons`), `/progress` y `/profile`. Un juego se envuelve en
+  `<GameShell>`, que
+  pone el `<main>`, el encabezado común (casa a Explore —que pregunta si hay partida en curso—,
   ayuda y `<MuteButton />`), la pantalla de introducción, la ayuda y la confirmación de
   salida. `GameShell` no tiene nada que ver con `AppShell`; la salida de un juego siempre es
   el panal.
