@@ -18,6 +18,13 @@ export type GameHexagon = {
 
 export type Hexagon = Category | GameHexagon;
 
+/**
+ * Los nueve del panal, categorías de preguntas y juegos por igual. Es la clave
+ * con la que el progreso guarda la dificultad de cada actividad, así que sale
+ * de aquí, que es la fuente de verdad de qué existe.
+ */
+export type GameId = Hexagon["id"];
+
 export const categories: Category[] = [
   {
     id: "lugares",

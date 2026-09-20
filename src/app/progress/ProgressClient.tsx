@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { hexagons, type Hexagon } from "@/data/categories";
 import { localizeHexagon } from "@/data/localization";
-import { getProgress, type Progress, type SessionSummary } from "@/lib/storage";
+import {
+  countPlayedGames,
+  getProgress,
+  getUnassignedGameProgress,
+  hasGameProgress,
+  type Progress,
+  type SessionSummary,
+} from "@/lib/storage";
+import { UNASSIGNED_GRADE } from "@/lib/grade";
 import { ROUNDS_PER_SESSION } from "@/lib/gameEngine";
 import { WORD_SCRAMBLE_MAX_LEVEL } from "@/lib/wordScramble";
 import { TRACING_MAX_LEVEL } from "@/lib/tracingGame";
@@ -26,18 +34,17 @@ export default function ProgressClient() {
     setProgress(getProgress());
   }, []);
 
-  // Vacío es no haber jugado a nada: ni lecciones, ni estrellas, ni niveles, ni
-  // ninguno de los dos juegos de palabras. Enseñar ceros y "Nivel 1" a quien
-  // acaba de llegar no informa de nada.
+  // Vacío es no haber jugado a nada: ni lecciones, ni estrellas, ni ninguna
+  // actividad con dificultad guardada. Enseñar ceros y "Nivel 1" a quien acaba
+  // de llegar no informa de nada.
+  //
+  // Las actividades se cuentan ya desde `byGrade`, que recoge tanto lo que
+  // escriben los juegos hoy como lo que hubiera guardado de antes.
   const hasProgress = Boolean(
     progress &&
       (progress.sessions.length > 0 ||
         progress.totalStars > 0 ||
-        Object.keys(progress.levelByCategory).length > 0 ||
-        progress.tracing ||
-        progress.wordScramble ||
-        progress.wordPuzzle ||
-        progress.wordSearch),
+        countPlayedGames(progress, UNASSIGNED_GRADE) > 0),
   );
 
   if (!progress) {
@@ -198,60 +205,68 @@ function SummaryStat({
 }
 
 /**
- * Lo que se sabe de cada actividad, leído del progreso ya guardado.
+ * Lo que se sabe de cada actividad, leído del modelo por grado.
+ *
+ * Todo sale ya de `byGrade`, bajo `unassigned`, que es donde vive el progreso
+ * de quien todavía no ha elegido curso. Lo que había guardado de antes llega
+ * aquí sin que esta pantalla tenga que saber de campos antiguos.
+ *
+ * Cuántos escalones tiene cada juego lo sigue diciendo el juego, no la escala
+ * compartida: mientras solo ofrezca tres, enseñar "de 5" sería prometer dos
+ * que no se pueden jugar. Cuando cada juego suba su tope, esto le sigue solo.
  *
  * Devuelve `null` cuando no hay nada que contar, que ocurre en dos casos y
  * ambos se muestran igual: una actividad a la que todavía no se ha jugado, y
- * Agilidad visual y Type Rush, que por diseño no guardan nada. Ninguna de las
- * dos merece una tarjeta que hable de lo que falta.
+ * Agilidad visual, Type Rush y Parejas, que todavía no guardan nada. Ninguna
+ * merece una tarjeta que hable de lo que falta.
  */
 function readActivity(
   hexagon: Hexagon,
   progress: Progress,
   t: Translate,
 ): ActivityProgress {
+  if (!hasGameProgress(progress, UNASSIGNED_GRADE, hexagon.id)) return null;
+
   if (hexagon.id === "scramble") {
-    const stored = progress.wordScramble ?? progress.wordPuzzle;
-    if (!stored) return null;
+    const stored = getUnassignedGameProgress(progress, "scramble");
     return {
       level: t("progressLevel", {
-        level: stored.level,
+        level: stored.difficulty,
         total: WORD_SCRAMBLE_MAX_LEVEL,
       }),
-      best: t("progressBestScramble", { count: stored.bestPerfectWords }),
+      best: t("progressBestScramble", {
+        count: stored.best.perfectWords ?? 0,
+      }),
     };
   }
 
   if (hexagon.id === "search") {
-    const stored = progress.wordSearch;
-    if (!stored) return null;
+    const stored = getUnassignedGameProgress(progress, "search");
     return {
       level: t("progressLevel", {
-        level: stored.level,
+        level: stored.difficulty,
         total: WORD_SEARCH_MAX_LEVEL,
       }),
-      best: t("progressBestSearch", { count: stored.bestWordsFound }),
+      best: t("progressBestSearch", { count: stored.best.wordsFound ?? 0 }),
     };
   }
 
   if (hexagon.id === "tracing") {
-    const stored = progress.tracing;
-    if (!stored) return null;
+    const stored = getUnassignedGameProgress(progress, "tracing");
     return {
       level: t("progressLevel", {
-        level: stored.level,
+        level: stored.difficulty,
         total: TRACING_MAX_LEVEL,
       }),
-      best: t("progressBestTracing", { accuracy: stored.bestAccuracy }),
+      best: t("progressBestTracing", { accuracy: stored.best.accuracy ?? 0 }),
     };
   }
 
-  // Las tres categorías de preguntas guardan su nivel en `levelByCategory`.
+  // Las tres categorías de preguntas, que todavía tienen tres escalones.
   if (!("href" in hexagon)) {
-    const level = progress.levelByCategory[hexagon.id];
-    if (level === undefined) return null;
+    const stored = getUnassignedGameProgress(progress, hexagon.id);
     return {
-      level: t("progressLevel", { level, total: 3 }),
+      level: t("progressLevel", { level: stored.difficulty, total: 3 }),
     };
   }
 

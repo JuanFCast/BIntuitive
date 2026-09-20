@@ -1,6 +1,33 @@
+import type { GameId } from "@/data/categories";
 import type { CategoryId } from "@/data/questions";
+import { UNASSIGNED_GRADE, type GradeKey } from "./grade";
+import {
+  createGameProgress,
+  normalizeByGrade,
+  projectLegacyProgress,
+  type ByGrade,
+  type GameProgress,
+} from "./progressModel";
 
 const PROGRESS_KEY = "bintuitive-progress";
+
+/**
+ * Versión del progreso guardado.
+ *
+ * La 1 no se escribía: es todo lo que hay en dispositivos de antes del modelo
+ * por grado y dificultad. La 2 añade `byGrade` **sin quitar un solo campo de
+ * la 1**, porque mientras los juegos sigan escribiendo en los campos antiguos
+ * hay que poder volver atrás sin que nadie pierda su progreso.
+ *
+ * Las dos conviven a propósito y de forma temporal: `projectLegacyProgress`
+ * las mantiene de acuerdo en cada lectura, siempre en la dirección 1 → 2 y sin
+ * que un dato de la 1 pueda rebajar uno de la 2. Ese puente —y con él los
+ * campos de la 1— se retira al subir a la versión 3; las condiciones exactas
+ * están escritas sobre `projectLegacyProgress`, en `progressModel.ts`.
+ *
+ * La prueba que protege todo esto es `npm run check:migration`.
+ */
+export const PROGRESS_VERSION = 2;
 const MUTE_KEY = "bintuitive-muted";
 const TEXT_SIZE_KEY = "bintuitive-text-size";
 
@@ -66,6 +93,18 @@ export type TracingProgress = {
 };
 
 export type Progress = {
+  /** Qué forma tiene lo guardado. Ausente significa 1, de antes de `byGrade`. */
+  version: number;
+  /**
+   * Dificultad, desbloqueo y marcas de cada actividad, separadas por grado.
+   *
+   * Todo lo que había antes de que existieran los grados vive bajo
+   * `unassigned`: nadie ha elegido curso todavía y atribuírselo a uno sería
+   * inventarlo. Se proyecta desde los campos de abajo en cada lectura, así que
+   * los dos modelos no pueden discrepar mientras los juegos sigan escribiendo
+   * en los antiguos.
+   */
+  byGrade: ByGrade;
   sessions: SessionSummary[];
   totalStars: number;
   levelByCategory: Partial<Record<CategoryId, number>>;
@@ -93,6 +132,8 @@ export type Progress = {
  */
 function createEmptyProgress(): Progress {
   return {
+    version: PROGRESS_VERSION,
+    byGrade: {},
     sessions: [],
     totalStars: 0,
     levelByCategory: {},
@@ -154,7 +195,7 @@ export function getProgress(): Progress {
     const raw = window.localStorage.getItem(PROGRESS_KEY);
     if (!raw) return createEmptyProgress();
     const parsed = JSON.parse(raw) as Progress;
-    return {
+    const legacy = {
       sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
       totalStars: typeof parsed.totalStars === "number" ? parsed.totalStars : 0,
       levelByCategory: parsed.levelByCategory ?? {},
@@ -168,6 +209,16 @@ export function getProgress(): Progress {
         ? { wordSearch: normalizeWordSearch(parsed.wordSearch) }
         : {}),
       ...(parsed.tracing ? { tracing: normalizeTracing(parsed.tracing) } : {}),
+    };
+
+    // Lo antiguo se lee tal cual y encima se calcula lo nuevo. Proyectar en
+    // cada lectura, en vez de convertir una vez y olvidarse, es lo que
+    // mantiene los dos modelos de acuerdo mientras los juegos escriban todavía
+    // en los campos de la versión 1.
+    return {
+      ...legacy,
+      version: PROGRESS_VERSION,
+      byGrade: projectLegacyProgress(legacy, normalizeByGrade(parsed.byGrade)),
     };
   } catch {
     return createEmptyProgress();
@@ -282,6 +333,47 @@ export function saveTracingSession(session: {
     attempts: stored.attempts + session.attempts,
   });
   saveProgress(progress);
+}
+
+/**
+ * El progreso de una actividad dentro de un grado.
+ *
+ * Nunca devuelve `undefined`: quien pregunta es para pintar algo, y "todavía
+ * no se ha jugado" es exactamente un escalón 1 sin nada desbloqueado por
+ * encima. Para distinguir las dos cosas está `hasGameProgress`.
+ */
+export function getGameProgress<Id extends GameId>(
+  progress: Progress,
+  grade: GradeKey,
+  id: Id,
+): GameProgress<Id> {
+  const stored = progress.byGrade[grade]?.[id];
+  return (stored as GameProgress<Id> | undefined) ?? createGameProgress(id);
+}
+
+/** El progreso de quien todavía no ha elegido grado. */
+export function getUnassignedGameProgress<Id extends GameId>(
+  progress: Progress,
+  id: Id,
+): GameProgress<Id> {
+  return getGameProgress(progress, UNASSIGNED_GRADE, id);
+}
+
+/** Si hay algo guardado de esa actividad en ese grado. */
+export function hasGameProgress(
+  progress: Progress,
+  grade: GradeKey,
+  id: GameId,
+): boolean {
+  return progress.byGrade[grade]?.[id] !== undefined;
+}
+
+/** Cuántas actividades tienen algo guardado en ese grado. */
+export function countPlayedGames(
+  progress: Progress,
+  grade: GradeKey,
+): number {
+  return Object.keys(progress.byGrade[grade] ?? {}).length;
 }
 
 export function clearProgress(): void {

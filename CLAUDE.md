@@ -10,8 +10,9 @@ analytics: todo el estado vive en `localStorage`. Producción en `bintuitive.aum
 CloudFront (el workflow de deploy vive fuera del repo).
 
 Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`,
-`npm run validate:content` (valida el contenido educativo). No hay tests ni linter configurado;
-esos dos comandos son la verificación.
+`npm run validate:content` (valida el contenido educativo) y `npm run check:migration` (comprueba
+que actualizar la aplicación no le pierde el progreso a nadie). No hay linter configurado, y la
+única prueba automática es la de la migración: esos tres comandos son la verificación.
 
 ## Arquitectura
 
@@ -271,6 +272,18 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hacen
   `normalizeWordScramble` y `normalizeWordSearch`: `getProgress` debe tolerar el campo
   ausente en datos ya guardados.
+- **El progreso tiene dos modelos vivos, y es temporal.** `Progress` guarda a la vez los campos
+  de la versión 1 —`levelByCategory`, `wordScramble`, `wordSearch`, `tracing`— y el modelo nuevo
+  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Los
+  nueve juegos siguen escribiendo **solo** en los campos de la versión 1; `projectLegacyProgress`
+  los proyecta sobre `byGrade` en **cada lectura**, no una vez, que es lo que impide que los dos
+  modelos discrepen. La dirección es siempre 1 → 2 y un dato antiguo **nunca** rebaja uno nuevo:
+  las marcas se juntan por su mejor valor, el desbloqueo y las estrellas solo suben, y lo que el
+  modelo antiguo no sabía medir llega como `null` y no borra nada. Todo el progreso anterior vive
+  bajo la clave `unassigned`, que no es un grado: atribuirlo a Pre-K sería inventarle un curso a
+  quien no lo ha elegido. Cuándo se puede retirar el puente está escrito sobre
+  `projectLegacyProgress`, y `npm run check:migration` es lo que lo protege: si se toca el
+  progreso, ese comando tiene que seguir en verde.
 - **Campo heredado**: `Progress.wordPuzzle` es el nombre que tenía Word Scramble antes de
   distinguirlo de la futura sopa de letras. `getWordScrambleProgress` lo lee como respaldo y
   las escrituras van solo a `wordScramble`; el campo antiguo se conserva por si se revierte
