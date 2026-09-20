@@ -36,8 +36,9 @@ export default function VisualGame() {
   const [locked, setLocked] = useState(false);
   const timers = useGameTimers();
 
-  // Leer la ayuda no puede costar tiempo: el cronómetro se detiene mientras
-  // está abierta y el instante de inicio se desplaza al reanudar.
+  // Ni leer la ayuda ni dudar ante la confirmación de salida pueden costar
+  // tiempo: el cronómetro se detiene mientras haya algo superpuesto y el
+  // instante de inicio se desplaza al reanudar.
   const [paused, pauseClock] = useClockPause(
     useCallback((pausedMs: number) => {
       setStartedAt((current) => current + pausedMs);
@@ -45,9 +46,10 @@ export default function VisualGame() {
     }, []),
   );
 
-  // Con la ayuda abierta la partida queda quieta: además del cronómetro se
-  // congela la espera entre cartas, para que al cerrar siga la misma carta.
-  const handleHelpOpenChange = useCallback(
+  // Con la ayuda o la confirmación de salida abiertas la partida queda quieta:
+  // además del cronómetro se congela la espera entre cartas, para que al
+  // cerrar siga la misma carta.
+  const handleOverlayOpenChange = useCallback(
     (open: boolean) => {
       if (open) timers.freeze();
       else timers.resume();
@@ -146,7 +148,8 @@ export default function VisualGame() {
       showIntro={phase === "intro"}
       startLabel={t("visualStart")}
       onStart={startGame}
-      onHelpOpenChange={handleHelpOpenChange}
+      confirmExit={phase === "playing"}
+      onOverlayOpenChange={handleOverlayOpenChange}
     >
       {phase === "playing" && baseCard && playerCard && (
         <section className="mx-auto w-full max-w-6xl pb-2 pt-2 text-center sm:pt-4">

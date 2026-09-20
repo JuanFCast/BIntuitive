@@ -88,9 +88,10 @@ export default function TypingGame() {
     playCelebrationSound();
   }, []);
 
-  // La cuenta atrás se detiene mientras la ayuda está abierta: si siguiera
-  // corriendo, la ronda podría terminarse sola detrás de la explicación.
-  const [paused, handleHelpOpenChange] = useClockPause(
+  // La cuenta atrás se detiene mientras haya algo superpuesto —la ayuda o la
+  // confirmación de salida—: si siguiera corriendo, la ronda podría
+  // terminarse sola por detrás.
+  const [paused, handleOverlayOpenChange] = useClockPause(
     useCallback((pausedMs: number) => {
       // En "ready" todavía no hay marca de inicio y no hay nada que desplazar.
       if (!startedAtRef.current) return;
@@ -228,7 +229,8 @@ export default function TypingGame() {
       showIntro={phase === "intro"}
       startLabel={t("typingStart")}
       onStart={prepareRound}
-      onHelpOpenChange={handleHelpOpenChange}
+      confirmExit={phase === "playing"}
+      onOverlayOpenChange={handleOverlayOpenChange}
     >
       {(phase === "ready" || phase === "playing") && (
         <section className="mx-auto flex w-full max-w-4xl flex-col gap-2 pb-3 pt-2 sm:gap-4 sm:pb-5 sm:pt-5">

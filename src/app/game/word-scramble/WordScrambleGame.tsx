@@ -84,11 +84,12 @@ export default function WordScrambleGame() {
     cancelWordSpeech();
   }, [timers, cancelWordSpeech]);
 
-  // Con la ayuda abierta la partida queda quieta: la pausa tras resolver una
-  // palabra se congela, así que al cerrar sigue la misma palabra en pantalla.
-  // La locución pendiente se descarta en vez de aplazarse: al volver, el niño
-  // ya ha visto la palabra y repetirla tarde confunde más que ayuda.
-  const handleHelpOpenChange = useCallback(
+  // Con la ayuda o la confirmación de salida abiertas la partida queda quieta:
+  // la pausa tras resolver una palabra se congela, así que al cerrar sigue la
+  // misma palabra en pantalla. La locución pendiente se descarta en vez de
+  // aplazarse: al volver, el niño ya ha visto la palabra y repetirla tarde
+  // confunde más que ayuda.
+  const handleOverlayOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
         timers.freeze();
@@ -257,7 +258,8 @@ export default function WordScrambleGame() {
       showIntro={phase === "intro"}
       startLabel={t("scrambleStart")}
       onStart={startGame}
-      onHelpOpenChange={handleHelpOpenChange}
+      confirmExit={phase === "playing"}
+      onOverlayOpenChange={handleOverlayOpenChange}
     >
       {phase === "playing" && word && (
         <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 pb-4 pt-3 sm:gap-6 sm:pt-6">

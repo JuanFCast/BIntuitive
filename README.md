@@ -24,7 +24,7 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **Social sharing:** Open Graph and Twitter cards use the official BIntuitive brand mark, with favicon and Apple touch icon support.
 - **Local profile:** a name, an avatar and the date you started, saved on the device — no sign-in, no email, no password. The profile screen shows them next to your stars and lessons.
 - **Local progress:** total stars, recent sessions, per-category levels, the levels and best marks of the word games and Tracing, language preference, and mute preference are stored in `localStorage`, each under its own key.
-- **Exit confirmation:** a simple confirmation helps prevent accidental exits during a lesson.
+- **Exit confirmation:** leaving a lesson or a game in progress asks first, so a stray tap cannot throw away the session. The introduction and the results screens leave straight away.
 - **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
 
 ## Tech stack

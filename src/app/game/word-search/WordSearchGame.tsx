@@ -96,7 +96,7 @@ export default function WordSearchGame() {
 
   useEffect(() => clearTimers, [clearTimers]);
 
-  // El cronómetro se detiene mientras se lee la ayuda: las palabras ya
+  // El cronómetro se detiene mientras haya algo superpuesto: las palabras ya
   // encontradas, el tablero y la selección en curso siguen intactos.
   const [paused, pauseClock] = useClockPause(
     useCallback((pausedMs: number) => {
@@ -105,10 +105,11 @@ export default function WordSearchGame() {
     }, []),
   );
 
-  // Con la ayuda abierta la partida queda quieta: se congelan el destello del
-  // fallo y la espera entre tableros, y se descarta la palabra que estuviera a
-  // punto de pronunciarse para no hablar por encima de la explicación.
-  const handleHelpOpenChange = useCallback(
+  // Con la ayuda o la confirmación de salida abiertas la partida queda quieta:
+  // se congelan el destello del fallo y la espera entre tableros, y se
+  // descarta la palabra que estuviera a punto de pronunciarse para no hablar
+  // por encima de lo que hay abierto.
+  const handleOverlayOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
         timers.freeze();
@@ -426,7 +427,8 @@ export default function WordSearchGame() {
       showIntro={phase === "intro"}
       startLabel={t("searchStart")}
       onStart={startGame}
-      onHelpOpenChange={handleHelpOpenChange}
+      confirmExit={phase === "playing"}
+      onOverlayOpenChange={handleOverlayOpenChange}
     >
       {phase === "playing" && board && (
         <section className="mx-auto flex w-full max-w-5xl flex-col items-center gap-3 pb-6 pt-3 sm:gap-4 sm:pt-5">

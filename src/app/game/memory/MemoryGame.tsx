@@ -46,8 +46,9 @@ export default function MemoryGame() {
   const { speakAfterSound, cancel: cancelSpeaking } =
     useSpeakAfterSound(language);
 
-  // Leer la ayuda no puede costar tiempo: el cronómetro se detiene mientras
-  // está abierta y el instante de inicio se desplaza al reanudar.
+  // Ni leer la ayuda ni dudar ante la confirmación de salida pueden costar
+  // tiempo: el cronómetro se detiene mientras haya algo superpuesto y el
+  // instante de inicio se desplaza al reanudar.
   const [paused, pauseClock] = useClockPause(
     useCallback((pausedMs: number) => {
       setStartedAt((current) => current + pausedMs);
@@ -55,10 +56,10 @@ export default function MemoryGame() {
     }, []),
   );
 
-  // Con la ayuda abierta la partida queda quieta: si la espera de la pareja
-  // fallida siguiera corriendo, el niño cerraría la ayuda y se encontraría las
-  // fichas otra vez tapadas sin haberlas visto.
-  const handleHelpOpenChange = useCallback(
+  // Con la ayuda o la confirmación de salida abiertas la partida queda quieta:
+  // si la espera de la pareja fallida siguiera corriendo, el niño volvería a
+  // la partida y encontraría las fichas otra vez tapadas sin haberlas visto.
+  const handleOverlayOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
         timers.freeze();
@@ -153,7 +154,8 @@ export default function MemoryGame() {
       showIntro={phase === "intro"}
       startLabel={t("memoryStart")}
       onStart={startGame}
-      onHelpOpenChange={handleHelpOpenChange}
+      confirmExit={phase === "playing"}
+      onOverlayOpenChange={handleOverlayOpenChange}
     >
       {phase === "playing" && (
         <section className="mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:gap-3 sm:pt-4">

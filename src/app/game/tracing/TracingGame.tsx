@@ -72,9 +72,10 @@ export default function TracingGame() {
   );
   const tolerance = TRACING_LEVELS[level].tolerance;
 
-  // La ayuda se superpone: soltar el trazo a medias y callar la palabra
-  // pendiente deja la partida quieta mientras se lee, sin tocar la fase.
-  const handleHelpOpenChange = useCallback(
+  // La ayuda y la confirmación de salida se superponen: soltar el trazo a
+  // medias y callar la palabra pendiente deja la partida quieta mientras se
+  // lee o se decide, sin tocar la fase.
+  const handleOverlayOpenChange = useCallback(
     (open: boolean) => {
       if (!open) return;
       drawingRef.current = false;
@@ -265,7 +266,8 @@ export default function TracingGame() {
       showIntro={phase === "intro"}
       startLabel={t("tracingStart")}
       onStart={startGame}
-      onHelpOpenChange={handleHelpOpenChange}
+      confirmExit={phase === "playing"}
+      onOverlayOpenChange={handleOverlayOpenChange}
     >
       {phase === "playing" && exercise && (
         <section className="mx-auto flex w-full max-w-xl flex-col items-center gap-1.5 pt-2 text-center sm:gap-3 sm:pt-4">

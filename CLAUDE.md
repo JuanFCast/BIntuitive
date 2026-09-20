@@ -99,9 +99,9 @@ src/lib/
   encender la pestaña de quien entre por ahí, y `AppShell` la cuenta como ruta principal.
 - **Rutas de juego no llevan AppShell**: `AppShell` solo envuelve el panal (`/` y su dirección
   anterior `/hexagons`), `/progress` y `/profile`. Un juego se envuelve en `<GameShell>`, que
-  pone el `<main>`, el encabezado
-  común (casa a `/`, ayuda y `<MuteButton />`), la pantalla de introducción y la
-  ayuda. `GameShell` no tiene nada que ver con `AppShell`; la salida de un juego siempre es
+  pone el `<main>`, el encabezado común (casa a `/` —que pregunta si hay partida en curso—,
+  ayuda y `<MuteButton />`), la pantalla de introducción, la ayuda y la confirmación de
+  salida. `GameShell` no tiene nada que ver con `AppShell`; la salida de un juego siempre es
   el panal.
 - **Una sola explicación por juego**: el objeto `intro` que recibe `GameShell` es la única
   fuente de contenido, y de ahí salen tanto la pantalla previa a jugar como la ayuda. No
@@ -119,11 +119,17 @@ src/lib/
   build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
 - **Ayuda no es reiniciar**: la ayuda se superpone a la partida y no toca `phase`. Volver a
   `"intro"` reiniciaría ronda, tablero, letras colocadas y estadísticas. Un juego con reloj
-  pasa `onHelpOpenChange` y usa `useClockPause`: leer la explicación no puede costar tiempo.
-- **Con la ayuda abierta la partida está quieta**: las esperas cortas de un juego van por
-  `useGameTimers` (`later`, no `setTimeout` suelto), y `onHelpOpenChange` las congela y las
-  reanuda con el tiempo que les faltaba. Un `setTimeout` propio seguiría corriendo detrás del
-  overlay y cambiaría la carta, la palabra o el tablero mientras el niño lee.
+  pasa `onOverlayOpenChange` y usa `useClockPause`: leer la explicación no puede costar tiempo.
+- **Salir de una partida pregunta**: `GameShell` recibe `confirmExit` —`phase === "playing"`
+  en los seis juegos— y con él la casa deja de ser un enlace y pasa a ser un botón que abre
+  `ExitDialog` con `variant="game"`. En `intro` y en `results` no hay nada que perder y sale
+  directa. La ruta de preguntas tiene encabezado propio y usa el mismo `ExitDialog` con su
+  `variant` por defecto, el de lección. No hay un segundo diálogo de salida.
+- **Con algo superpuesto la partida está quieta**: vale igual para la ayuda y para la
+  confirmación de salida. Las esperas cortas de un juego van por `useGameTimers` (`later`, no
+  `setTimeout` suelto), y `onOverlayOpenChange` las congela y las reanuda con el tiempo que
+  les faltaba. Un `setTimeout` propio seguiría corriendo detrás del overlay y cambiaría la
+  carta, la palabra o el tablero mientras el niño lee o decide.
 - **La voz nunca arranca sola**: en iOS SpeechSynthesis solo habla como consecuencia directa
   de un gesto, así que el audio de la introducción es un botón, no una reproducción
   automática. `AudioButton` comprueba `isMuted()` en los dos caminos.
@@ -248,7 +254,8 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   navegador se queda el gesto vertical como scroll y no llega ni un `pointermove`.
 - **Un solo diálogo de confirmación**: `ConfirmDialog` (título, descripción, confirmar,
   cancelar, `destructive`), con Escape y devolución del foco. `ExitDialog` es una capa fina
-  sobre él. No crear un modal nuevo para la siguiente confirmación.
+  sobre él, con una tabla de textos por `variant` (`lesson` y `game`) y un único destino, el
+  panal. No crear un modal nuevo para la siguiente confirmación.
 - **Borrar progreso**: `clearProgress()` quita solo `bintuitive-progress`. Nunca
   `localStorage.clear()`: las preferencias y el perfil viven en sus propias claves y no se
   tocan. Quien borra su progreso no pide cambiar de idioma ni dejar de llamarse como se llama.
