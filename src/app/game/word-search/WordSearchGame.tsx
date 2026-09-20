@@ -84,6 +84,17 @@ export default function WordSearchGame() {
   const lockedRef = useRef(false);
   const boardDataRef = useRef<Board | null>(null);
 
+  // Un gesto de puntero puede ser dos cosas y no se sabe cuál hasta que
+  // termina: un toque, que apunta a una celda concreta, o un arrastre, que va
+  // por encima de varias. Se apunta dónde se apoyó el dedo y si llegó a salir
+  // de esa celda; al soltar, eso decide con qué regla se cierra el recorrido.
+  const gestureOriginRef = useRef<Cell | null>(null);
+  const movedRef = useRef(false);
+  // Si la letra la armó este mismo gesto, soltar sin moverse no puede
+  // interpretarse como el segundo toque: sería cancelar lo que se acaba de
+  // elegir.
+  const armedHereRef = useRef(false);
+
   const { speakAfterSound, cancel: cancelWordSpeech } =
     useSpeakAfterSound(language);
 
@@ -143,6 +154,9 @@ export default function WordSearchGame() {
     applyHead(null);
     draggingRef.current = false;
     pointerIdRef.current = null;
+    gestureOriginRef.current = null;
+    movedRef.current = false;
+    armedHereRef.current = false;
   }, [applyAnchor, applyHead]);
 
   const loadBoard = useCallback(() => {
@@ -195,8 +209,11 @@ export default function WordSearchGame() {
     sessionLanguageRef.current = language;
     clearTimers();
     lockedRef.current = false;
+    // El banco siguiente es otro: una letra armada del tablero anterior no
+    // significa nada en el nuevo y no puede sobrevivir al cambio.
+    clearSelection();
     setPhase("intro");
-  }, [clearTimers, language]);
+  }, [clearSelection, clearTimers, language]);
 
   const finishGame = useCallback(() => {
     const timeMs = Date.now() - startedAtRef.current;
@@ -295,21 +312,68 @@ export default function WordSearchGame() {
     return { row, col };
   };
 
+  /**
+   * La regla del toque: la primera pulsación arma la letra inicial y la
+   * segunda cierra el recorrido entre las dos. La usan por igual el teclado
+   * —Enter o Espacio sobre una letra— y el dedo o el ratón cuando tocan sin
+   * arrastrar, así que las dos formas de jugar sin arrastre se comportan
+   * exactamente igual.
+   *
+   * Aquí el recorrido es exacto (`buildLine`), no redondeado: un toque señala
+   * una celda concreta y no hay nada que adivinar. Dos letras que no están
+   * alineadas tampoco forman ningún recorrido, así que la segunda pasa a ser
+   * el nuevo inicio en vez de contar como fallo: quien se equivoca de letra al
+   * apuntar no está fallando una palabra.
+   *
+   * Validar es cosa de `validateSelection`, la misma que cierra el arrastre.
+   */
+  const activateCell = useCallback(
+    (cell: Cell) => {
+      const current = boardDataRef.current;
+      if (phase !== "playing" || lockedRef.current || !current) return;
+
+      const armed = anchorRef.current;
+      if (!armed) {
+        applyAnchor(cell);
+        applyHead(cell);
+        playTapSound();
+        return;
+      }
+
+      // Volver a tocar la letra inicial deshace la selección.
+      if (isSameCell(armed, cell)) {
+        clearSelection();
+        playTapSound();
+        return;
+      }
+
+      const line = buildLine(armed, cell);
+      if (!line) {
+        applyAnchor(cell);
+        applyHead(cell);
+        playTapSound();
+        return;
+      }
+      validateSelection(line);
+    },
+    [applyAnchor, applyHead, clearSelection, phase, validateSelection],
+  );
+
+  /**
+   * Apoyar el dedo todavía no dice si esto va a ser un toque o un arrastre, y
+   * por eso aquí solo se anota dónde empezó.
+   *
+   * Sin nada armado, la letra se marca ya: el destello bajo el dedo es la
+   * respuesta inmediata de siempre. Con una letra ya armada no se mueve la
+   * cabeza de la selección, porque hacerlo pintaría la línea redondeada del
+   * arrastre debajo de un dedo que solo está tocando la última letra.
+   */
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (phase !== "playing" || lockedRef.current || !boardDataRef.current) return;
     const cell = cellFromPoint(event.clientX, event.clientY);
     if (!cell) return;
 
     event.preventDefault();
-    const armed = anchorRef.current;
-
-    // Segundo toque sobre la misma celda de inicio: cancela la selección.
-    if (armed && isSameCell(armed, cell)) {
-      clearSelection();
-      playTapSound();
-      return;
-    }
-
     try {
       event.currentTarget.setPointerCapture(event.pointerId);
     } catch {
@@ -317,17 +381,41 @@ export default function WordSearchGame() {
     }
     pointerIdRef.current = event.pointerId;
     draggingRef.current = true;
-    if (!armed) {
+    gestureOriginRef.current = cell;
+    movedRef.current = false;
+    armedHereRef.current = false;
+
+    if (!anchorRef.current) {
+      armedHereRef.current = true;
       applyAnchor(cell);
+      applyHead(cell);
       playTapSound();
     }
-    applyHead(cell);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!draggingRef.current || event.pointerId !== pointerIdRef.current) return;
     const cell = cellFromPoint(event.clientX, event.clientY);
     if (!cell) return;
+
+    const origin = gestureOriginRef.current;
+    if (!origin) return;
+
+    // Mientras el dedo no salga de la celda donde se apoyó, esto todavía puede
+    // acabar siendo un toque y no hay trazo que mover. En cuanto sale, el
+    // gesto es un arrastre, y el arrastre manda sobre cualquier letra que
+    // hubiera dejado armada un toque anterior: el trazo empieza donde se apoyó
+    // el dedo, no donde quedó aquel toque suelto.
+    //
+    // La comprobación solo decide eso. Pasar de aquí y seguir moviendo la
+    // cabeza es lo que permite deshacer un trazo volviendo sobre los propios
+    // pasos, incluso hasta la casilla de partida.
+    if (!movedRef.current) {
+      if (isSameCell(origin, cell)) return;
+      movedRef.current = true;
+      if (!armedHereRef.current) applyAnchor(origin);
+    }
+
     const currentHead = headRef.current;
     if (currentHead && isSameCell(currentHead, cell)) return;
     applyHead(cell);
@@ -339,14 +427,31 @@ export default function WordSearchGame() {
     pointerIdRef.current = null;
 
     const current = boardDataRef.current;
+    const origin = gestureOriginRef.current;
+    const moved = movedRef.current;
+    gestureOriginRef.current = null;
+    movedRef.current = false;
+    if (!current || !origin) return;
+
+    // El dedo no salió de su celda: es un toque. Si fue este gesto el que armó
+    // la letra, ya está hecho lo que tocaba y se queda esperando la segunda.
+    // Si la letra venía de antes, esta es esa segunda pulsación.
+    if (!moved) {
+      if (!armedHereRef.current) activateCell(origin);
+      armedHereRef.current = false;
+      return;
+    }
+
     const anchorCell = anchorRef.current;
     const headCell = headRef.current;
-    if (!current || !anchorCell || !headCell) return;
+    if (!anchorCell || !headCell) return;
 
+    // El arrastre sí se redondea: el dedo no pasa por todas las celdas ni
+    // termina encima de la línea.
     const line = snapSelection(anchorCell, headCell, current.size);
     if (line.length < 2) {
-      // Un toque suelto deja el ancla armada: la palabra se cierra con un
-      // segundo toque en la última letra, sin necesidad de arrastrar.
+      // Volvió al punto de partida: la letra se queda armada y la palabra se
+      // puede cerrar con un toque en la última.
       applyHead(anchorCell);
       return;
     }
@@ -355,35 +460,6 @@ export default function WordSearchGame() {
 
   const handlePointerCancel = () => {
     clearSelection();
-  };
-
-  /** Activación por teclado: dos pulsaciones, primera y última letra. */
-  const handleCellActivate = (cell: Cell) => {
-    const current = boardDataRef.current;
-    if (phase !== "playing" || lockedRef.current || !current) return;
-
-    const armed = anchorRef.current;
-    if (!armed) {
-      applyAnchor(cell);
-      applyHead(cell);
-      playTapSound();
-      return;
-    }
-    if (isSameCell(armed, cell)) {
-      clearSelection();
-      playTapSound();
-      return;
-    }
-
-    const line = buildLine(armed, cell);
-    if (!line) {
-      // No están alineadas: la nueva celda pasa a ser el inicio.
-      applyAnchor(cell);
-      applyHead(cell);
-      playTapSound();
-      return;
-    }
-    validateSelection(line);
   };
 
   const selection =
@@ -542,10 +618,12 @@ export default function WordSearchGame() {
                         type="button"
                         data-cell={key}
                         onClick={(event) => {
-                          // Solo el teclado: el ratón y el dedo usan los
-                          // eventos de puntero y ya validaron al soltar.
+                          // Solo el teclado. Enter y Espacio sobre la letra
+                          // llegan como click sin pulsaciones (`detail === 0`);
+                          // el ratón y el dedo ya pasaron por los eventos de
+                          // puntero, que resolvieron el toque al soltar.
                           if (event.detail === 0) {
-                            handleCellActivate({ row: rowIndex, col: colIndex });
+                            activateCell({ row: rowIndex, col: colIndex });
                           }
                         }}
                         aria-label={t("searchCellAria", {
