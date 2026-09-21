@@ -10,9 +10,10 @@ analytics: todo el estado vive en `localStorage`. Producción en `bintuitive.aum
 CloudFront (el workflow de deploy vive fuera del repo).
 
 Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`,
-`npm run validate:content` (valida el contenido educativo) y `npm run check:migration` (comprueba
-que actualizar la aplicación no le pierde el progreso a nadie). No hay linter configurado, y la
-única prueba automática es la de la migración: esos tres comandos son la verificación.
+`npm run validate:content` (valida el contenido educativo), `npm run check:migration` (comprueba
+que actualizar la aplicación no le pierde el progreso a nadie) y `npm run check:tracing` (las
+reglas de nivel, estrellas y desbloqueo de Trazos). No hay linter configurado, y las únicas
+pruebas automáticas son esas dos: los cuatro comandos son la verificación.
 
 ## Arquitectura
 
@@ -142,6 +143,16 @@ src/lib/
   que explica cada categoría vive en la tabla `CATEGORY_INTRO`, indexada por `slug` y
   comprobada por TypeScript con `satisfies`: si se añade una categoría sin sus textos, el
   build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
+- **La dificultad se elige, no se mueve sola** (hoy solo en Trazos, y es el patrón que copiarán
+  los demás). El selector de los cinco escalones vive dentro de la pantalla de introducción, por
+  la prop `beforeStart` de `GameShell` —que **no** va dentro de `intro` a propósito: `intro` es
+  lo que la ayuda vuelve a enseñar encima de una partida en curso, y un selector ahí invitaría a
+  cambiar de dificultad a mitad de sesión—. Elegido el escalón, queda fijo hasta el final. Al
+  terminar, `tracingSessionStars` valora la sesión de 0 a 3 por la media de estrellas de cada
+  trazo, y dos estrellas abren el siguiente escalón con `unlockedAfterSession`, que solo sabe
+  subir. Abandonar no llega a guardar, así que no desbloquea nada. Las estrellas de cada trazo
+  siguen existiendo y son otra cosa: en los resultados van en tarjetas distintas para que no se
+  lean como la misma cuenta. `npm run check:tracing` protege todas estas reglas.
 - **Ayuda no es reiniciar**: la ayuda se superpone a la partida y no toca `phase`. Volver a
   `"intro"` reiniciaría ronda, tablero, letras colocadas y estadísticas. Un juego con reloj
   pasa `onOverlayOpenChange` y usa `useClockPause`: leer la explicación no puede costar tiempo.
@@ -288,7 +299,7 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   (`wordScramble`), el de Word Search (`wordSearch`) y el de Trazos (`tracing`), cada uno en su
   propio campo opcional y sin compartir datos. `visual`, `typing` y `memory` no persisten nada.
   Trazos es el único que acumula —ejercicios, estrellas e intentos— y lo hace con
-  `saveTracingSession`, que recibe lo que pasó en una sesión y suma sobre lo guardado; el juego
+  `saveTracingResult`, que recibe lo que pasó en una sesión y suma sobre lo guardado; el juego
   no tiene que leer antes para escribir después. Sus estrellas son suyas y no tocan
   `totalStars`. Cuántos niveles tiene Trazos lo sabe `tracingGame.ts` y solo él: `storage.ts`
   guarda el nivel tal cual y el juego lo recorta con `clampTracingLevel` al empezar, para no
@@ -298,10 +309,12 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   ausente en datos ya guardados.
 - **El progreso tiene dos modelos vivos, y es temporal.** `Progress` guarda a la vez los campos
   de la versión 1 —`levelByCategory`, `wordScramble`, `wordSearch`, `tracing`— y el modelo nuevo
-  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Los
-  nueve juegos siguen escribiendo **solo** en los campos de la versión 1; `projectLegacyProgress`
-  los proyecta sobre `byGrade` en **cada lectura**, no una vez, que es lo que impide que los dos
-  modelos discrepen. La dirección es siempre 1 → 2 y un dato antiguo **nunca** rebaja uno nuevo:
+  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Ocho
+  juegos siguen escribiendo **solo** en los campos de la versión 1; **Trazos ya escribe en los
+  dos a la vez**, con exactamente los mismos totales acumulados, que es lo que impide que la
+  proyección le sume una sesión dos veces o le duplique ejercicios. `projectLegacyProgress`
+  proyecta lo antiguo sobre `byGrade` en **cada lectura**, no una vez, que es lo que impide que
+  los dos modelos discrepen. La dirección es siempre 1 → 2 y un dato antiguo **nunca** rebaja uno nuevo:
   las marcas se juntan por su mejor valor, el desbloqueo y las estrellas solo suben, y lo que el
   modelo antiguo no sabía medir llega como `null` y no borra nada. Todo el progreso anterior vive
   bajo la clave `unassigned`, que no es un grado: atribuirlo a Pre-K sería inventarle un curso a

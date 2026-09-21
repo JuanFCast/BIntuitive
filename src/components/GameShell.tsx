@@ -31,6 +31,15 @@ type GameShellProps = {
    * delante de la pregunta pueden costarle tiempo al jugador.
    */
   onOverlayOpenChange?: (open: boolean) => void;
+  /**
+   * Lo que el juego coloca en su pantalla de introducción, entre el ejemplo y
+   * el botón de empezar. Hoy lo usa Trazos para su selector de nivel.
+   *
+   * No va dentro de `intro` porque `intro` es lo que la ayuda vuelve a enseñar
+   * encima de una partida en curso, y elegir dificultad a mitad de sesión es
+   * justo lo que no puede pasar. `GameHelp` no lo recibe.
+   */
+  beforeStart?: ReactNode;
   children: ReactNode;
 };
 
@@ -60,6 +69,7 @@ export default function GameShell({
   onStart,
   confirmExit = false,
   onOverlayOpenChange,
+  beforeStart,
   children,
 }: GameShellProps) {
   const { t } = useLanguage();
@@ -139,6 +149,7 @@ export default function GameShell({
       {showIntro ? (
         <GameIntro
           {...intro}
+          beforeAction={beforeStart}
           actionLabel={startLabel}
           onAction={onStart}
         />

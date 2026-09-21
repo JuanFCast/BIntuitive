@@ -29,6 +29,17 @@ type GameIntroProps = GameIntroContent & {
   actionLabel: string;
   onAction: () => void;
   /**
+   * Lo que el juego pone entre el ejemplo y el botón de empezar: hoy, el
+   * selector de nivel de Trazos.
+   *
+   * Va aparte de `intro` a propósito. `intro` es la explicación, y la ayuda
+   * enseña esa misma explicación **encima de una partida en curso**: un
+   * selector de nivel ahí invitaría a cambiar de dificultad a mitad de sesión,
+   * que es justo lo que no puede pasar. Por eso esto solo llega a la pantalla
+   * previa a jugar, y `GameHelp` no lo recibe nunca.
+   */
+  beforeAction?: ReactNode;
+  /**
    * `screen` es la pantalla previa a jugar y ocupa el alto disponible.
    * `dialog` es la misma explicación dentro de la ayuda, sin la marca y con la
    * altura acotada para que quepa sobre la partida.
@@ -44,6 +55,7 @@ export default function GameIntro({
   example,
   actionLabel,
   onAction,
+  beforeAction,
   layout = "screen",
 }: GameIntroProps) {
   const { t } = useLanguage();
@@ -89,6 +101,8 @@ export default function GameIntro({
           <div className="mt-2 flex items-center justify-center">{example}</div>
         </figure>
       )}
+
+      {!isDialog && beforeAction}
 
       {/*
         A 360px el altavoz ocupa 64px fijos y el botón, con "Empezar a jugar"

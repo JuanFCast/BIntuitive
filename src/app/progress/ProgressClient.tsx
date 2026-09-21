@@ -255,11 +255,21 @@ function readActivity(
   if (hexagon.id === "tracing") {
     const stored = getUnassignedGameProgress(progress, "tracing");
     return {
+      // Trazos ya deja elegir nivel, así que lo que cuenta aquí es hasta
+      // dónde llegó y no qué estaba repitiendo la última vez: enseñar "Nivel
+      // 1" a quien tiene abierto el 5 por haber repetido el primero sería
+      // decirle que ha perdido lo que ganó.
       level: t("progressLevel", {
-        level: stored.difficulty,
+        level: stored.unlocked,
         total: TRACING_MAX_LEVEL,
       }),
-      best: t("progressBestTracing", { accuracy: stored.best.accuracy ?? 0 }),
+      best:
+        stored.stars > 0
+          ? t("progressBestTracingStars", {
+              accuracy: stored.best.accuracy ?? 0,
+              stars: stored.stars,
+            })
+          : t("progressBestTracing", { accuracy: stored.best.accuracy ?? 0 }),
     };
   }
 

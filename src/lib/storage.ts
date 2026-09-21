@@ -1,5 +1,11 @@
 import type { GameId } from "@/data/categories";
 import type { CategoryId } from "@/data/questions";
+import {
+  clampStars,
+  unlockedAfterSession,
+  type Difficulty,
+  type Stars,
+} from "./difficulty";
 import { UNASSIGNED_GRADE, type GradeKey } from "./grade";
 import {
   createGameProgress,
@@ -310,28 +316,71 @@ export function getTracingProgress(): TracingProgress {
 }
 
 /**
- * Guarda una sesión de Trazos sobre lo que ya había: el nivel se sustituye, la
- * mejor precisión se queda con la más alta y ejercicios, estrellas e intentos
- * se suman. El juego cuenta lo que pasó en su sesión y no tiene que saber lo
- * que había antes.
+ * Guarda una sesión terminada de Trazos.
+ *
+ * Escribe **una sola vez y en los dos modelos a la vez**: el nuevo, bajo
+ * `byGrade.unassigned`, y los campos de la versión 1, con exactamente los
+ * mismos totales acumulados. Que sean iguales es lo que hace que la proyección
+ * del puente —que se queda con el mejor de los dos— no pueda sumar una sesión
+ * dos veces ni duplicar ejercicios o intentos.
+ *
+ * Los acumuladores suman, las marcas se quedan con la mejor y el desbloqueo
+ * solo sube. El escalón elegido se guarda tal cual, porque repetir un nivel ya
+ * abierto es justamente lo que se quiere poder hacer.
+ *
+ * Una sesión abandonada no llega aquí: el juego solo llama al terminar.
  */
-export function saveTracingSession(session: {
-  level: number;
+export function saveTracingResult(result: {
+  /** El escalón que se acaba de jugar. */
+  playedLevel: Difficulty;
+  /** La valoración de la sesión, de cero a tres. */
+  sessionStars: Stars;
+  /** Estrellas sumadas de los trazos, que es lo que contaba la versión 1. */
+  exerciseStars: number;
   completed: number;
-  stars: number;
   accuracy: number;
   attempts: number;
+  /** ISO. Lo pasa el juego para que esto no dependa del reloj. */
+  playedAt: string;
 }): void {
   const progress = getProgress();
-  const stored = normalizeTracing(progress.tracing);
+  const current = getUnassignedGameProgress(progress, "tracing");
+  const legacy = normalizeTracing(progress.tracing);
 
+  const unlocked = unlockedAfterSession(
+    current.unlocked,
+    result.playedLevel,
+    result.sessionStars,
+  );
+  const completed = (current.best.completed ?? 0) + result.completed;
+  const attempts = (current.best.attempts ?? 0) + result.attempts;
+  const accuracy = Math.max(current.best.accuracy ?? 0, result.accuracy);
+
+  const next: GameProgress<"tracing"> = {
+    difficulty: result.playedLevel,
+    unlocked,
+    stars: clampStars(Math.max(current.stars, result.sessionStars)),
+    sessions: current.sessions + 1,
+    lastPlayedAt: result.playedAt,
+    best: { accuracy, completed, attempts },
+  };
+
+  const unassigned = { ...(progress.byGrade[UNASSIGNED_GRADE] ?? {}) };
+  unassigned.tracing = next;
+  progress.byGrade = { ...progress.byGrade, [UNASSIGNED_GRADE]: unassigned };
+
+  // El espejo de la versión 1, con los mismos totales. `level` guarda lo
+  // desbloqueado y no lo elegido: es lo que entendía el código anterior por
+  // "hasta dónde ha llegado", así que revertir el despliegue no degrada a
+  // nadie por haber estado repitiendo un nivel fácil.
   progress.tracing = normalizeTracing({
-    level: session.level,
-    completed: stored.completed + session.completed,
-    stars: stored.stars + session.stars,
-    bestAccuracy: Math.max(stored.bestAccuracy, session.accuracy),
-    attempts: stored.attempts + session.attempts,
+    level: unlocked,
+    completed,
+    stars: legacy.stars + result.exerciseStars,
+    bestAccuracy: accuracy,
+    attempts,
   });
+
   saveProgress(progress);
 }
 

@@ -1,3 +1,4 @@
+import type { Stars } from "./difficulty";
 import type { Language } from "./language";
 
 /**
@@ -271,16 +272,30 @@ export function tracingStars(accuracy: number): number {
 }
 
 /**
- * Dificultad suave, como la de las lecciones: sube con una sesión buena, baja
- * solo si de verdad costó, y en medio se queda donde está.
+ * La valoración de la sesión entera, de cero a tres estrellas.
+ *
+ * No sustituye a las estrellas de cada trazo, que se siguen ganando una a una
+ * y son lo que ve el niño mientras juega: esto resume la sesión, y es lo único
+ * que decide si se abre el escalón siguiente.
+ *
+ * Una sesión sin terminar vale cero. No es un castigo por rendirse: es que no
+ * hay sesión que valorar, y abandonar a mitad no puede desbloquear nada.
+ *
+ * El nivel ya no se mueve solo. Antes esta lógica subía y bajaba la dificultad
+ * a espaldas del niño; ahora la elige él entre las desbloqueadas y no cambia
+ * durante la partida.
  */
-export function nextTracingLevel(
-  level: number,
-  averageStars: number,
-): TracingLevel {
-  if (averageStars >= 2.5) return clampTracingLevel(level + 1);
-  if (averageStars < 1.5) return clampTracingLevel(level - 1);
-  return clampTracingLevel(level);
+export function tracingSessionStars(
+  exerciseStars: number,
+  completed: number,
+  total: number,
+): Stars {
+  if (total <= 0 || completed < total) return 0;
+
+  const average = exerciseStars / total;
+  if (average >= 2.6) return 3;
+  if (average >= 2) return 2;
+  return 1;
 }
 
 export function clampTracingLevel(level: number): TracingLevel {

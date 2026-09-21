@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 import Confetti from "@/components/Confetti";
 import GameShell from "@/components/GameShell";
@@ -15,15 +15,16 @@ import {
   playWrongSound,
 } from "@/lib/sounds";
 import { useSpeakAfterSound } from "@/lib/speakAfterSound";
-import { getTracingProgress, saveTracingSession } from "@/lib/storage";
+import { getProgress, getUnassignedGameProgress, saveTracingResult } from "@/lib/storage";
+import { MAX_STARS, type Stars } from "@/lib/difficulty";
 import {
   clampTracingLevel,
   createTracingSession,
   isTracingComplete,
   nearestOnPath,
-  nextTracingLevel,
   tracingAccuracy,
   tracingPath,
+  tracingSessionStars,
   tracingStars,
   TRACING_EXERCISES_PER_SESSION,
   TRACING_LEVELS,
@@ -55,6 +56,25 @@ export default function TracingGame() {
   const [stars, setStars] = useState(0);
   const [bestAccuracy, setBestAccuracy] = useState(0);
   const [attempts, setAttempts] = useState(0);
+
+  // El escalón elegido en la introducción, el más alto abierto, y el aviso de
+  // haber tocado uno cerrado. El nivel elegido no se mueve durante la sesión:
+  // `level` se fija al empezar y solo cambia volviendo a la introducción.
+  const [unlocked, setUnlocked] = useState<TracingLevel>(1);
+  const [selectedLevel, setSelectedLevel] = useState<TracingLevel>(1);
+  const [lockedHint, setLockedHint] = useState<TracingLevel | null>(null);
+  const [sessionStars, setSessionStars] = useState<Stars>(0);
+  const [openedLevel, setOpenedLevel] = useState<TracingLevel | null>(null);
+
+  // Lo guardado se lee al montar y no al pulsar Comenzar: el selector tiene
+  // que enseñar los candados antes de que nadie elija nada.
+  useEffect(() => {
+    const stored = getUnassignedGameProgress(getProgress(), "tracing");
+    const open = clampTracingLevel(stored.unlocked);
+    setUnlocked(open);
+    // El último elegido, salvo que fuera más alto de lo que hoy está abierto.
+    setSelectedLevel(clampTracingLevel(Math.min(stored.difficulty, open)));
+  }, []);
 
   const boardRef = useRef<SVGSVGElement>(null);
   const drawingRef = useRef(false);
@@ -96,13 +116,16 @@ export default function TracingGame() {
   };
 
   const startGame = () => {
-    // El nivel guardado se recorta aquí: `storage.ts` no sabe cuántos niveles
-    // tiene Trazos y guarda el número tal cual.
-    const startingLevel = clampTracingLevel(getTracingProgress().level);
+    // El nivel es el que se eligió en el selector, y se queda fijo hasta que
+    // la sesión termine: el juego ya no sube ni baja la dificultad solo.
+    const startingLevel = selectedLevel;
     cancelSpeaking();
     resetTrace();
     setLevel(startingLevel);
     setSession(createTracingSession(startingLevel));
+    setSessionStars(0);
+    setOpenedLevel(null);
+    setLockedHint(null);
     setIndex(0);
     setSolved(null);
     setStars(0);
@@ -234,17 +257,57 @@ export default function TracingGame() {
       return;
     }
 
-    const nextLevel = nextTracingLevel(level, earned / session.length);
-    saveTracingSession({
-      level: nextLevel,
+    // La sesión llegó al final, así que hay valoración: la media de estrellas
+    // por trazo decide cuántas valen los cinco juntos. Abandonar a mitad no
+    // pasa por aquí y por eso no desbloquea nada.
+    const rating = tracingSessionStars(earned, session.length, session.length);
+    const nextUnlocked =
+      rating >= 2 ? clampTracingLevel(Math.max(unlocked, level + 1)) : unlocked;
+
+    saveTracingResult({
+      playedLevel: level,
+      sessionStars: rating,
+      exerciseStars: earned,
       completed: session.length,
-      stars: earned,
       accuracy: best,
       attempts,
+      playedAt: new Date().toISOString(),
     });
-    setLevel(nextLevel);
+
+    setSessionStars(rating);
+    // Solo se anuncia lo que se acaba de abrir, no lo que ya estaba abierto.
+    setOpenedLevel(nextUnlocked > unlocked ? nextUnlocked : null);
+    setUnlocked(nextUnlocked);
     setPhase("results");
     playCelebrationSound();
+  };
+
+  /**
+   * Volver a la introducción, que es donde está el selector.
+   *
+   * El botón de repetir de los resultados no relanza la misma sesión a ciegas:
+   * si se acaba de abrir un nivel, lo que quiere el niño es probarlo, y la
+   * única forma de elegirlo es esta pantalla. Empezar sigue a un toque.
+   */
+  const backToIntro = () => {
+    cancelSpeaking();
+    resetTrace();
+    setSolved(null);
+    setHint(null);
+    setLockedHint(null);
+    setPhase("intro");
+  };
+
+  const pickLevel = (option: TracingLevel) => {
+    if (option > unlocked) {
+      // Un nivel cerrado no se elige: se explica cómo se abre.
+      setLockedHint(option);
+      playWrongSound();
+      return;
+    }
+    setLockedHint(null);
+    setSelectedLevel(option);
+    playTapSound();
   };
 
   const retry = () => {
@@ -268,6 +331,14 @@ export default function TracingGame() {
       onStart={startGame}
       confirmExit={phase === "playing"}
       onOverlayOpenChange={handleOverlayOpenChange}
+      beforeStart={
+        <LevelPicker
+          unlocked={unlocked}
+          selected={selectedLevel}
+          lockedHint={lockedHint}
+          onPick={pickLevel}
+        />
+      }
     >
       {phase === "playing" && exercise && (
         <section className="mx-auto flex w-full max-w-xl flex-col items-center gap-1.5 pt-2 text-center sm:gap-3 sm:pt-4">
@@ -386,8 +457,42 @@ export default function TracingGame() {
               })}
             </p>
           </div>
+          {/*
+            Las estrellas de la sesión, aparte y en grande. Son otra cosa que
+            las de cada trazo —tres como mucho, y son las que abren el nivel
+            siguiente—, así que no pueden compartir tarjeta con ellas ni
+            parecer la suma de nada.
+          */}
+          <div
+            className="flex flex-col items-center gap-1 rounded-3xl border-2 border-sun bg-sunsoft px-6 py-4 shadow-sm"
+            role="img"
+            aria-label={t("tracingSessionStarsAria", { stars: sessionStars })}
+          >
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#9b7400]">
+              {t("tracingSessionStars")}
+            </p>
+            <p className="text-4xl leading-none sm:text-5xl" aria-hidden="true">
+              {Array.from({ length: MAX_STARS }, (_, index) =>
+                index < sessionStars ? "⭐" : "☆",
+              ).join("")}
+            </p>
+          </div>
+
+          {openedLevel && (
+            <p
+              className="break-words rounded-2xl border-2 border-mint bg-mintsoft px-4 py-2 text-base font-extrabold text-ink sm:text-lg"
+              role="status"
+            >
+              {t("tracingUnlockedLevel", { level: openedLevel })}
+            </p>
+          )}
+
           <div className="grid w-full grid-cols-3 gap-3">
-            <ResultStat tone="sun" label={t("tracingStars")} value={stars} />
+            <ResultStat
+              tone="sun"
+              label={t("tracingExerciseStars")}
+              value={stars}
+            />
             <ResultStat
               tone="sun"
               label={t("tracingAccuracy")}
@@ -401,11 +506,110 @@ export default function TracingGame() {
           </div>
           <ResultActions
             playAgainLabel={t("tracingPlayAgain")}
-            onPlayAgain={startGame}
+            onPlayAgain={backToIntro}
           />
         </section>
       )}
     </GameShell>
+  );
+}
+
+/**
+ * El selector de nivel, dentro de la pantalla de introducción.
+ *
+ * Cinco fichas en fila: las abiertas se pueden elegir y repetir cuantas veces
+ * se quiera, y la elegida se distingue por color, borde y peso, no solo por
+ * color —quien no distingue el amarillo tiene que verla igual—.
+ *
+ * Las cerradas llevan candado y se ven apagadas, pero **no** son `disabled`:
+ * un botón deshabilitado no recibe foco ni toque, así que no podría explicar
+ * por qué está cerrado. Llevan `aria-disabled`, no se pueden elegir, y al
+ * tocarlas cuentan lo que falta para abrirlas.
+ */
+function LevelPicker({
+  unlocked,
+  selected,
+  lockedHint,
+  onPick,
+}: {
+  unlocked: TracingLevel;
+  selected: TracingLevel;
+  lockedHint: TracingLevel | null;
+  onPick: (level: TracingLevel) => void;
+}) {
+  const { t } = useLanguage();
+  const levels = Array.from(
+    { length: TRACING_MAX_LEVEL },
+    (_, index) => (index + 1) as TracingLevel,
+  );
+
+  return (
+    <div className="w-full max-w-sm">
+      <p
+        className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#9b7400]"
+        id="tracing-level-picker"
+      >
+        {t("tracingPickLevel")}
+      </p>
+
+      <div
+        className="mt-2 flex w-full items-stretch gap-2"
+        role="group"
+        aria-labelledby="tracing-level-picker"
+      >
+        {levels.map((option) => {
+          const locked = option > unlocked;
+          const chosen = option === selected;
+
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onPick(option)}
+              aria-disabled={locked || undefined}
+              aria-pressed={locked ? undefined : chosen}
+              aria-label={t(
+                locked
+                  ? "tracingLevelLockedAria"
+                  : chosen
+                    ? "tracingLevelSelectedAria"
+                    : "tracingLevelUnlockedAria",
+                { level: option },
+              )}
+              className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center rounded-2xl border-2 text-lg font-extrabold transition-transform ${
+                locked
+                  ? "border-ink/10 bg-ink/5 text-ink/35"
+                  : chosen
+                    ? "border-sun bg-sun text-black shadow-md active:scale-95"
+                    : "border-ink/15 bg-white text-ink active:scale-95"
+              }`}
+            >
+              <span aria-hidden="true">{locked ? "🔒" : option}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/*
+        Alto mínimo fijo: el aviso aparece y desaparece sin mover el botón de
+        empezar, que está justo debajo y es donde va el dedo.
+      */}
+      <p
+        className="mt-2 flex min-h-10 items-center justify-center break-words text-center text-sm font-bold leading-snug text-ink/60"
+        role="status"
+        aria-live="polite"
+      >
+        {lockedHint
+          ? t("tracingLevelLockedHint", {
+              level: lockedHint - 1,
+              next: lockedHint,
+            })
+          : t("tracingLevelBest", {
+              level: unlocked,
+              total: TRACING_MAX_LEVEL,
+            })}
+      </p>
+    </div>
   );
 }
 
