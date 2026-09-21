@@ -3,21 +3,32 @@
 import { useCallback, useEffect, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
+import LevelPicker from "@/components/LevelPicker";
 import ResultActions from "@/components/ResultActions";
 import ResultStat from "@/components/ResultStat";
+import SessionStars from "@/components/SessionStars";
 import { useClockPause } from "@/lib/clockPause";
+import type { Stars } from "@/lib/difficulty";
 import { useGameTimers } from "@/lib/gameTimers";
 import { hexagonPoints } from "@/lib/hexagon";
 import { useLanguage } from "@/lib/i18n";
 import {
+  clampMemoryLevel,
   createMemoryBoard,
   formatMemoryTime,
   memoryAccuracy,
-  MEMORY_FLIP_BACK_MS,
+  memorySessionStars,
+  MEMORY_LEVELS,
   MEMORY_MATCH_MS,
-  MEMORY_PAIRS,
+  MEMORY_MAX_LEVEL,
   type MemoryCard,
+  type MemoryLevel,
 } from "@/lib/memoryGame";
+import {
+  getProgress,
+  getUnassignedGameProgress,
+  saveMemoryResult,
+} from "@/lib/storage";
 import {
   playCelebrationSound,
   playCorrectSound,
@@ -42,7 +53,29 @@ export default function MemoryGame() {
   const [startedAt, setStartedAt] = useState(0);
   const [now, setNow] = useState(0);
   const [finalTime, setFinalTime] = useState(0);
+
+  // El escalón de la partida en curso, fijado al empezar: el juego no lo sube
+  // ni lo baja solo. Aparte, el elegido en el selector, el más alto abierto y
+  // el aviso de haber tocado uno cerrado.
+  const [level, setLevel] = useState<MemoryLevel>(1);
+  const [unlocked, setUnlocked] = useState<MemoryLevel>(1);
+  const [selectedLevel, setSelectedLevel] = useState<MemoryLevel>(1);
+  const [lockedHint, setLockedHint] = useState<MemoryLevel | null>(null);
+  const [sessionStars, setSessionStars] = useState<Stars>(0);
+  const [openedLevel, setOpenedLevel] = useState<MemoryLevel | null>(null);
   const timers = useGameTimers();
+
+  // Lo guardado se lee al montar y no al pulsar Comenzar: el selector tiene
+  // que enseñar los candados antes de que nadie elija nada.
+  useEffect(() => {
+    const stored = getUnassignedGameProgress(getProgress(), "memory");
+    const open = clampMemoryLevel(stored.unlocked);
+    setUnlocked(open);
+    // El último elegido, salvo que fuera más alto de lo que hoy está abierto.
+    setSelectedLevel(clampMemoryLevel(Math.min(stored.difficulty, open)));
+  }, []);
+
+  const config = MEMORY_LEVELS[level];
   const { speakAfterSound, cancel: cancelSpeaking } =
     useSpeakAfterSound(language);
 
@@ -81,8 +114,14 @@ export default function MemoryGame() {
   const startGame = () => {
     timers.clear();
     cancelSpeaking();
+    // El escalón es el elegido en el selector y se queda fijo hasta el final.
+    const startingLevel = selectedLevel;
     const start = Date.now();
-    setBoard(createMemoryBoard());
+    setLevel(startingLevel);
+    setSessionStars(0);
+    setOpenedLevel(null);
+    setLockedHint(null);
+    setBoard(createMemoryBoard(MEMORY_LEVELS[startingLevel].pairs));
     setFlipped([]);
     setMatched([]);
     setWrongPair([]);
@@ -118,10 +157,8 @@ export default function MemoryGame() {
       timers.later(() => {
         setMatched(nextMatched);
         setFlipped([]);
-        if (nextMatched.length >= MEMORY_PAIRS) {
-          setFinalTime(Date.now() - startedAt);
-          setPhase("results");
-          playCelebrationSound();
+        if (nextMatched.length >= config.pairs) {
+          finishGame(nextMoves, nextMatched.length);
           return;
         }
         setLocked(false);
@@ -131,11 +168,66 @@ export default function MemoryGame() {
 
     playWrongSound();
     setWrongPair(turned);
+    // Cuánto se queda a la vista una pareja fallida lo dice el escalón: es lo
+    // que hace el quinto más difícil que el cuarto con el mismo tablero.
     timers.later(() => {
       setWrongPair([]);
       setFlipped([]);
       setLocked(false);
-    }, MEMORY_FLIP_BACK_MS);
+    }, config.flipBackMs);
+  };
+
+  /**
+   * La partida llegó al final, así que hay valoración: la precisión decide
+   * cuántas estrellas vale. Abandonar a mitad no pasa por aquí y por eso no
+   * desbloquea nada ni guarda nada.
+   */
+  const finishGame = (finalMoves: number, pairsFound: number) => {
+    const timeMs = Date.now() - startedAt;
+    const finalAccuracy = memoryAccuracy(finalMoves, pairsFound);
+    const rating = memorySessionStars(finalAccuracy, true);
+    const nextUnlocked =
+      rating >= 2 ? clampMemoryLevel(Math.max(unlocked, level + 1)) : unlocked;
+
+    saveMemoryResult({
+      playedLevel: level,
+      sessionStars: rating,
+      accuracy: finalAccuracy,
+      timeMs,
+      playedAt: new Date().toISOString(),
+    });
+
+    setFinalTime(timeMs);
+    setSessionStars(rating);
+    // Solo se anuncia lo que se acaba de abrir, no lo que ya estaba abierto.
+    setOpenedLevel(nextUnlocked > unlocked ? nextUnlocked : null);
+    setUnlocked(nextUnlocked);
+    setPhase("results");
+    playCelebrationSound();
+  };
+
+  /**
+   * Volver a la introducción, donde está el selector, igual que en Trazos: si
+   * se acaba de abrir un nivel, lo que se quiere es probarlo, y solo se puede
+   * elegir ahí. Empezar sigue estando a un toque.
+   */
+  const backToIntro = () => {
+    timers.clear();
+    cancelSpeaking();
+    setLockedHint(null);
+    setPhase("intro");
+  };
+
+  const pickLevel = (option: MemoryLevel) => {
+    if (option > unlocked) {
+      // Un nivel cerrado no se elige: se explica cómo se abre.
+      setLockedHint(option);
+      playWrongSound();
+      return;
+    }
+    setLockedHint(null);
+    setSelectedLevel(option);
+    playTapSound();
   };
 
   const elapsed =
@@ -156,18 +248,30 @@ export default function MemoryGame() {
       onStart={startGame}
       confirmExit={phase === "playing"}
       onOverlayOpenChange={handleOverlayOpenChange}
+      beforeStart={
+        <LevelPicker
+          maxLevel={MEMORY_MAX_LEVEL}
+          unlocked={unlocked}
+          selected={selectedLevel}
+          lockedHint={lockedHint}
+          onPick={(option) => pickLevel(clampMemoryLevel(option))}
+        />
+      }
     >
       {phase === "playing" && (
-        <section className="mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:gap-3 sm:pt-4">
+        <section className="memory-play mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:gap-3 sm:pt-4">
           <h1 className="text-base font-extrabold text-ink sm:text-2xl">
             {t("memoryInstruction")}
           </h1>
+          <p className="-mt-1 text-xs font-extrabold uppercase tracking-[0.18em] text-ink/45 sm:text-sm">
+            {t("memoryLevelLabel", { level })}
+          </p>
 
           <div className="grid w-full grid-cols-3 gap-1.5 sm:gap-3">
             <Metric
               icon="🧩"
               label={t("memoryPairs")}
-              value={`${matched.length}/${MEMORY_PAIRS}`}
+              value={`${matched.length}/${config.pairs}`}
             />
             <Metric icon="👆" label={t("memoryMoves")} value={moves} />
             <Metric
@@ -178,12 +282,21 @@ export default function MemoryGame() {
           </div>
 
           {/*
-            Tres columnas, siempre: el tablero es vertical porque se juega con
-            el teléfono en la mano. El ancho lo manda la altura de la ventana
-            —medida en `svh`, el viewport que no cambia al plegarse las barras—
-            para que las cuatro filas quepan sin desplazar la página.
+            Las columnas las dice el escalón —tres o cuatro, según cómo reparta
+            el número de fichas—. El ancho lo calcula `.memory-board` contra el
+            alto que queda libre, descontando el texto escalado y el área
+            segura; `--memory-ratio` es columnas entre filas.
           */}
-          <div className="grid w-full max-w-[min(22rem,calc((100svh-13rem)*0.75))] grid-cols-3 gap-2 sm:max-w-[min(26rem,calc((100svh-14rem)*0.75))] sm:gap-3">
+          <div
+            className={`memory-board grid w-full gap-2 sm:gap-3 ${
+              config.columns === 4 ? "grid-cols-4" : "grid-cols-3"
+            }`}
+            style={
+              {
+                "--memory-ratio": config.columns / ((config.pairs * 2) / config.columns),
+              } as React.CSSProperties
+            }
+          >
             {board.map((card) => (
               <MemoryCardButton
                 key={card.key}
@@ -214,9 +327,16 @@ export default function MemoryGame() {
               {t("memoryResultsTitle")}
             </h1>
             <p className="mt-2 text-xl font-semibold text-ink/65">
-              {t("memoryResultsText", { total: MEMORY_PAIRS })}
+              {t("memoryResultsText", { total: config.pairs })}
+            </p>
+            <p className="mt-1 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45">
+              {t("memoryLevelLabel", { level })}
             </p>
           </div>
+
+          {/* Aparte de la precisión y el tiempo, que van en sus tarjetas. */}
+          <SessionStars stars={sessionStars} openedLevel={openedLevel} />
+
           <div className="grid w-full grid-cols-3 gap-3">
             <ResultStat
               tone="sky"
@@ -232,7 +352,7 @@ export default function MemoryGame() {
           </div>
           <ResultActions
             playAgainLabel={t("memoryPlayAgain")}
-            onPlayAgain={startGame}
+            onPlayAgain={backToIntro}
           />
         </section>
       )}

@@ -11,9 +11,10 @@ CloudFront (el workflow de deploy vive fuera del repo).
 
 Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`,
 `npm run validate:content` (valida el contenido educativo), `npm run check:migration` (comprueba
-que actualizar la aplicación no le pierde el progreso a nadie) y `npm run check:tracing` (las
-reglas de nivel, estrellas y desbloqueo de Trazos). No hay linter configurado, y las únicas
-pruebas automáticas son esas dos: los cuatro comandos son la verificación.
+que actualizar la aplicación no le pierde el progreso a nadie), `npm run check:tracing` y
+`npm run check:memory` (las reglas de nivel, estrellas y desbloqueo de Trazos y de Parejas). No
+hay linter configurado, y las únicas pruebas automáticas son esas tres: los cinco comandos son la
+verificación.
 
 ## Arquitectura
 
@@ -143,16 +144,24 @@ src/lib/
   que explica cada categoría vive en la tabla `CATEGORY_INTRO`, indexada por `slug` y
   comprobada por TypeScript con `satisfies`: si se añade una categoría sin sus textos, el
   build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
-- **La dificultad se elige, no se mueve sola** (hoy solo en Trazos, y es el patrón que copiarán
-  los demás). El selector de los cinco escalones vive dentro de la pantalla de introducción, por
-  la prop `beforeStart` de `GameShell` —que **no** va dentro de `intro` a propósito: `intro` es
-  lo que la ayuda vuelve a enseñar encima de una partida en curso, y un selector ahí invitaría a
-  cambiar de dificultad a mitad de sesión—. Elegido el escalón, queda fijo hasta el final. Al
-  terminar, `tracingSessionStars` valora la sesión de 0 a 3 por la media de estrellas de cada
-  trazo, y dos estrellas abren el siguiente escalón con `unlockedAfterSession`, que solo sabe
-  subir. Abandonar no llega a guardar, así que no desbloquea nada. Las estrellas de cada trazo
-  siguen existiendo y son otra cosa: en los resultados van en tarjetas distintas para que no se
-  lean como la misma cuenta. `npm run check:tracing` protege todas estas reglas.
+- **La dificultad se elige, no se mueve sola** (hoy en Trazos y Parejas; es el patrón que
+  copiarán los demás). El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
+  juego lo coloca en su introducción por la prop `beforeStart` de `GameShell` —que **no** va
+  dentro de `intro` a propósito: `intro` es lo que la ayuda vuelve a enseñar encima de una
+  partida en curso, y un selector ahí invitaría a cambiar de dificultad a mitad de sesión—.
+  Elegido el escalón, queda fijo hasta el final. Al terminar, cada juego valora la sesión de 0 a
+  3 con su propia función (`tracingSessionStars` por la media de estrellas de cada trazo,
+  `memorySessionStars` por la precisión), y dos estrellas abren el siguiente escalón con
+  `unlockedAfterSession`, que solo sabe subir. Abandonar no llega a guardar, así que no
+  desbloquea nada. Las estrellas de la sesión se enseñan con `SessionStars`, siempre aparte de
+  las marcas del juego, para que no se lean como la misma cuenta. "Jugar otra vez" vuelve a la
+  introducción y no relanza la partida: es la única forma de elegir el nivel que se acaba de
+  abrir. `npm run check:tracing` y `npm run check:memory` protegen estas reglas.
+- **Un solo escritor de sesiones**: `recordSession`, en `storage.ts`, tiene las reglas que no
+  pueden cambiar de un juego a otro —escalón elegido, desbloqueo, mejor valoración, una sesión
+  cada vez—. Cada juego solo aporta cómo se juntan **sus** marcas (`saveTracingResult`,
+  `saveMemoryResult`). Existe en un solo sitio para que, cuando E3 separe destreza, actividad y
+  dominio por grado, cambie una función y no nueve.
 - **Ayuda no es reiniciar**: la ayuda se superpone a la partida y no toca `phase`. Volver a
   `"intro"` reiniciaría ronda, tablero, letras colocadas y estadísticas. Un juego con reloj
   pasa `onOverlayOpenChange` y usa `useClockPause`: leer la explicación no puede costar tiempo.
@@ -297,7 +306,11 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   tocan. Quien borra su progreso no pide cambiar de idioma ni dejar de llamarse como se llama.
 - `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
   (`wordScramble`), el de Word Search (`wordSearch`) y el de Trazos (`tracing`), cada uno en su
-  propio campo opcional y sin compartir datos. `visual`, `typing` y `memory` no persisten nada.
+  propio campo opcional y sin compartir datos. `visual` y `typing` no persisten nada. Parejas
+  (`memory`) sí, pero **solo en el modelo nuevo**: no guardaba nada antes, así que no tiene
+  campos de la versión 1 ni puente. Su mejor tiempo se guarda con el escalón en que se hizo
+  (`fastestLevel`): tres parejas se terminan en un tercio del tiempo que ocho, y sin el nivel
+  repetir el primero dejaría un récord imbatible.
   Trazos es el único que acumula —ejercicios, estrellas e intentos— y lo hace con
   `saveTracingResult`, que recibe lo que pasó en una sesión y suma sobre lo guardado; el juego
   no tiene que leer antes para escribir después. Sus estrellas son suyas y no tocan
@@ -309,10 +322,11 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
   ausente en datos ya guardados.
 - **El progreso tiene dos modelos vivos, y es temporal.** `Progress` guarda a la vez los campos
   de la versión 1 —`levelByCategory`, `wordScramble`, `wordSearch`, `tracing`— y el modelo nuevo
-  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Ocho
+  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Siete
   juegos siguen escribiendo **solo** en los campos de la versión 1; **Trazos ya escribe en los
   dos a la vez**, con exactamente los mismos totales acumulados, que es lo que impide que la
-  proyección le sume una sesión dos veces o le duplique ejercicios. `projectLegacyProgress`
+  proyección le sume una sesión dos veces o le duplique ejercicios; y **Parejas escribe solo en
+  el nuevo**, porque antes no guardaba nada. `projectLegacyProgress`
   proyecta lo antiguo sobre `byGrade` en **cada lectura**, no una vez, que es lo que impide que
   los dos modelos discrepen. La dirección es siempre 1 → 2 y un dato antiguo **nunca** rebaja uno nuevo:
   las marcas se juntan por su mejor valor, el desbloqueo y las estrellas solo suben, y lo que el

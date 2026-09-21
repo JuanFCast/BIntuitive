@@ -23,7 +23,7 @@ import { questions, type CategoryId } from "../src/data/questions";
 import { ROUNDS_PER_SESSION } from "../src/lib/gameEngine";
 import { WORD_ALPHABET, getWordLetters } from "../src/lib/letters";
 import type { Language } from "../src/lib/language";
-import { MEMORY_PAIRS, MEMORY_SYMBOLS } from "../src/lib/memoryGame";
+import { MEMORY_MAX_PAIRS, MEMORY_SYMBOLS } from "../src/lib/memoryGame";
 import {
   TRACING_EXERCISES,
   TRACING_EXERCISES_PER_SESSION,
@@ -618,15 +618,15 @@ function validateMemory(): void {
     }
   }
 
-  // Un tablero toma seis simbolos distintos del banco. Con justo seis, todas
-  // las partidas serian el mismo tablero.
-  if (MEMORY_SYMBOLS.length <= MEMORY_PAIRS) {
+  // El tablero mas grande toma tantos simbolos distintos como parejas tiene su
+  // escalon. Con justo esos, todas las partidas de ese escalon serian iguales.
+  if (MEMORY_SYMBOLS.length <= MEMORY_MAX_PAIRS) {
     fail(
       bank,
       "banco",
       MEMORY_SYMBOLS.length +
         " simbolos para tableros de " +
-        MEMORY_PAIRS +
+        MEMORY_MAX_PAIRS +
         " parejas: hacen falta mas para que dos partidas no sean iguales",
     );
   }

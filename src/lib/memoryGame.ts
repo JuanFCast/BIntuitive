@@ -1,12 +1,8 @@
+import type { Stars } from "./difficulty";
 import type { Language } from "./language";
 
 /**
  * Parejas: lógica pura del juego de memoria.
- *
- * El tablero es vertical —tres columnas— porque el juego se juega de pie y con
- * una mano en un teléfono, no en la mesa. Tres columnas por cuatro filas son
- * doce fichas: seis parejas, que es una partida corta de verdad y cabe entera
- * en la pantalla sin desplazarla.
  *
  * El banco es suyo y no lo comparte con Agilidad visual, igual que los dos
  * juegos de palabras tienen el suyo. Aquí los emojis tienen que ser distintos
@@ -14,11 +10,59 @@ import type { Language } from "./language";
  * vista en vez de uno de memoria.
  */
 
-export const MEMORY_PAIRS = 6;
-export const MEMORY_COLUMNS = 3;
+export const MEMORY_MAX_LEVEL = 5;
 
-/** Lo que una pareja fallida se queda destapada antes de volver a taparse. */
-export const MEMORY_FLIP_BACK_MS = 1000;
+export type MemoryLevel = 1 | 2 | 3 | 4 | 5;
+
+/**
+ * Qué cambia en cada escalón: cuántas parejas, en cuántas columnas y cuánto se
+ * queda destapada una pareja fallida antes de volver a taparse.
+ *
+ * Ocho parejas como máximo, y en cuatro columnas: dieciséis fichas en 4×4
+ * caben en un teléfono de 360 px sin desplazar la página y con fichas de unos
+ * 78 px. Veinte fichas no se han comprobado y no se ofrecen. Por eso el quinto
+ * escalón no añade fichas: se hace más difícil acortando el destape, que es
+ * memoria pura.
+ *
+ * Las columnas van por escalón porque el número de fichas no siempre reparte
+ * bien en tres: ocho fichas son dos filas de cuatro, no dos filas y dos tercios.
+ */
+export const MEMORY_LEVELS: Record<
+  MemoryLevel,
+  { pairs: number; columns: 3 | 4; flipBackMs: number }
+> = {
+  1: { pairs: 3, columns: 3, flipBackMs: 1400 },
+  2: { pairs: 4, columns: 4, flipBackMs: 1200 },
+  3: { pairs: 6, columns: 3, flipBackMs: 1000 },
+  4: { pairs: 8, columns: 4, flipBackMs: 850 },
+  5: { pairs: 8, columns: 4, flipBackMs: 700 },
+};
+
+/** El tablero más grande de todos: el banco tiene que poder llenarlo. */
+export const MEMORY_MAX_PAIRS = Math.max(
+  ...Object.values(MEMORY_LEVELS).map((level) => level.pairs),
+);
+
+export function clampMemoryLevel(level: number): MemoryLevel {
+  const rounded = Math.round(level);
+  if (rounded <= 1) return 1;
+  if (rounded >= MEMORY_MAX_LEVEL) return MEMORY_MAX_LEVEL;
+  return rounded as MemoryLevel;
+}
+
+/**
+ * La valoración de una partida, de cero a tres estrellas, por la precisión.
+ *
+ * Sin terminar vale cero: no hay partida que valorar y abandonar no puede
+ * abrir nada. Terminada, una estrella es haberla acabado; dos, acertar al
+ * menos seis de cada diez intentos; tres, ocho de cada diez.
+ */
+export function memorySessionStars(accuracy: number, completed: boolean): Stars {
+  if (!completed) return 0;
+  if (accuracy >= 80) return 3;
+  if (accuracy >= 60) return 2;
+  return 1;
+}
 
 /** Pausa tras acertar, para que se vea la pareja antes de darla por hecha. */
 export const MEMORY_MATCH_MS = 450;
@@ -69,12 +113,12 @@ export function shuffleMemoryItems<T>(items: readonly T[]): T[] {
 }
 
 /**
- * Un tablero nuevo: seis símbolos al azar del banco, cada uno dos veces y todo
- * revuelto. Cada partida trae símbolos distintos, así que repetir no es repasar
- * el mismo tablero.
+ * Un tablero nuevo: tantos símbolos al azar del banco como parejas pida el
+ * escalón, cada uno dos veces y todo revuelto. Cada partida trae símbolos
+ * distintos, así que repetir no es repasar el mismo tablero.
  */
-export function createMemoryBoard(): MemoryCard[] {
-  const chosen = shuffleMemoryItems(MEMORY_SYMBOLS).slice(0, MEMORY_PAIRS);
+export function createMemoryBoard(pairs: number): MemoryCard[] {
+  const chosen = shuffleMemoryItems(MEMORY_SYMBOLS).slice(0, pairs);
 
   return shuffleMemoryItems(
     chosen.flatMap((symbol) => [

@@ -17,6 +17,7 @@ import { EXPLORE } from "@/lib/routes";
 import { ROUNDS_PER_SESSION } from "@/lib/gameEngine";
 import { WORD_SCRAMBLE_MAX_LEVEL } from "@/lib/wordScramble";
 import { TRACING_MAX_LEVEL } from "@/lib/tracingGame";
+import { MEMORY_MAX_LEVEL } from "@/lib/memoryGame";
 import { WORD_SEARCH_MAX_LEVEL } from "@/lib/wordSearch";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
@@ -218,7 +219,7 @@ function SummaryStat({
  *
  * Devuelve `null` cuando no hay nada que contar, que ocurre en dos casos y
  * ambos se muestran igual: una actividad a la que todavía no se ha jugado, y
- * Agilidad visual, Type Rush y Parejas, que todavía no guardan nada. Ninguna
+ * Agilidad visual y Type Rush, que todavía no guardan nada. Ninguna
  * merece una tarjeta que hable de lo que falta.
  */
 function readActivity(
@@ -270,6 +271,22 @@ function readActivity(
               stars: stored.stars,
             })
           : t("progressBestTracing", { accuracy: stored.best.accuracy ?? 0 }),
+    };
+  }
+
+  // Parejas, como Trazos, deja elegir nivel: cuenta hasta dónde llegó.
+  if (hexagon.id === "memory") {
+    const stored = getUnassignedGameProgress(progress, "memory");
+    const accuracy = stored.best.accuracy ?? 0;
+    return {
+      level: t("progressLevel", {
+        level: stored.unlocked,
+        total: MEMORY_MAX_LEVEL,
+      }),
+      best:
+        stored.stars > 0
+          ? t("progressBestMemoryStars", { accuracy, stars: stored.stars })
+          : t("progressBestMemory", { accuracy }),
     };
   }
 

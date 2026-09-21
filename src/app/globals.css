@@ -767,6 +767,79 @@ button {
  * desplazaria la pagina en vez de trazar el camino, que es justo lo que hace
  * el navegador con un gesto vertical.
  */
+/*
+ * El tablero de Parejas se dimensiona contra el alto que queda libre, para
+ * que todas sus filas quepan sin desplazar la página.
+ *
+ * Lo que tiene encima —la instrucción, el nivel y los tres marcadores— es
+ * sobre todo texto, y el texto crece con la preferencia de tamaño. Reservarle
+ * un alto fijo hacía que con letra extragrande la última fila acabara a 2 px
+ * del borde inferior. Por eso la reserva se parte en una parte fija (la
+ * cabecera, los rellenos, los iconos) y otra que escala con `--text-scale`: con
+ * letra normal suman exactamente los 13 rem de siempre, y el tablero de
+ * siempre no cambia ni un píxel.
+ *
+ * Además se descuenta el área segura inferior. La aplicación usa
+ * `viewport-fit: cover`, así que instalada en un iPhone la página llega hasta
+ * debajo del indicador de inicio, y una fila de fichas ahí no se puede tocar.
+ *
+ * `--memory-ratio` es columnas entre filas, que pone el juego según el
+ * escalón: convierte el alto disponible en el ancho que le toca al tablero.
+ */
+.memory-board {
+  max-width: min(
+    22rem,
+    calc(
+      (100vh - 9.25rem - 3.75rem * var(--text-scale) -
+          env(safe-area-inset-bottom, 0px)) *
+        var(--memory-ratio)
+    )
+  );
+  max-width: min(
+    22rem,
+    calc(
+      (100svh - 9.25rem - 3.75rem * var(--text-scale) -
+          env(safe-area-inset-bottom, 0px)) *
+        var(--memory-ratio)
+    )
+  );
+}
+
+@media (min-width: 640px) {
+  .memory-board {
+    max-width: min(
+      26rem,
+      calc(
+        (100vh - 10.25rem - 3.75rem * var(--text-scale) -
+            env(safe-area-inset-bottom, 0px)) *
+          var(--memory-ratio)
+      )
+    );
+    max-width: min(
+      26rem,
+      calc(
+        (100svh - 10.25rem - 3.75rem * var(--text-scale) -
+            env(safe-area-inset-bottom, 0px)) *
+          var(--memory-ratio)
+      )
+    );
+  }
+}
+
+/*
+ * Y si con letra grande el tablero aun así llega abajo del todo, la página se
+ * desplaza —el documento es el que se desplaza, como en toda la aplicación— y
+ * este relleno garantiza que la última fila pueda subir por encima del
+ * indicador de inicio.
+ *
+ * Solo el área segura, sin mínimo: el `<main>` de `GameShell` ya deja su
+ * relleno abajo, y sumarle otro hacía desplazar unos píxeles una página que
+ * cabía entera. Sin indicador de inicio vale cero y no cambia nada.
+ */
+.memory-play {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 .tracing-board {
   aspect-ratio: 1;
   touch-action: none;

@@ -11,8 +11,10 @@ import {
   createGameProgress,
   normalizeByGrade,
   projectLegacyProgress,
+  type BestFor,
   type ByGrade,
   type GameProgress,
+  type GradeProgress,
 } from "./progressModel";
 
 const PROGRESS_KEY = "bintuitive-progress";
@@ -330,55 +332,142 @@ export function getTracingProgress(): TracingProgress {
  *
  * Una sesión abandonada no llega aquí: el juego solo llama al terminar.
  */
-export function saveTracingResult(result: {
+/** Lo que todo juego con la escala de dificultad sabe de una sesión terminada. */
+type FinishedSession = {
   /** El escalón que se acaba de jugar. */
   playedLevel: Difficulty;
   /** La valoración de la sesión, de cero a tres. */
   sessionStars: Stars;
-  /** Estrellas sumadas de los trazos, que es lo que contaba la versión 1. */
-  exerciseStars: number;
-  completed: number;
-  accuracy: number;
-  attempts: number;
   /** ISO. Lo pasa el juego para que esto no dependa del reloj. */
   playedAt: string;
-}): void {
-  const progress = getProgress();
-  const current = getUnassignedGameProgress(progress, "tracing");
-  const legacy = normalizeTracing(progress.tracing);
+};
 
-  const unlocked = unlockedAfterSession(
-    current.unlocked,
-    result.playedLevel,
-    result.sessionStars,
-  );
-  const completed = (current.best.completed ?? 0) + result.completed;
-  const attempts = (current.best.attempts ?? 0) + result.attempts;
-  const accuracy = Math.max(current.best.accuracy ?? 0, result.accuracy);
+/**
+ * El núcleo de guardar una sesión terminada, igual para todos los juegos.
+ *
+ * Aquí viven las reglas que no pueden ser distintas de un juego a otro: el
+ * escalón elegido se guarda tal cual, el desbloqueo solo sube y solo con dos
+ * estrellas, la mejor valoración nunca baja, y cada sesión cuenta una vez.
+ * Lo único que cada juego pone de su parte es cómo se juntan **sus** marcas,
+ * porque solo él sabe si una suma, se queda con la mejor o va emparejada.
+ *
+ * Escribe en el progreso recibido y no guarda: quien llama puede tener algo
+ * más que escribir en la misma operación —el espejo de la versión 1 de
+ * Trazos— y todo sale de una sola vez con `saveProgress`.
+ *
+ * Existe en un solo sitio a propósito: cuando E3 separe destreza, actividad y
+ * dominio por grado, es esta función la que cambia, no una por juego.
+ */
+function recordSession<Id extends GameId>(
+  progress: Progress,
+  id: Id,
+  session: FinishedSession,
+  mergeBest: (current: BestFor<Id>) => BestFor<Id>,
+): GameProgress<Id> {
+  const current = getUnassignedGameProgress(progress, id);
 
-  const next: GameProgress<"tracing"> = {
-    difficulty: result.playedLevel,
-    unlocked,
-    stars: clampStars(Math.max(current.stars, result.sessionStars)),
+  const next: GameProgress<Id> = {
+    difficulty: session.playedLevel,
+    unlocked: unlockedAfterSession(
+      current.unlocked,
+      session.playedLevel,
+      session.sessionStars,
+    ),
+    stars: clampStars(Math.max(current.stars, session.sessionStars)),
     sessions: current.sessions + 1,
-    lastPlayedAt: result.playedAt,
-    best: { accuracy, completed, attempts },
+    lastPlayedAt: session.playedAt,
+    best: mergeBest(current.best),
   };
 
-  const unassigned = { ...(progress.byGrade[UNASSIGNED_GRADE] ?? {}) };
-  unassigned.tracing = next;
-  progress.byGrade = { ...progress.byGrade, [UNASSIGNED_GRADE]: unassigned };
+  // El hueco de cada juego guarda sus métricas y solo las suyas; con un `Id`
+  // genérico TypeScript no puede comprobarlo aquí, y lo comprueba la firma.
+  const unassigned = {
+    ...(progress.byGrade[UNASSIGNED_GRADE] ?? {}),
+  } as Record<GameId, unknown>;
+  unassigned[id] = next;
+  progress.byGrade = {
+    ...progress.byGrade,
+    [UNASSIGNED_GRADE]: unassigned as GradeProgress,
+  };
+
+  return next;
+}
+
+/**
+ * Guarda una sesión terminada de Trazos.
+ *
+ * Escribe **una sola vez y en los dos modelos a la vez**: el nuevo, bajo
+ * `byGrade.unassigned`, y los campos de la versión 1, con exactamente los
+ * mismos totales acumulados. Que sean iguales es lo que hace que la proyección
+ * del puente —que se queda con el mejor de los dos— no pueda sumar una sesión
+ * dos veces ni duplicar ejercicios o intentos.
+ *
+ * Ejercicios e intentos suman; la precisión se queda con la mejor.
+ *
+ * Una sesión abandonada no llega aquí: el juego solo llama al terminar.
+ */
+export function saveTracingResult(
+  result: FinishedSession & {
+    /** Estrellas sumadas de los trazos, que es lo que contaba la versión 1. */
+    exerciseStars: number;
+    completed: number;
+    accuracy: number;
+    attempts: number;
+  },
+): void {
+  const progress = getProgress();
+  const legacy = normalizeTracing(progress.tracing);
+
+  const next = recordSession(progress, "tracing", result, (best) => ({
+    accuracy: Math.max(best.accuracy ?? 0, result.accuracy),
+    completed: (best.completed ?? 0) + result.completed,
+    attempts: (best.attempts ?? 0) + result.attempts,
+  }));
 
   // El espejo de la versión 1, con los mismos totales. `level` guarda lo
   // desbloqueado y no lo elegido: es lo que entendía el código anterior por
   // "hasta dónde ha llegado", así que revertir el despliegue no degrada a
   // nadie por haber estado repitiendo un nivel fácil.
   progress.tracing = normalizeTracing({
-    level: unlocked,
-    completed,
+    level: next.unlocked,
+    completed: next.best.completed ?? 0,
     stars: legacy.stars + result.exerciseStars,
-    bestAccuracy: accuracy,
-    attempts,
+    bestAccuracy: next.best.accuracy ?? 0,
+    attempts: next.best.attempts ?? 0,
+  });
+
+  saveProgress(progress);
+}
+
+/**
+ * Guarda una partida terminada de Parejas.
+ *
+ * Solo en el modelo nuevo: Parejas no guardaba nada antes, así que no tiene
+ * campos de la versión 1 que mantener ni puente que alimentar.
+ *
+ * La precisión se queda con la mejor. El tiempo va emparejado con su escalón
+ * y se compara solo contra el mismo tablero o uno más grande: un tiempo de un
+ * escalón mayor sustituye siempre al récord —es el tablero que importa ahora—,
+ * uno del mismo escalón solo si es más rápido, y uno de un escalón menor no lo
+ * toca nunca. Así repetir el nivel 1 no deja un récord imbatible.
+ */
+export function saveMemoryResult(
+  result: FinishedSession & { accuracy: number; timeMs: number },
+): void {
+  const progress = getProgress();
+
+  recordSession(progress, "memory", result, (best) => {
+    const recordLevel = best.fastestLevel ?? 0;
+    const beatsRecord =
+      best.fastestMs === null ||
+      result.playedLevel > recordLevel ||
+      (result.playedLevel === recordLevel && result.timeMs < best.fastestMs);
+
+    return {
+      accuracy: Math.max(best.accuracy ?? 0, result.accuracy),
+      fastestMs: beatsRecord ? result.timeMs : best.fastestMs,
+      fastestLevel: beatsRecord ? result.playedLevel : best.fastestLevel,
+    };
   });
 
   saveProgress(progress);

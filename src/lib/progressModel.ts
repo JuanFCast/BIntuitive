@@ -37,7 +37,17 @@ export type BestByGame = {
   colores: { firstTryCorrect: number | null };
   scramble: { perfectWords: number | null };
   search: { wordsFound: number | null; fewestMisses: number | null };
-  memory: { accuracy: number | null; fastestMs: number | null };
+  /**
+   * `fastestMs` solo tiene sentido junto al escalón en que se hizo: tres
+   * parejas se terminan en un tercio del tiempo que ocho, y sin el nivel
+   * repetir el primero dejaría un récord imbatible que haría parecer un
+   * retroceso cualquier partida seria. `fastestLevel` dice de qué tablero es.
+   */
+  memory: {
+    accuracy: number | null;
+    fastestMs: number | null;
+    fastestLevel: number | null;
+  };
   visual: { fastestMs: number | null; fewestMistakes: number | null };
   typing: {
     wpm: number | null;
@@ -69,7 +79,11 @@ const BEST_DIRECTION: {
   colores: { firstTryCorrect: "higher" },
   scramble: { perfectWords: "higher" },
   search: { wordsFound: "higher", fewestMisses: "lower" },
-  memory: { accuracy: "higher", fastestMs: "lower" },
+  // Estas dos direcciones solo sirven a la proyección del puente, que junta
+  // campo a campo. Parejas no tiene campos de la versión 1, así que nunca le
+  // llegan dos fuentes que juntar: el tiempo y su nivel los escribe siempre
+  // juntos `saveMemoryResult`, que es quien sabe que van emparejados.
+  memory: { accuracy: "higher", fastestMs: "lower", fastestLevel: "higher" },
   visual: { fastestMs: "lower", fewestMistakes: "lower" },
   typing: { wpm: "higher", accuracy: "higher", correctChars: "higher" },
   tracing: { accuracy: "higher", completed: "higher", attempts: "higher" },

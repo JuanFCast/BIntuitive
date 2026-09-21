@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 import Confetti from "@/components/Confetti";
 import GameShell from "@/components/GameShell";
+import LevelPicker from "@/components/LevelPicker";
 import ResultActions from "@/components/ResultActions";
 import ResultStat from "@/components/ResultStat";
+import SessionStars from "@/components/SessionStars";
 import { useLanguage } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
 import {
@@ -16,7 +18,7 @@ import {
 } from "@/lib/sounds";
 import { useSpeakAfterSound } from "@/lib/speakAfterSound";
 import { getProgress, getUnassignedGameProgress, saveTracingResult } from "@/lib/storage";
-import { MAX_STARS, type Stars } from "@/lib/difficulty";
+import type { Stars } from "@/lib/difficulty";
 import {
   clampTracingLevel,
   createTracingSession,
@@ -333,10 +335,11 @@ export default function TracingGame() {
       onOverlayOpenChange={handleOverlayOpenChange}
       beforeStart={
         <LevelPicker
+          maxLevel={TRACING_MAX_LEVEL}
           unlocked={unlocked}
           selected={selectedLevel}
           lockedHint={lockedHint}
-          onPick={pickLevel}
+          onPick={(option) => pickLevel(clampTracingLevel(option))}
         />
       }
     >
@@ -457,35 +460,8 @@ export default function TracingGame() {
               })}
             </p>
           </div>
-          {/*
-            Las estrellas de la sesión, aparte y en grande. Son otra cosa que
-            las de cada trazo —tres como mucho, y son las que abren el nivel
-            siguiente—, así que no pueden compartir tarjeta con ellas ni
-            parecer la suma de nada.
-          */}
-          <div
-            className="flex flex-col items-center gap-1 rounded-3xl border-2 border-sun bg-sunsoft px-6 py-4 shadow-sm"
-            role="img"
-            aria-label={t("tracingSessionStarsAria", { stars: sessionStars })}
-          >
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#9b7400]">
-              {t("tracingSessionStars")}
-            </p>
-            <p className="text-4xl leading-none sm:text-5xl" aria-hidden="true">
-              {Array.from({ length: MAX_STARS }, (_, index) =>
-                index < sessionStars ? "⭐" : "☆",
-              ).join("")}
-            </p>
-          </div>
-
-          {openedLevel && (
-            <p
-              className="break-words rounded-2xl border-2 border-mint bg-mintsoft px-4 py-2 text-base font-extrabold text-ink sm:text-lg"
-              role="status"
-            >
-              {t("tracingUnlockedLevel", { level: openedLevel })}
-            </p>
-          )}
+          {/* Aparte de las de cada trazo, que van en su tarjeta de abajo. */}
+          <SessionStars stars={sessionStars} openedLevel={openedLevel} />
 
           <div className="grid w-full grid-cols-3 gap-3">
             <ResultStat
@@ -511,105 +487,6 @@ export default function TracingGame() {
         </section>
       )}
     </GameShell>
-  );
-}
-
-/**
- * El selector de nivel, dentro de la pantalla de introducción.
- *
- * Cinco fichas en fila: las abiertas se pueden elegir y repetir cuantas veces
- * se quiera, y la elegida se distingue por color, borde y peso, no solo por
- * color —quien no distingue el amarillo tiene que verla igual—.
- *
- * Las cerradas llevan candado y se ven apagadas, pero **no** son `disabled`:
- * un botón deshabilitado no recibe foco ni toque, así que no podría explicar
- * por qué está cerrado. Llevan `aria-disabled`, no se pueden elegir, y al
- * tocarlas cuentan lo que falta para abrirlas.
- */
-function LevelPicker({
-  unlocked,
-  selected,
-  lockedHint,
-  onPick,
-}: {
-  unlocked: TracingLevel;
-  selected: TracingLevel;
-  lockedHint: TracingLevel | null;
-  onPick: (level: TracingLevel) => void;
-}) {
-  const { t } = useLanguage();
-  const levels = Array.from(
-    { length: TRACING_MAX_LEVEL },
-    (_, index) => (index + 1) as TracingLevel,
-  );
-
-  return (
-    <div className="w-full max-w-sm">
-      <p
-        className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#9b7400]"
-        id="tracing-level-picker"
-      >
-        {t("tracingPickLevel")}
-      </p>
-
-      <div
-        className="mt-2 flex w-full items-stretch gap-2"
-        role="group"
-        aria-labelledby="tracing-level-picker"
-      >
-        {levels.map((option) => {
-          const locked = option > unlocked;
-          const chosen = option === selected;
-
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onPick(option)}
-              aria-disabled={locked || undefined}
-              aria-pressed={locked ? undefined : chosen}
-              aria-label={t(
-                locked
-                  ? "tracingLevelLockedAria"
-                  : chosen
-                    ? "tracingLevelSelectedAria"
-                    : "tracingLevelUnlockedAria",
-                { level: option },
-              )}
-              className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center rounded-2xl border-2 text-lg font-extrabold transition-transform ${
-                locked
-                  ? "border-ink/10 bg-ink/5 text-ink/35"
-                  : chosen
-                    ? "border-sun bg-sun text-black shadow-md active:scale-95"
-                    : "border-ink/15 bg-white text-ink active:scale-95"
-              }`}
-            >
-              <span aria-hidden="true">{locked ? "🔒" : option}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/*
-        Alto mínimo fijo: el aviso aparece y desaparece sin mover el botón de
-        empezar, que está justo debajo y es donde va el dedo.
-      */}
-      <p
-        className="mt-2 flex min-h-10 items-center justify-center break-words text-center text-sm font-bold leading-snug text-ink/60"
-        role="status"
-        aria-live="polite"
-      >
-        {lockedHint
-          ? t("tracingLevelLockedHint", {
-              level: lockedHint - 1,
-              next: lockedHint,
-            })
-          : t("tracingLevelBest", {
-              level: unlocked,
-              total: TRACING_MAX_LEVEL,
-            })}
-      </p>
-    </div>
   );
 }
 

@@ -8,7 +8,8 @@
     "start": "next start",
     "validate:content": "tsc -p tsconfig.validate.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/validateContent.js",
     "check:migration": "tsc -p tsconfig.migration.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/checkMigration.js",
-    "check:tracing": "tsc -p tsconfig.tracing.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/checkTracing.js"
+    "check:tracing": "tsc -p tsconfig.tracing.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/checkTracing.js",
+    "check:memory": "tsc -p tsconfig.memory.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/checkMemory.js"
   },
   "dependencies": {
     "next": "^15.3.4",
