@@ -78,7 +78,7 @@ const messages = {
     typingExampleTyped: "the lit",
     searchExampleAria: "The word CAT is hidden in the first row",
     searchExampleWord: "CAT",
-    navHome: "Explore",
+    navHome: "Home",
     navProgress: "Progress",
     navProfile: "Profile",
 
@@ -369,7 +369,7 @@ const messages = {
     typingExampleTyped: "la abe",
     searchExampleAria: "La palabra SOL está escondida en la primera fila",
     searchExampleWord: "SOL",
-    navHome: "Explorar",
+    navHome: "Inicio",
     navProgress: "Progreso",
     navProfile: "Perfil",
 

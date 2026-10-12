@@ -10,7 +10,7 @@ type IconProps = {
   active: boolean;
 };
 
-// Explore, Progress y Profile: los tres únicos destinos de la barra. Explore
+// Home, Progress y Profile: los tres únicos destinos de la barra. Home
 // es el panal, que desde que la raíz es la portada pública vive en `/explore`.
 //
 // `legacyHref` es una dirección anterior del panal, que sigue sirviendo la
@@ -64,25 +64,31 @@ export default function BottomNavigation() {
 }
 
 /*
- * La casa del panal: un tejado sobre cuatro celdas de dos en dos.
+ * La casa del panal: el panal de la portada con un tejado en el sitio de su
+ * fila de arriba, así que debajo quedan cinco celdas, tres y dos.
  *
  * No es la casita genérica de cualquier aplicación ni el panal a secas: las
- * celdas son las fichas de la pantalla —el mismo hexagono pointy-top, con su
- * fila de abajo corrida media ficha— y el tejado dice que aquí se entra. Se
- * dibujan al 80% de su celda para que el hueco entre vecinas sobreviva al
- * relleno del estado activo, que es cuando dos siluetas pegadas se leerían
- * como una mancha.
+ * celdas son las fichas de la pantalla —el mismo hexagono pointy-top, con la
+ * fila de abajo corrida media ficha— y el tejado dice que aquí se entra. Son
+ * cinco y no siete porque a 1.55rem siete celdas apagadas, solo contorno, se
+ * juntan en una trama. Se dibujan al 80% de su celda para que el hueco entre
+ * vecinas sobreviva al relleno del estado activo, que es cuando dos siluetas
+ * pegadas se leerían como una mancha.
  */
-const HOME_HEX_RADIUS = 3.7;
+const HOME_HEX_RADIUS = 4;
+const HOME_HEX_SCALE = 0.8;
 const HOME_HEX_WIDTH = HOME_HEX_RADIUS * HEXAGON_WIDTH_RATIO;
-const HOME_HEX_LEFT = (24 - 2.5 * HOME_HEX_WIDTH) / 2 + HOME_HEX_WIDTH / 2;
-// La primera fila empieza dos unidades por debajo del alero: el hueco tiene
-// que sobrevivir a los dos trazos que lo muerden cuando la pestaña se enciende.
-const HOME_HEX_FIRST_ROW = 10 + HOME_HEX_RADIUS;
+const HOME_HEX_LEFT = (24 - 3 * HOME_HEX_WIDTH) / 2;
+// La fila de tres empieza algo más de una unidad por debajo del alero, lo
+// justo para que el tejado y las celdas no se toquen en ningún estado.
+const HOME_HEX_FIRST_ROW = 9.4 + HOME_HEX_RADIUS * HOME_HEX_SCALE;
 
-const HOME_HEXAGONS = [0, 1].flatMap((row) =>
-  [0, 1].map((column) => ({
-    cx: HOME_HEX_LEFT + row * (HOME_HEX_WIDTH / 2) + column * HOME_HEX_WIDTH,
+const HOME_HEXAGONS = [3, 2].flatMap((count, row) =>
+  Array.from({ length: count }, (_, column) => ({
+    cx:
+      HOME_HEX_LEFT +
+      (row + 1) * (HOME_HEX_WIDTH / 2) +
+      column * HOME_HEX_WIDTH,
     cy: HOME_HEX_FIRST_ROW + row * HOME_HEX_RADIUS * 1.5,
   })),
 );
@@ -90,9 +96,9 @@ const HOME_HEXAGONS = [0, 1].flatMap((row) =>
 function HomeIcon({ active }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" role="presentation">
-      {/* El tejado, un poco mas ancho que el panal que cubre. */}
+      {/* El tejado, tan ancho como la fila de tres que cubre. */}
       <polygon
-        points="12,2.6 21,8 3,8"
+        points="12,1.4 22,8 2,8"
         fill={active ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth="1.5"
@@ -100,16 +106,16 @@ function HomeIcon({ active }: IconProps) {
       />
       {/*
         Encendidas, las celdas van rellenas y SIN trazo: el contorno crece
-        hacia fuera y se comeria el hueco que las separa, y cuatro hexagonos
+        hacia fuera y se comeria el hueco que las separa, y cinco hexagonos
         pegados dejan de leerse como panal para leerse como mancha.
       */}
       {HOME_HEXAGONS.map(({ cx, cy }) => (
         <polygon
           key={`${cx}-${cy}`}
-          points={hexagonPoints(cx, cy, HOME_HEX_RADIUS * 0.78)}
+          points={hexagonPoints(cx, cy, HOME_HEX_RADIUS * HOME_HEX_SCALE)}
           fill={active ? "currentColor" : "none"}
           stroke={active ? "none" : "currentColor"}
-          strokeWidth="1.5"
+          strokeWidth="1.1"
           strokeLinejoin="round"
         />
       ))}

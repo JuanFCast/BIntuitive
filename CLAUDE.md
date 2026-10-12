@@ -25,7 +25,7 @@ dicen en vez de fingirlo. No guardan correos, ni contraseñas, ni cuentas falsas
 `localStorage`. La tercera es la que lleva a la aplicación de verdad.
 
 **El panal (`/explore`) es la única superficie de descubrimiento.** Es la pantalla de entrada
-de la aplicación —la pestaña se llama Explore— y todo lo que dentro significa "volver al
+de la aplicación —la pestaña se llama Home (Inicio en español), aunque la ruta sea `/explore`— y todo lo que dentro significa "volver al
 principio" apunta ahí, nunca a `/`. Las direcciones viven en `src/lib/routes.ts`: un
 `href="/"` suelto en un juego mandaría al niño a la pantalla de registro. Renderiza
 `hexagons = [...categories, ...gameHexagons]`, es decir lecciones y juegos en el mismo panal.
@@ -109,8 +109,8 @@ src/lib/
   favicon; el de 192 vive en `public/`. Ninguno se declara `maskable`: el logo llega cerca del
   borde y una máscara circular le cortaría el birrete. iOS no lee `display` del manifest, así
   que el modo standalone en Safari depende de las metas `appleWebApp` de `layout.tsx`.
-- **El panal es Explore**: la barra inferior tiene exactamente tres destinos (Explore, Progress,
-  Profile) y Explore es el panal, servido desde `/explore`. Un enlace que dentro de la
+- **El panal es Explore**: la barra inferior tiene exactamente tres destinos (Home, Progress,
+  Profile) y Home es el panal, servido desde `/explore`. Un enlace que dentro de la
   aplicación signifique "volver al principio" apunta a `EXPLORE` de `src/lib/routes.ts`, nunca
   a `/` ni a `/hexagons`. La portada, `/signin`, `/signup` y `/forgot-password` **no** llevan
   barra inferior: quien las ve todavía no ha entrado, y se sale de ellas por su botón de volver.
