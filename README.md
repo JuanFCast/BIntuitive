@@ -62,7 +62,9 @@ npm start
 
 `npm run validate:content` checks the educational content: unique ids, answers that exist among
 their options, English copy present for every Spanish question, words in NFC and within their
-language alphabet, and enough content per level to build a session. The banks stay separate — the
+language alphabet, enough content per level to build a session, every option having something to
+show, each `imageSrc` pointing at a drawing that really exists in `public/art/`, and the English
+layer never labelling an option that the Spanish source leaves unlabelled. The banks stay separate — the
 question bank, Word Scramble, Word Search, Typing and Visual each keep their own shape.
 
 The production build validates TypeScript, generates the application routes, and prepares the optimized Next.js output.
@@ -91,6 +93,7 @@ src/
     categories.ts       # Base category definitions
     questions.ts        # Spanish source question bank
     localization.ts     # English category, question, option, and accessibility copy
+                        # (artwork for the questions lives in public/art/)
   lib/
     gameEngine.ts       # Question selection and adaptive difficulty
     i18n.tsx            # Language provider and interface translations
@@ -120,9 +123,14 @@ Interface translations live in `src/lib/i18n.tsx`. Question and category transla
 When adding a question:
 
 1. Add the Spanish source question and options to `src/data/questions.ts` using the `Question` type.
-2. Add the matching English instruction and hint to `englishQuestions` in `src/data/localization.ts`.
-3. Add English option labels and accessibility descriptions to `englishOptions` when the option ID is new.
-4. Run `npm run build` to verify the content and types.
+2. Point each option at its drawing with `imageSrc` (`public/art/places/` and `public/art/colors/`).
+   Numbers keep emoji, because counting apples does not depend on how a phone draws them.
+3. Leave `label` out whenever the label would be the answer — the numeral under a group to count,
+   the colour name under a colour swatch. Keep it where the name teaches vocabulary instead.
+4. Add the matching English instruction and hint to `englishQuestions` in `src/data/localization.ts`.
+5. Add English option labels and accessibility descriptions to `englishOptions` when the option ID is new.
+   Do not add a label there if the Spanish option has none.
+6. Run `npm run validate:content`, then `npm run build` to verify the content and types.
 
 ### Adding a Word Scramble word
 
@@ -162,7 +170,7 @@ Each hexagon type runs its own session length, defined in one place per game.
 
 `ROUNDS_PER_SESSION` in `src/lib/gameEngine.ts`.
 
-- Each session contains 5 unique questions.
+- Each session contains 5 unique questions, drawn from 20 per category (60 in all).
 - Each question allows up to 2 attempts.
 - Correct first attempts contribute to the difficulty streak.
 - Two consecutive first-try answers increase the category level, up to level 3.

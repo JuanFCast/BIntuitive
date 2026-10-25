@@ -13,6 +13,9 @@
  * Se ejecuta con `npm run validate:content`.
  */
 
+import { existsSync } from "fs";
+import { join } from "path";
+
 import { hexagons } from "../src/data/categories";
 import {
   englishHexagons,
@@ -57,6 +60,10 @@ const SCRAMBLE_LENGTH_BY_LEVEL: Record<number, [number, number]> = {
 /** Rango de opciones que `AnswerGrid` sabe repartir en pantalla. */
 const MIN_OPTIONS = 2;
 const MAX_OPTIONS = 4;
+
+/** Dónde viven los dibujos propios de las preguntas, y desde dónde se sirven. */
+const ART_PREFIX = "/art/";
+const PUBLIC_DIR = join(__dirname, "..", "..", "public");
 
 /** Longitud mínima del texto de Type Rush, la que pide `buildTypingPassage`. */
 const TYPING_MIN_PASSAGE = 240;
@@ -146,6 +153,36 @@ function validateQuestions(): void {
       if (option.label !== undefined && isBlank(option.label)) {
         fail(bank, at, "opción " + option.id + " con etiqueta vacía");
       }
+      // Algo tiene que quedar pintado. Una opción sin dibujo y sin etiqueta
+      // es una ficha en blanco que además se puede pulsar.
+      if (
+        option.imageSrc === undefined &&
+        option.emoji === undefined &&
+        isBlank(option.label)
+      ) {
+        fail(
+          bank,
+          at,
+          "opción " + option.id + " sin nada que enseñar: ni dibujo ni etiqueta",
+        );
+      }
+      // La ruta del dibujo se escribe a mano y nadie la comprueba en
+      // ejecución: una errata deja la opción invisible en producción.
+      if (option.imageSrc !== undefined) {
+        if (!option.imageSrc.startsWith(ART_PREFIX)) {
+          fail(
+            bank,
+            at,
+            "opción " + option.id + ": el dibujo vive fuera de " + ART_PREFIX,
+          );
+        } else if (!existsSync(join(PUBLIC_DIR, option.imageSrc))) {
+          fail(
+            bank,
+            at,
+            "opción " + option.id + ": no existe el dibujo " + option.imageSrc,
+          );
+        }
+      }
     }
 
     // Una y solo una respuesta correcta: el answerId señala una opción que
@@ -224,6 +261,19 @@ function validateQuestions(): void {
           bank,
           option.id,
           "la etiqueta " + option.label + " no está traducida al inglés",
+        );
+      }
+      // Y al revés: donde el español calla, el inglés también. Una opción sin
+      // etiqueta lo está porque su nombre sería la respuesta —"Green" bajo el
+      // círculo verde, "4" bajo cuatro manzanas—, así que ponérsela solo en
+      // inglés regalaría la respuesta a quien juega en inglés.
+      if (option.label === undefined && copy.label !== undefined) {
+        fail(
+          bank,
+          option.id,
+          "el inglés le pone etiqueta (" +
+            copy.label +
+            ") a una opción que en español no lleva",
         );
       }
     }

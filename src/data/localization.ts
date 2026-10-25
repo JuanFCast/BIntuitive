@@ -51,6 +51,7 @@ type QuestionCopy = {
 };
 
 export const englishQuestions: Record<string, QuestionCopy> = {
+  // ─── PLACES ─────────────────────────────────────────────────
   "lugares-desierto-01": {
     instruction: "Tap the place with lots of sand and no water.",
     hint: "Look for the dry place with a cactus.",
@@ -63,49 +64,103 @@ export const englishQuestions: Record<string, QuestionCopy> = {
     instruction: "Tap the place where you sleep with your family.",
     hint: "It's where your bed is.",
   },
+  "lugares-escuela-11": {
+    instruction: "Tap the place where you learn to read.",
+    hint: "It has a flag and a clock.",
+  },
+  "lugares-parque-12": {
+    instruction: "Tap the place with swings and a slide.",
+    hint: "It's where you go to play outside.",
+  },
+  "lugares-tienda-13": {
+    instruction: "Tap the place where you buy food.",
+    hint: "It has a striped awning and a shop window.",
+  },
   "lugares-montana-04": {
     instruction: "Tap the very high place with snow.",
     hint: "Look for the white part on top. It's snow!",
   },
   "lugares-selva-05": {
     instruction: "Tap the place with many trees and wild animals.",
-    hint: "Look for the green place with trees.",
+    hint: "Look for the green place with lots of trees.",
   },
   "lugares-granja-06": {
     instruction: "Tap the place where cows and chickens live.",
-    hint: "Look for the tractor in the fields.",
+    hint: "Look for the red barn out in the fields.",
   },
   "lugares-escuela-07": {
     instruction: "Tap the place where people learn.",
     hint: "Look for the boards and the notebooks.",
   },
+  "lugares-hospital-14": {
+    instruction: "Tap the place where they take care of you when you are sick.",
+    hint: "Look for the red cross.",
+  },
+  "lugares-ciudad-15": {
+    instruction: "Tap the place with very tall buildings.",
+    hint: "Look for the lit windows, one above the other.",
+  },
+  "lugares-playa-16": {
+    instruction: "Tap the place with waves where you can swim.",
+    hint: "Look for the palm tree next to the water.",
+  },
   "lugares-hospital-08": {
-    instruction: "Tap the place where doctors care for people.",
-    hint: "Look for the big cross.",
+    instruction: "Tap the place where doctors take care of people.",
+    hint: "Look for the doctor's cross.",
   },
   "lugares-parque-09": {
-    instruction: "Tap the place with swings for playing.",
-    hint: "Look for the slide.",
+    instruction: "Tap the place with swings to play on.",
+    hint: "The slide is there.",
   },
   "lugares-ciudad-10": {
     instruction: "Tap the place with many buildings and cars.",
-    hint: "Look for the tall buildings.",
+    hint: "Look for the tall buildings and the street.",
   },
+  "lugares-granja-17": {
+    instruction: "Tap the place where food is grown.",
+    hint: "Look for the barn in the fields, with the animals.",
+  },
+  "lugares-montana-18": {
+    instruction: "Tap the place where it is very cold at the top.",
+    hint: "The white part at the top is snow.",
+  },
+  "lugares-selva-19": {
+    instruction: "Tap the place where monkeys jump between the trees.",
+    hint: "It's the greenest place of them all.",
+  },
+  "lugares-tienda-20": {
+    instruction: "Tap the place where you pay for what you take home.",
+    hint: "It has a shop window and a striped awning.",
+  },
+
+  // ─── NUMBERS ────────────────────────────────────────────────
   "numeros-cinco-01": {
     instruction: "Tap the number five.",
-    hint: "A five has a little hat on top.",
+    hint: "Five has a little hat on top.",
   },
   "numeros-mas-manzanas-02": {
     instruction: "Tap the group with more apples.",
-    hint: "More means the bigger group.",
+    hint: "More is where there are lots.",
   },
   "numeros-dos-perritos-03": {
     instruction: "Tap the group with two puppies.",
     hint: "Count slowly: one, two.",
   },
+  "numeros-tres-11": {
+    instruction: "Tap the number three.",
+    hint: "Three has two little tummies.",
+  },
+  "numeros-menos-estrellas-12": {
+    instruction: "Tap the group with fewer stars.",
+    hint: "Fewer is where there are only a few.",
+  },
+  "numeros-una-flor-13": {
+    instruction: "Tap the group with only one flower.",
+    hint: "Just one, nothing more.",
+  },
   "numeros-mayor-04": {
-    instruction: "Which number is greater?",
-    hint: "The greater number is the bigger one.",
+    instruction: "Which number is the biggest?",
+    hint: "The biggest is the largest one of them all.",
   },
   "numeros-despues-4-05": {
     instruction: "Which number comes after four?",
@@ -117,20 +172,50 @@ export const englishQuestions: Record<string, QuestionCopy> = {
   },
   "numeros-siete-07": {
     instruction: "Tap the number seven.",
-    hint: "A seven looks like a slide.",
+    hint: "Seven looks like a slide.",
+  },
+  "numeros-cinco-perritos-14": {
+    instruction: "Tap the group with five puppies.",
+    hint: "Count them on the fingers of one hand.",
+  },
+  "numeros-diez-15": {
+    instruction: "Tap the number ten.",
+    hint: "Ten is written with two digits.",
+  },
+  "numeros-antes-6-16": {
+    instruction: "Which number comes before six?",
+    hint: "Count: four, five... and then?",
   },
   "numeros-menor-08": {
-    instruction: "Which number is smaller?",
-    hint: "The smaller number is the little one.",
+    instruction: "Which number is the smallest?",
+    hint: "The smallest is the tiniest one.",
   },
   "numeros-antes-3-09": {
     instruction: "Which number comes before three?",
-    hint: "Count: one, two... what comes next?",
+    hint: "Count: one, two... and then?",
   },
   "numeros-mas-flores-10": {
     instruction: "Tap the group with more flowers.",
-    hint: "Look for the group with lots of little flowers.",
+    hint: "Look for where there are lots of little flowers.",
   },
+  "numeros-ocho-17": {
+    instruction: "Tap the number eight.",
+    hint: "Eight is two little circles, one on top of the other.",
+  },
+  "numeros-menos-manzanas-18": {
+    instruction: "Tap the group with fewer apples.",
+    hint: "Fewer is where there are only a few.",
+  },
+  "numeros-despues-8-19": {
+    instruction: "Which number comes after eight?",
+    hint: "Count: seven, eight, and keep going...",
+  },
+  "numeros-seis-estrellas-20": {
+    instruction: "Tap the group with six stars.",
+    hint: "Count on from five: five and one more.",
+  },
+
+  // ─── COLORS ─────────────────────────────────────────────────
   "colores-fruta-roja-01": {
     instruction: "Tap the red fruit.",
     hint: "It's red like a heart.",
@@ -141,7 +226,19 @@ export const englishQuestions: Record<string, QuestionCopy> = {
   },
   "colores-animal-verde-03": {
     instruction: "Tap the green animal.",
-    hint: "Green like grass, and it jumps!",
+    hint: "Green like the grass, and it hops!",
+  },
+  "colores-animal-azul-11": {
+    instruction: "Tap the blue animal.",
+    hint: "Blue, and it lives in the water.",
+  },
+  "colores-circulo-rojo-12": {
+    instruction: "Tap the red circle.",
+    hint: "Red like an apple.",
+  },
+  "colores-animal-negro-13": {
+    instruction: "Tap the black animal.",
+    hint: "Black like the night, and it says meow.",
   },
   "colores-fruta-amarilla-04": {
     instruction: "Tap the yellow fruit.",
@@ -159,6 +256,18 @@ export const englishQuestions: Record<string, QuestionCopy> = {
     instruction: "Tap the pink animal.",
     hint: "It's pink and it has long legs.",
   },
+  "colores-cuadrado-naranja-14": {
+    instruction: "Tap the orange square.",
+    hint: "Orange like the fruit with the same name.",
+  },
+  "colores-verdura-naranja-15": {
+    instruction: "Tap the orange vegetable.",
+    hint: "Rabbits love them.",
+  },
+  "colores-corazon-morado-16": {
+    instruction: "Tap the purple heart.",
+    hint: "Purple like grapes.",
+  },
   "colores-cuadrado-amarillo-08": {
     instruction: "Tap the yellow square.",
     hint: "Yellow like a banana.",
@@ -171,22 +280,49 @@ export const englishQuestions: Record<string, QuestionCopy> = {
     instruction: "Tap the green heart.",
     hint: "Green like a frog.",
   },
+  "colores-blanco-17": {
+    instruction: "Tap the one that is white.",
+    hint: "White like milk, and it's up in the sky.",
+  },
+  "colores-animal-cafe-18": {
+    instruction: "Tap the brown animal.",
+    hint: "Brown like chocolate, and it's big.",
+  },
+  "colores-circulo-rosado-19": {
+    instruction: "Tap the pink circle.",
+    hint: "Pink is a light red, like the flamingo.",
+  },
+  "colores-cuadrado-negro-20": {
+    instruction: "Tap the black square.",
+    hint: "Black like the night.",
+  },
 };
 
 type OptionCopy = Partial<Pick<QuestionOption, "label">> &
   Pick<QuestionOption, "alt">;
 
+/**
+ * Las figuras de color y los grupos de contar entran aquí **sin `label`**, y
+ * no por descuido: en español tampoco lo llevan. Escribir "Green" bajo el
+ * círculo verde, o "4" bajo cuatro manzanas, pondría la respuesta en la
+ * opción. Ver `QuestionOption.label` en `questions.ts`.
+ */
 export const englishOptions: Record<string, OptionCopy> = {
+  // Lugares
   playa: { label: "Beach", alt: "Beach with sea and an umbrella" },
   desierto: { label: "Desert", alt: "Desert with a cactus" },
   ciudad: { label: "City", alt: "City with buildings" },
-  casa: { label: "Home", alt: "Home with a red roof" },
+  casa: { label: "House", alt: "House with a red roof" },
   hospital: { label: "Hospital", alt: "Hospital with a cross" },
   montana: { label: "Mountain", alt: "Mountain with snow" },
   selva: { label: "Jungle", alt: "Jungle with green trees" },
   escuela: { label: "School", alt: "School with a flag" },
-  granja: { label: "Farm", alt: "Farm with a tractor" },
-  parque: { label: "Park", alt: "Park with a slide" },
+  granja: { label: "Farm", alt: "Farm with a red barn and a cow" },
+  parque: { label: "Park", alt: "Park with swings and a slide" },
+  tienda: { label: "Store", alt: "Store with a striped awning" },
+
+  // Números: los numerales sí llevan etiqueta, porque la etiqueta ES el
+  // numeral que se pregunta. Los grupos no.
   n1: { alt: "Number one" },
   n2: { alt: "Number two" },
   n3: { alt: "Number three" },
@@ -196,38 +332,64 @@ export const englishOptions: Record<string, OptionCopy> = {
   n7: { alt: "Number seven" },
   n8: { alt: "Number eight" },
   n9: { alt: "Number nine" },
+  n10: { alt: "Number ten" },
   "una-manzana": { alt: "One apple" },
+  "dos-manzanas": { alt: "Two apples" },
+  "tres-manzanas": { alt: "Three apples" },
   "cuatro-manzanas": { alt: "Four apples" },
   "dos-perritos": { alt: "Two puppies" },
+  "tres-perritos": { alt: "Three puppies" },
   "cuatro-perritos": { alt: "Four puppies" },
+  "cinco-perritos": { alt: "Five puppies" },
   "una-estrella": { alt: "One star" },
+  "dos-estrellas": { alt: "Two stars" },
   "tres-estrellas": { alt: "Three stars" },
+  "cuatro-estrellas": { alt: "Four stars" },
   "cinco-estrellas": { alt: "Five stars" },
+  "seis-estrellas": { alt: "Six stars" },
+  "ocho-estrellas": { alt: "Eight stars" },
   "una-flor": { alt: "One flower" },
   "dos-flores": { alt: "Two flowers" },
   "tres-flores": { alt: "Three flowers" },
   "cuatro-flores": { alt: "Four flowers" },
+
+  // Colores: objetos con nombre, figuras sin él.
   manzana: { label: "Apple", alt: "Red apple" },
   banano: { label: "Banana", alt: "Yellow banana" },
   uvas: { label: "Grapes", alt: "Purple grapes" },
   naranja: { label: "Orange", alt: "Orange fruit" },
-  "corazon-rojo": { label: "Red", alt: "Red heart" },
-  "corazon-azul": { label: "Blue", alt: "Blue heart" },
-  "corazon-verde": { label: "Green", alt: "Green heart" },
-  "corazon-amarillo": { label: "Yellow", alt: "Yellow heart" },
+  zanahoria: { label: "Carrot", alt: "Orange carrot" },
   rana: { label: "Frog", alt: "Green frog" },
   flamenco: { label: "Flamingo", alt: "Pink flamingo" },
   oso: { label: "Bear", alt: "Brown bear" },
-  "circulo-verde": { label: "Green", alt: "Green circle" },
-  "circulo-rojo": { label: "Red", alt: "Red circle" },
-  "circulo-amarillo": { label: "Yellow", alt: "Yellow circle" },
+  pez: { label: "Fish", alt: "Blue fish" },
+  gato: { label: "Cat", alt: "Black cat" },
+  nube: { label: "Cloud", alt: "White cloud" },
   rosa: { label: "Rose", alt: "Red rose" },
   girasol: { label: "Sunflower", alt: "Yellow sunflower" },
   margarita: { label: "Daisy", alt: "White daisy" },
-  "cuadrado-amarillo": { label: "Yellow", alt: "Yellow square" },
-  "cuadrado-azul": { label: "Blue", alt: "Blue square" },
-  "cuadrado-rojo": { label: "Red", alt: "Red square" },
-  "cuadrado-verde": { label: "Green", alt: "Green square" },
+
+  "corazon-rojo": { alt: "Red heart" },
+  "corazon-azul": { alt: "Blue heart" },
+  "corazon-verde": { alt: "Green heart" },
+  "corazon-amarillo": { alt: "Yellow heart" },
+  "corazon-morado": { alt: "Purple heart" },
+  "corazon-rosado": { alt: "Pink heart" },
+  "circulo-rojo": { alt: "Red circle" },
+  "circulo-azul": { alt: "Blue circle" },
+  "circulo-verde": { alt: "Green circle" },
+  "circulo-amarillo": { alt: "Yellow circle" },
+  "circulo-morado": { alt: "Purple circle" },
+  "circulo-rosado": { alt: "Pink circle" },
+  "circulo-naranja": { alt: "Orange circle" },
+  "cuadrado-rojo": { alt: "Red square" },
+  "cuadrado-azul": { alt: "Blue square" },
+  "cuadrado-verde": { alt: "Green square" },
+  "cuadrado-amarillo": { alt: "Yellow square" },
+  "cuadrado-naranja": { alt: "Orange square" },
+  "cuadrado-morado": { alt: "Purple square" },
+  "cuadrado-negro": { alt: "Black square" },
+  "cuadrado-cafe": { alt: "Brown square" },
 };
 
 export function localizeHexagon(

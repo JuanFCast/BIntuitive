@@ -93,6 +93,29 @@ src/lib/
   nuevos (no preguntas) el patrón real usado es distinto: los strings viven bilingües en
   `messages` de `i18n.tsx`, y los datos con nombre (símbolos, frases) usan
   `Record<Language, string>` o `Record<Language, string[]>` dentro de su lib.
+- **Una opción nunca lleva escrita su respuesta**: por eso `QuestionOption.label` es opcional.
+  Un "4" debajo de cuatro manzanas convierte "¿cuál grupo tiene más?" en leer cifras, y un
+  "Verde" debajo del círculo verde convierte "toca el círculo verde" en leer palabras: en los
+  dos casos la etiqueta se omite y el dibujo es toda la opción. Donde el nombre **no** es la
+  respuesta sí se escribe, porque entonces enseña vocabulario ("Manzana" cuando se pregunta el
+  color, "Casa" cuando se pregunta dónde duermes). Si la opción no trae ni `imageSrc` ni
+  `emoji`, la etiqueta es lo único que hay que pintar —el numeral— y es obligatoria.
+  `validate:content` comprueba las tres cosas, y también que el inglés no ponga etiqueta donde
+  el español no la pone: sería regalarle la respuesta a quien juega en inglés.
+- **Los dibujos de las preguntas son propios**, en `public/art/<categoría>/`, y se enlazan con
+  `QuestionOption.imageSrc`. El emoji se quedó donde sirve —los números, porque contar manzanas
+  no depende del tono— y se fue de donde no: **Colores**, porque cada sistema dibuja sus emoji y
+  una lección que enseña colores no puede dejar el color en manos de la fuente del teléfono
+  (🌼 es amarillo en iOS y blancuzco en otros, y se llamaba "margarita blanca"); y **Lugares**,
+  porque no hay emoji de granja ni de selva y se usaban 🚜 y 🌳, así que a "dónde viven las
+  vacas y las gallinas" se respondía con un tractor. Dentro de una pregunta no se mezclan
+  dibujo y emoji: se ven como dos juegos distintos.
+- **Los colores que se enseñan no son los de la marca**: la paleta de la interfaz es pastel
+  (`sky` es un celeste, `coral` un salmón) y sirve para la interfaz. Los dibujos de la
+  categoría Colores usan colores plenos y canónicos, que viven en los propios SVG. Enseñar
+  "azul" con `sky` y preguntarlo con el azul fuerte son dos azules distintos para quien está
+  aprendiendo cuál es cuál; por eso el ejemplo de la introducción enseña el mismo archivo que
+  la lección en vez de un cuadro con una clase de Tailwind.
 - **Lógica pura separada de la UI**: constantes, generación de rondas y cálculo de stats van en
   `src/lib/<juego>.ts`; el componente cliente solo orquesta fases y render.
 - **Máquina de fases**: los juegos usan `type Phase = "intro" | "playing" | "results"`
@@ -359,8 +382,10 @@ lo que obliga a `/hexagons` a servir la página en vez de redirigir.
 - **`npm run validate:content`** comprueba las invariantes que cada banco ya asume: ids únicos,
   `answerId` existente, traducciones inglesas presentes y sin huérfanas, NFC y alfabeto por
   idioma, longitud de palabra compatible con su nivel o con el tamaño de su tablero, forma de
-  camino compatible con el nivel que dice tener en Trazos, y contenido suficiente para formar
-  una sesión. Compila sin `lib: ["DOM"]` a propósito: el validador solo alcanza contenido puro,
+  camino compatible con el nivel que dice tener en Trazos, contenido suficiente para formar
+  una sesión, que cada opción tenga algo que enseñar, que el `imageSrc` que dice tener exista
+  de verdad en `public/art/` —la ruta se escribe a mano y una errata deja la opción invisible
+  en producción— y que el inglés no le ponga etiqueta a una opción que en español no la lleva. Compila sin `lib: ["DOM"]` a propósito: el validador solo alcanza contenido puro,
   así que un banco no puede acabar importando código de navegador. Es estructural y tarda menos de dos segundos: no genera
   tableros ni simula partidas. Compila con `tsconfig.validate.json` a `.content-check/`
   (ignorado) y ejecuta con un resolutor mínimo del alias `@/`, porque `tsc` lo deja tal cual en

@@ -1,7 +1,7 @@
 "use client";
 
 import type { QuestionOption } from "@/data/questions";
-import AnswerOption, { type OptionState } from "./AnswerOption";
+import AnswerOption, { countGlyphs, type OptionState } from "./AnswerOption";
 
 type AnswerGridProps = {
   options: QuestionOption[];
@@ -15,6 +15,12 @@ export default function AnswerGrid({
   onSelect,
 }: AnswerGridProps) {
   const twoOptions = options.length === 2;
+  // En cuanto UNA opción sea un grupo, todas se pintan a la misma escala: si
+  // no, en las preguntas de contar el tamaño del dibujo competiría con la
+  // cantidad, que es lo único que debería distinguir una ficha de otra.
+  const anyGroup = options.some(
+    (option) => option.emoji !== undefined && countGlyphs(option.emoji) > 1,
+  );
 
   return (
     <div
@@ -28,6 +34,7 @@ export default function AnswerGrid({
           option={option}
           state={getState(option.id)}
           onSelect={onSelect}
+          compact={anyGroup}
         />
       ))}
     </div>

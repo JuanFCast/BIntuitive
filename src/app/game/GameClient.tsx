@@ -391,7 +391,12 @@ function PlacesExample() {
 
   return (
     <ExampleRow ariaLabel={t("placesExampleAria")} answer={t("placesExampleWord")}>
-      <span className="text-3xl">🏖️</span>
+      {/*
+        El dibujo de la lección, no un emoji parecido: el ejemplo tiene que
+        enseñar exactamente lo que va a salir después.
+      */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/art/places/playa.svg" alt="" aria-hidden="true" className="h-9 w-9" />
     </ExampleRow>
   );
 }
@@ -411,8 +416,14 @@ function ColorsExample() {
 
   return (
     <ExampleRow ariaLabel={t("colorsExampleAria")} answer={t("colorsExampleWord")}>
-      {/* Un cuadro de color real se lee mejor que un emoji de color. */}
-      <span className="h-8 w-8 rounded-lg border-2 border-ink/15 bg-sky" />
+      {/*
+        El mismo cuadrado azul de la lección, y no el `sky` de la marca:
+        aquel es un celeste pastel y el de las preguntas es un azul fuerte.
+        Enseñar "azul" con uno y preguntarlo con el otro son dos azules
+        distintos para quien está aprendiendo cuál es cuál.
+      */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/art/colors/cuadrado-azul.svg" alt="" aria-hidden="true" className="h-8 w-8" />
     </ExampleRow>
   );
 }
