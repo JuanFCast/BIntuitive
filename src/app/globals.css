@@ -659,6 +659,15 @@ button {
   top: 75%;
 }
 
+/*
+ * La decima cae en el hueco que la novena dejo a su derecha, asi que no abre
+ * fila y ningun aspect-ratio cambia. La siguiente si abriria una.
+ */
+.hexagon-card:nth-child(10) {
+  left: 60%;
+  top: 75%;
+}
+
 @media (min-width: 640px) {
   /*
    * Dos filas de 4 y una novena ficha que abre la tercera, alineada con la
@@ -718,6 +727,11 @@ button {
 
   .hexagon-card:nth-child(9) {
     left: 0;
+    top: 60%;
+  }
+
+  .hexagon-card:nth-child(10) {
+    left: 22.2222%;
     top: 60%;
   }
 }
@@ -836,6 +850,44 @@ button {
  * relleno abajo, y sumarle otro hacía desplazar unos píxeles una página que
  * cabía entera. Sin indicador de inicio vale cero y no cambia nada.
  */
+/*
+ * El lienzo de Colorear. Cuadrado, y limitado por el alto que queda libre:
+ * encima lleva la consigna y debajo la paleta, que son alto fijo, y el texto
+ * de ambos crece con la preferencia de tamanio.
+ */
+.coloring-board {
+  max-width: min(
+    20rem,
+    calc(
+      100vh - 16rem - 3.75rem * var(--text-scale) -
+        env(safe-area-inset-bottom, 0px)
+    )
+  );
+  max-width: min(
+    20rem,
+    calc(
+      100svh - 16rem - 3.75rem * var(--text-scale) -
+        env(safe-area-inset-bottom, 0px)
+    )
+  );
+}
+
+@media (min-width: 640px) {
+  .coloring-board {
+    max-width: min(
+      24rem,
+      calc(
+        100svh - 18rem - 3.75rem * var(--text-scale) -
+          env(safe-area-inset-bottom, 0px)
+      )
+    );
+  }
+}
+
+.coloring-play {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 .memory-play {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }

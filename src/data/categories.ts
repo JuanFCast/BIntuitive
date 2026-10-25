@@ -9,7 +9,14 @@ export type Category = {
 };
 
 export type GameHexagon = {
-  id: "visual" | "typing" | "scramble" | "search" | "memory" | "tracing";
+  id:
+    | "visual"
+    | "typing"
+    | "scramble"
+    | "search"
+    | "memory"
+    | "tracing"
+    | "coloring";
   name: string;
   emoji: string;
   description: string;
@@ -19,7 +26,7 @@ export type GameHexagon = {
 export type Hexagon = Category | GameHexagon;
 
 /**
- * Los nueve del panal, categorías de preguntas y juegos por igual. Es la clave
+ * Los diez del panal, categorías de preguntas y juegos por igual. Es la clave
  * con la que el progreso guarda la dificultad de cada actividad, así que sale
  * de aquí, que es la fuente de verdad de qué existe.
  */
@@ -91,6 +98,13 @@ export const gameHexagons: GameHexagon[] = [
     emoji: "✏️",
     description: "Sigue el camino punteado con el dedo.",
     href: "/game/tracing",
+  },
+  {
+    id: "coloring",
+    name: "Colorear",
+    emoji: "🖍️",
+    description: "Pinta cada zona del color que le toca.",
+    href: "/game/coloring",
   },
 ];
 

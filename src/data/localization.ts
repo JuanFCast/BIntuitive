@@ -43,6 +43,10 @@ export const englishHexagons: Record<
     name: "Tracing",
     description: "Follow the dotted path with your finger.",
   },
+  coloring: {
+    name: "Coloring",
+    description: "Paint each area with the colour it needs.",
+  },
 };
 
 type QuestionCopy = {

@@ -11,10 +11,10 @@ CloudFront (el workflow de deploy vive fuera del repo).
 
 Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`,
 `npm run validate:content` (valida el contenido educativo), `npm run check:migration` (comprueba
-que actualizar la aplicación no le pierde el progreso a nadie), `npm run check:tracing` y
-`npm run check:memory` (las reglas de nivel, estrellas y desbloqueo de Trazos y de Parejas). No
-hay linter configurado, y las únicas pruebas automáticas son esas tres: los cinco comandos son la
-verificación.
+que actualizar la aplicación no le pierde el progreso a nadie), y `npm run check:tracing`,
+`npm run check:memory` y `npm run check:coloring` (las reglas de nivel, estrellas y desbloqueo de
+los tres juegos que usan la escala compartida). No hay linter configurado, y las únicas pruebas
+automáticas son esas cuatro: los seis comandos son la verificación.
 
 ## Arquitectura
 
@@ -37,7 +37,8 @@ Dos tipos de contenido conviven en ese panal, y ambos se abren bajo la ruta sing
 
 1. **Categorías de preguntas** (`lugares`, `numeros`, `colores`) → todas comparten UNA ruta,
    `/game?hexagon=<slug>`, y el motor genérico `src/lib/gameEngine.ts` + banco `src/data/questions.ts`.
-2. **Juegos independientes** (`visual`, `typing`, `scramble`, `search`, `memory`, `tracing`) → cada uno con su propia ruta
+2. **Juegos independientes** (`visual`, `typing`, `scramble`, `search`, `memory`, `tracing`,
+   `coloring`) → cada uno con su propia ruta
    `/game/<id>`, su propio cliente y su propia lib de lógica pura en `src/lib/`.
 
 Un juego nuevo casi siempre es del tipo 2.
@@ -72,6 +73,7 @@ src/lib/
   visualGame.ts         Lógica pura de Agilidad visual
   memoryGame.ts         Banco, tablero y estadísticas de Parejas
   tracingGame.ts        Caminos, tolerancia, estrellas y banco de Trazos
+  coloringGame.ts       Láminas, paleta de enseñanza y reparto de color de Colorear
   typingGame.ts         Lógica pura de Type Rush
   wordScramble.ts       Banco bilingüe, fichas y dificultad de Word Scramble
   wordSearch.ts         Banco bilingüe, generador de tablero y selección de Word Search
@@ -123,6 +125,21 @@ src/lib/
   redondos puestos al lado—. Lo blanco sobre blanco es el caso límite: la nube y la margarita
   se pintan sobre una ficha blanca y necesitan sombreado propio que marque la silueta, no
   blanco puro.
+- **Colorear crece cambiando de mecánica, no de tamaño**: los escalones 1 y 2 dicen en voz
+  alta qué zona pintar y de qué color, y van zona por zona, así que sirven a quien todavía no
+  reconoce cifras; del 3 al 5 cada zona lleva un número, la paleta dice qué color es cada
+  número y se pinta en el orden que se quiera. Es un solo juego con dos formas de pedir lo
+  mismo, y es lo que hace que los cinco escalones sean cinco cosas distintas. Los colores
+  **no** se guardan en la lámina: se reparten en rueda sobre la paleta revuelta al empezar
+  cada ronda, lo que garantiza de una vez que dos zonas vecinas nunca salgan del mismo tono
+  —las zonas están escritas en orden de vecindad— y que la paleta no tenga fichas que no
+  pinten nada. Por eso doce láminas bastan: la misma casa sale distinta cada vez.
+- **Las láminas de Colorear son geometría a propósito**: una casa son un triángulo y unos
+  rectángulos, y eso es justo lo que un camino SVG escrito a mano hace bien. El `labelAt` de
+  cada zona —dónde se pinta su número— va escrito y es obligatorio: el centro de la caja del
+  camino no sirve, porque en una banda del arcoíris cae en el hueco del arco, en los pétalos
+  cae sobre el centro de la flor, que es otra zona, y en las dos ruedas del tren cae entre
+  ellas, en el aire.
 - **Los colores que se enseñan no son los de la marca**: la paleta de la interfaz es pastel
   (`sky` es un celeste, `coral` un salmón) y sirve para la interfaz. Los dibujos de la
   categoría Colores usan colores plenos y canónicos, que viven en los propios SVG. Enseñar
@@ -180,19 +197,21 @@ src/lib/
   que explica cada categoría vive en la tabla `CATEGORY_INTRO`, indexada por `slug` y
   comprobada por TypeScript con `satisfies`: si se añade una categoría sin sus textos, el
   build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
-- **La dificultad se elige, no se mueve sola** (hoy en Trazos y Parejas; es el patrón que
-  copiarán los demás). El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
+- **La dificultad se elige, no se mueve sola** (hoy en Trazos, Parejas y Colorear; es el patrón
+  que copiarán los demás). El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
   juego lo coloca en su introducción por la prop `beforeStart` de `GameShell` —que **no** va
   dentro de `intro` a propósito: `intro` es lo que la ayuda vuelve a enseñar encima de una
   partida en curso, y un selector ahí invitaría a cambiar de dificultad a mitad de sesión—.
   Elegido el escalón, queda fijo hasta el final. Al terminar, cada juego valora la sesión de 0 a
   3 con su propia función (`tracingSessionStars` por la media de estrellas de cada trazo,
-  `memorySessionStars` por la precisión), y dos estrellas abren el siguiente escalón con
+  `memorySessionStars` y `coloringSessionStars` por la precisión), y dos estrellas abren el
+  siguiente escalón con
   `unlockedAfterSession`, que solo sabe subir. Abandonar no llega a guardar, así que no
   desbloquea nada. Las estrellas de la sesión se enseñan con `SessionStars`, siempre aparte de
   las marcas del juego, para que no se lean como la misma cuenta. "Jugar otra vez" vuelve a la
   introducción y no relanza la partida: es la única forma de elegir el nivel que se acaba de
-  abrir. `npm run check:tracing` y `npm run check:memory` protegen estas reglas.
+  abrir. `npm run check:tracing`, `npm run check:memory` y `npm run check:coloring` protegen estas
+  reglas.
 - **Un solo escritor de sesiones**: `recordSession`, en `storage.ts`, tiene las reglas que no
   pueden cambiar de un juego a otro —escalón elegido, desbloqueo, mejor valoración, una sesión
   cada vez—. Cada juego solo aporta cómo se juntan **sus** marcas (`saveTracingResult`,
@@ -264,14 +283,14 @@ src/lib/
    (el tipo `MessageKey` sale de `en`, así que faltar en `es` rompe el build).
 7. `src/app/globals.css` — **importante**: el panal de `/` posiciona cada hexágono con
    `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2-2-1 y ≥640px 4-4-1). Hoy
-   está cableado para 9 hexágonos. En móvil van de dos en dos: las filas impares nacen en el
+   está cableado para 10 hexágonos. En móvil van de dos en dos: las filas impares nacen en el
    borde izquierdo (0 y 40%) y las pares van corridas media ficha (20% y 60%), así que la
    rejilla mide dos fichas y media de ancho y cada ficha es el 40%. En ≥640px son filas de
    cuatro corridas media ficha: cuatro fichas y media de ancho, cada una el 22.2222%. El noveno
-   abre la última fila en los dos y deja el hueco a su derecha; un décimo cae en ese hueco
+   abrió la última fila en los dos y dejó el hueco a su derecha, que es donde cayó el décimo
    (móvil `left: 60%, top: 75%`; ≥640px `left: 22.2222%, top: 60%`) sin tocar ningún
-   `aspect-ratio`. El siguiente sí abre fila y hay que recalcularlos: la altura es una ficha
-   más 3/4 por cada fila de más.
+   `aspect-ratio`. **Ese hueco ya está ocupado**: el undécimo sí abre fila y hay que recalcular
+   los dos `aspect-ratio`, porque la altura crece 3/4 de ficha por cada fila de más.
    La geometría: hexágono pointy-top con `aspect-ratio` 0.8660254 (√3/2), las filas se
    solapan con paso vertical de 3/4 de la altura de la ficha y desplazamiento horizontal de
    media ficha. El `aspect-ratio` de `.hexagons-grid` debe recalcularse con el nuevo número

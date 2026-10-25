@@ -59,6 +59,12 @@ export type BestByGame = {
     completed: number | null;
     attempts: number | null;
   };
+  /**
+   * `pictures` no es una marca sino un acumulador: cuántas láminas se han
+   * terminado en total. Quien suma es el juego al cerrar la sesión, igual
+   * que con `completed` de Trazos.
+   */
+  coloring: { accuracy: number | null; pictures: number | null };
 };
 
 export type BestFor<Id extends GameId> = BestByGame[Id];
@@ -87,6 +93,7 @@ const BEST_DIRECTION: {
   visual: { fastestMs: "lower", fewestMistakes: "lower" },
   typing: { wpm: "higher", accuracy: "higher", correctChars: "higher" },
   tracing: { accuracy: "higher", completed: "higher", attempts: "higher" },
+  coloring: { accuracy: "higher", pictures: "higher" },
 };
 
 export type GradeProgress = Partial<{

@@ -474,6 +474,29 @@ export function saveMemoryResult(
 }
 
 /**
+ * Guarda una sesión terminada de Colorear.
+ *
+ * Solo en el modelo nuevo, como Parejas: Colorear nace con la escala de
+ * dificultad compartida y no tiene campos de la versión 1 que mantener ni
+ * puente al que dar de comer.
+ *
+ * La precisión se queda con la mejor y las láminas se suman, que es el total
+ * de lo pintado desde siempre y no una marca que batir.
+ */
+export function saveColoringResult(
+  result: FinishedSession & { accuracy: number; pictures: number },
+): void {
+  const progress = getProgress();
+
+  recordSession(progress, "coloring", result, (best) => ({
+    accuracy: Math.max(best.accuracy ?? 0, result.accuracy),
+    pictures: (best.pictures ?? 0) + result.pictures,
+  }));
+
+  saveProgress(progress);
+}
+
+/**
  * El progreso de una actividad dentro de un grado.
  *
  * Nunca devuelve `undefined`: quien pregunta es para pintar algo, y "todavía

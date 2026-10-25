@@ -18,6 +18,14 @@ import { join } from "path";
 
 import { hexagons } from "../src/data/categories";
 import {
+  COLORING_COLORS,
+  COLORING_LEVELS,
+  COLORING_PICTURES,
+  COLORING_PICTURES_PER_SESSION,
+  picturesForLevel,
+  type ColoringLevel,
+} from "../src/lib/coloringGame";
+import {
   englishHexagons,
   englishOptions,
   englishQuestions,
@@ -281,6 +289,101 @@ function validateQuestions(): void {
   for (const id of Object.keys(englishOptions)) {
     if (!usedOptionIds.has(id)) {
       fail(bank, id, "traducción de opción huérfana: ninguna pregunta la usa");
+    }
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+ * Colorear
+ * ----------------------------------------------------------------------- */
+
+function validateColoring(): void {
+  const bank = "colorear";
+
+  for (const repeated of duplicates(COLORING_PICTURES.map((p) => p.id))) {
+    fail(bank, repeated, "id de lámina repetido");
+  }
+
+  for (const picture of COLORING_PICTURES) {
+    const at = picture.id;
+    if (isBlank(picture.id)) fail(bank, at, "lámina con id vacío");
+    if (!(picture.level in COLORING_LEVELS)) {
+      fail(bank, at, "nivel fuera de 1-5: " + picture.level);
+    }
+    for (const language of LANGUAGES) {
+      if (isBlank(picture.name[language])) {
+        fail(bank, at, "sin nombre en " + language);
+      }
+    }
+
+    if (picture.regions.length < 2) {
+      fail(bank, at, "una lámina necesita al menos dos zonas que pintar");
+    }
+    for (const repeated of duplicates(picture.regions.map((r) => r.id))) {
+      fail(bank, at, "id de zona repetido: " + repeated);
+    }
+
+    for (const region of picture.regions) {
+      const where = at + "/" + region.id;
+      if (isBlank(region.path)) fail(bank, where, "zona sin camino");
+      for (const language of LANGUAGES) {
+        if (isBlank(region.label[language])) {
+          fail(bank, where, "zona sin nombre en " + language);
+        }
+      }
+      // El número se pinta en ese punto: fuera del lienzo no se vería, y es
+      // el tipo de errata que no da error en ningún sitio.
+      const { x, y } = region.labelAt;
+      if (x < 0 || x > 100 || y < 0 || y > 100) {
+        fail(bank, where, "el punto del número cae fuera del lienzo");
+      }
+    }
+  }
+
+  for (const key of Object.keys(COLORING_LEVELS)) {
+    const level = Number(key) as ColoringLevel;
+    const { palette } = COLORING_LEVELS[level];
+    const pictures = picturesForLevel(level);
+
+    if (pictures.length < COLORING_PICTURES_PER_SESSION) {
+      fail(
+        bank,
+        "nivel " + level,
+        pictures.length +
+          " láminas, y una sesión son " +
+          COLORING_PICTURES_PER_SESSION,
+      );
+    }
+
+    // Con un solo color, dos zonas vecinas saldrían del mismo tono y la
+    // lámina parecería a medio pintar: el reparto en rueda necesita dos.
+    if (palette.length < 2) {
+      fail(bank, "nivel " + level, "la paleta necesita al menos dos colores");
+    }
+    for (const repeated of duplicates([...palette])) {
+      fail(bank, "nivel " + level, "color repetido en la paleta: " + repeated);
+    }
+    for (const colorId of palette) {
+      if (!COLORING_COLORS[colorId]) {
+        fail(bank, "nivel " + level, "color desconocido: " + colorId);
+      }
+    }
+
+    // Los colores se reparten en rueda, así que una paleta con más colores
+    // que zonas deja fichas que no pintan nada en ninguna lámina.
+    for (const picture of pictures) {
+      if (palette.length > picture.regions.length) {
+        fail(
+          bank,
+          "nivel " + level + "/" + picture.id,
+          "la paleta tiene " +
+            palette.length +
+            " colores y la lámina solo " +
+            picture.regions.length +
+            " zonas: sobrarían fichas",
+        );
+      }
     }
   }
 }
@@ -755,6 +858,7 @@ function validateTracing(): void {
 
 validateQuestions();
 validateHexagons();
+validateColoring();
 validateWordScramble();
 validateWordSearch();
 validateTyping();
@@ -788,6 +892,7 @@ const counts = [
   VISUAL_SYMBOLS.length + " visual symbols",
   MEMORY_SYMBOLS.length + " memory symbols",
   TRACING_EXERCISES.length + " tracing exercises",
+  COLORING_PICTURES.length + " coloring pictures",
 ].join(", ");
 
 console.log("Content validation passed — " + counts);

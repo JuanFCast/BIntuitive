@@ -10,7 +10,7 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
 - **A public welcome page:** the site root introduces BIntuitive and offers three doors — sign in, create an account, or continue as a guest. The first two are honest visual prototypes: there is no identity provider, no database and no session yet, and the screens say so instead of pretending otherwise. Nothing is stored, and no fake account is ever written to the browser.
 - **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which lives at `/explore` and is where every house button, exit and "back to the start" inside the app leads. There is no separate games section.
-- **9 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, and Tracing.
+- **10 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, Tracing, and Coloring.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
 - **Visual Agility:** a local, touch-first matching challenge where two nine-symbol cards share exactly one symbol and mistakes add a one-second penalty.
@@ -65,7 +65,8 @@ their options, English copy present for every Spanish question, words in NFC and
 language alphabet, enough content per level to build a session, every option having something to
 show, each `imageSrc` pointing at a drawing that really exists in `public/art/`, and the English
 layer never labelling an option that the Spanish source leaves unlabelled. The banks stay separate — the
-question bank, Word Scramble, Word Search, Typing and Visual each keep their own shape.
+question bank, Word Scramble, Word Search, Typing, Visual and Coloring each keep their own
+shape.
 
 The production build validates TypeScript, generates the application routes, and prepares the optimized Next.js output.
 
@@ -88,6 +89,7 @@ src/
       word-search/      #   Word Search
       memory/           #   Memory
       tracing/          #   Tracing
+      coloring/         #   Coloring
   components/           # Brand mark, hexagon cards, answers, feedback, results...
   data/
     categories.ts       # Base category definitions
@@ -95,6 +97,7 @@ src/
     localization.ts     # English category, question, option, and accessibility copy
                         # (artwork for the questions lives in public/art/)
   lib/
+    coloringGame.ts     # Coloring pictures, teaching palette, and colour dealing
     gameEngine.ts       # Question selection and adaptive difficulty
     i18n.tsx            # Language provider and interface translations
     language.ts         # Shared language type
