@@ -123,8 +123,10 @@ Interface translations live in `src/lib/i18n.tsx`. Question and category transla
 When adding a question:
 
 1. Add the Spanish source question and options to `src/data/questions.ts` using the `Question` type.
-2. Point each option at its drawing with `imageSrc` (`public/art/places/` and `public/art/colors/`).
-   Numbers keep emoji, because counting apples does not depend on how a phone draws them.
+2. Point each option at its drawing with `imageSrc`, filename and extension included
+   (`public/art/places/` and `public/art/colors/`). Geometric swatches and places are
+   hand-written SVG; the fourteen Colors objects are 384 px PNG illustrations. Numbers keep
+   emoji, because counting apples does not depend on how a phone draws them.
 3. Leave `label` out whenever the label would be the answer — the numeral under a group to count,
    the colour name under a colour swatch. Keep it where the name teaches vocabulary instead.
 4. Add the matching English instruction and hint to `englishQuestions` in `src/data/localization.ts`.

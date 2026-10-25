@@ -14,3 +14,8 @@ docs/
 
 # Salida compilada de `npm run validate:content`
 .content-check/
+
+# Originales de 1254 px que entregó ChatGPT, de donde salen los PNG de
+# `public/art/colors/`. No se publican: pesan 19 MB y lo que sirve la app son
+# los de 384 px ya recortados. Guardar una copia fuera del repositorio.
+imagesChatGPT/

@@ -103,13 +103,26 @@ src/lib/
   `validate:content` comprueba las tres cosas, y también que el inglés no ponga etiqueta donde
   el español no la pone: sería regalarle la respuesta a quien juega en inglés.
 - **Los dibujos de las preguntas son propios**, en `public/art/<categoría>/`, y se enlazan con
-  `QuestionOption.imageSrc`. El emoji se quedó donde sirve —los números, porque contar manzanas
+  `QuestionOption.imageSrc`, que lleva el **nombre de archivo con su extensión** porque no
+  todos son del mismo tipo. El emoji se quedó donde sirve —los números, porque contar manzanas
   no depende del tono— y se fue de donde no: **Colores**, porque cada sistema dibuja sus emoji y
   una lección que enseña colores no puede dejar el color en manos de la fuente del teléfono
   (🌼 es amarillo en iOS y blancuzco en otros, y se llamaba "margarita blanca"); y **Lugares**,
   porque no hay emoji de granja ni de selva y se usaban 🚜 y 🌳, así que a "dónde viven las
   vacas y las gallinas" se respondía con un tractor. Dentro de una pregunta no se mezclan
   dibujo y emoji: se ven como dos juegos distintos.
+- **Dos tipos de dibujo, y la razón no es estética**. Las figuras geométricas de Colores
+  —círculo, cuadrado y corazón en diez colores— y los once lugares son **SVG** escritos a
+  mano: son primitivas y arquitectura, pesan nada, y en el caso de las figuras el SVG es lo
+  que garantiza el color exacto que se enseña. Los catorce objetos de Colores —animales,
+  fruta, flores, la nube— son **PNG de 384 px**, ilustraciones generadas, porque un flamenco
+  escrito con coordenadas a mano no parece un flamenco; el primer intento parecía cualquier
+  otra cosa. Al sustituir uno: mantener el nombre de archivo, fondo transparente, recortar el
+  margen y reescalar a 384 px con el dibujo ocupando el 92% del lado largo —si no, los
+  objetos altos y estrechos (el flamenco, la zanahoria) se ven mucho más pequeños que los
+  redondos puestos al lado—. Lo blanco sobre blanco es el caso límite: la nube y la margarita
+  se pintan sobre una ficha blanca y necesitan sombreado propio que marque la silueta, no
+  blanco puro.
 - **Los colores que se enseñan no son los de la marca**: la paleta de la interfaz es pastel
   (`sky` es un celeste, `coral` un salmón) y sirve para la interfaz. Los dibujos de la
   categoría Colores usan colores plenos y canónicos, que viven en los propios SVG. Enseñar
