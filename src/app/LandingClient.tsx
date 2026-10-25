@@ -3,6 +3,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import { hexagonImage } from "@/data/categories";
 import { useLanguage } from "@/lib/i18n";
 import { EXPLORE, SIGN_IN, SIGN_UP } from "@/lib/routes";
 
@@ -94,6 +95,24 @@ export default function LandingClient() {
             </div>
           </section>
         </div>
+
+        {/*
+          Los dibujos de las fichas derivan de Twemoji, con licencia CC BY 4.0,
+          que pide la atribución allí donde se usan y no solo en el
+          repositorio. Va aquí, pequeña y al final, porque la portada es la
+          única pantalla para adultos que ve todo el que entra.
+        */}
+        <p className="mt-6 text-center text-xs font-semibold text-ink/70">
+          {t("artCredit")}{" "}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            className="underline underline-offset-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            CC BY 4.0
+          </a>
+        </p>
       </div>
     </main>
   );
@@ -102,7 +121,7 @@ export default function LandingClient() {
 /**
  * El panal de la portada: siete fichas con lo que se aprende dentro.
  *
- * Son los emoji de los hexágonos reales —colores, números, lugares, palabras,
+ * Son los dibujos de los hexágonos reales —colores, números, lugares, palabras,
  * trazos— colocados en la misma retícula que el panal de `/explore`: filas que
  * se solapan a tres cuartos de altura y corridas media ficha. Así la portada
  * enseña la forma de la aplicación antes de entrar en ella.
@@ -112,7 +131,9 @@ export default function LandingClient() {
  * marear a nadie.
  */
 function HoneycombArt({ label }: { label: string }) {
-  const cells = ["🎨", "🔢", "🏝️", "✏️", "🔠", "🧠", "👀"];
+  const cells = (
+    ["colores", "numeros", "lugares", "tracing", "search", "memory", "visual"] as const
+  ).map(hexagonImage);
 
   return (
     <div
@@ -120,9 +141,10 @@ function HoneycombArt({ label }: { label: string }) {
       role="img"
       aria-label={label}
     >
-      {cells.map((emoji, index) => (
-        <span key={emoji} className={`landing-hive-cell landing-hive-${index}`}>
-          <span aria-hidden="true">{emoji}</span>
+      {cells.map((image, index) => (
+        <span key={image} className={`landing-hive-cell landing-hive-${index}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="" aria-hidden="true" draggable={false} />
         </span>
       ))}
     </div>

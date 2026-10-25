@@ -91,6 +91,8 @@ const messages = {
     createAccount: "Create an account",
     continueAsGuest: "Continue as guest",
     landingGrownUps: "For grown-ups",
+    artCredit:
+      "Activity icons adapted from Twemoji, © Twitter and contributors.",
     accountsComingSoon:
       "Accounts are coming soon. You can continue playing as a guest.",
     accountsComingSoonForm:
@@ -404,6 +406,8 @@ const messages = {
     createAccount: "Crear una cuenta",
     continueAsGuest: "Continuar como invitado",
     landingGrownUps: "Para adultos",
+    artCredit:
+      "Íconos de las actividades adaptados de Twemoji, © Twitter y colaboradores.",
     accountsComingSoon:
       "Las cuentas estarán disponibles próximamente. Puedes continuar jugando como invitado.",
     accountsComingSoonForm:

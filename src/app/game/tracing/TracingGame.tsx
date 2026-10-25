@@ -36,6 +36,7 @@ import {
   type TracingLevel,
   type TracingPoint,
 } from "@/lib/tracingGame";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 type Solved = { stars: number; accuracy: number };
@@ -322,7 +323,7 @@ export default function TracingGame() {
   return (
     <GameShell
       intro={{
-        emoji: "✏️",
+        image: hexagonImage("tracing"),
         title: t("tracingTitle"),
         goal: t("tracingIntro"),
         howTo: t("tracingHowTo"),

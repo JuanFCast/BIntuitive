@@ -125,6 +125,18 @@ src/lib/
   transparente, recortar el margen y reescalar a 384 px con el dibujo ocupando el 92% del
   lado largo —si no, los objetos altos y estrechos (el flamenco, la zanahoria) se ven mucho
   más pequeños que los redondos puestos al lado—.
+- **Las fichas del panal tienen su propio dibujo**, en `public/art/hexagons/`, y es un estilo
+  distinto a propósito: iconos planos, no ilustraciones pintadas. Una ficha es un icono que se
+  reconoce de lejos y a 60 px; una opción de pregunta es un objeto que hay que mirar. Derivan
+  de Twemoji (© Twitter y colaboradores, **CC BY 4.0**), recoloreados y combinados, y la
+  licencia pide atribución allí donde se usan: por eso hay una línea de crédito al pie de la
+  portada y otra en el README. **No quitarlas.** El dibujo de cada hexágono se escribe una
+  sola vez, en el campo `image` de `categories.ts`; la introducción y la ayuda de cada juego
+  lo piden con `hexagonImage(id)` y la portada también, así que no hay una ruta repetida a
+  mano en ningún juego. Ninguno lleva el color de la ficha (`sun`) como color principal: se
+  perdería sobre ella. Mismo tratamiento que los demás PNG —384 px, el dibujo al 92% del lado
+  largo— y además reducidos a 256 colores, que en dibujos planos no se nota y deja los diez en
+  124 KB. `validate:content` comprueba que cada ruta exista.
 - **Dos casos límite al encargar un dibujo nuevo.** En Colores, lo blanco sobre blanco: la
   nube y la margarita se pintan sobre una ficha blanca y necesitan sombreado propio que
   marque la silueta, no blanco puro. En Lugares, **que no se parezcan entre sí**: los once se
@@ -294,14 +306,16 @@ src/lib/
    rondas y cálculo de estadísticas. Sin React.
 2. `src/app/game/<id>/page.tsx` — server component con `metadata` (`"<Nombre> · BIntuitive"`).
 3. `src/app/game/<id>/<Nombre>Game.tsx` — `"use client"`, fases intro/playing/results.
-   Todo el render va dentro de `<GameShell intro={{ emoji, title, goal, howTo, example }}
+   Todo el render va dentro de `<GameShell intro={{ image, title, goal, howTo, example }}
    showIntro={phase === "intro"} startLabel onStart />`, y los hijos son solo las fases de
    juego y resultados: el encabezado, la introducción y la ayuda ya vienen dadas. El
    `example` es un componente propio del juego, pequeño y estático, definido al final de su
    propio archivo como los demás ayudantes de presentación; `GameIntro` solo lo enmarca y
    nunca sabe de qué juego es.
 4. `src/data/categories.ts` — añadir el id al union de `GameHexagon["id"]` y una entrada en
-   `gameHexagons` (nombre y descripción **en español**, emoji, `href: "/game/<id>"`).
+   `gameHexagons` (nombre y descripción **en español**, `image` con su dibujo en
+   `public/art/hexagons/`, `href: "/game/<id>"`). La introducción toma ese mismo dibujo con
+   `image: hexagonImage("<id>")`.
    Con eso el juego ya aparece en el panal: **no hay ningún índice de juegos que actualizar**.
 5. `src/data/localization.ts` — añadir la entrada en inglés a `englishHexagons` (el `Record` es
    exhaustivo sobre `Hexagon["id"]`: si falta, TypeScript falla).

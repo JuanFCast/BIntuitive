@@ -37,6 +37,7 @@ import {
   getUnassignedGameProgress,
   saveColoringResult,
 } from "@/lib/storage";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 
@@ -258,7 +259,7 @@ export default function ColoringGame() {
   return (
     <GameShell
       intro={{
-        emoji: "🖍️",
+        image: hexagonImage("coloring"),
         title: t("coloringTitle"),
         goal: t("coloringIntro"),
         howTo: t("coloringHowTo"),

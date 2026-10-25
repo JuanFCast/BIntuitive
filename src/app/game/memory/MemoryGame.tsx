@@ -36,6 +36,7 @@ import {
   playWrongSound,
 } from "@/lib/sounds";
 import { useSpeakAfterSound } from "@/lib/speakAfterSound";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 
@@ -237,7 +238,7 @@ export default function MemoryGame() {
   return (
     <GameShell
       intro={{
-        emoji: "🧠",
+        image: hexagonImage("memory"),
         title: t("memoryTitle"),
         goal: t("memoryIntro"),
         howTo: t("memoryHowTo"),

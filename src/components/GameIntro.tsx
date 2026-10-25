@@ -11,8 +11,11 @@ import { HEXAGON_CLIP } from "@/lib/hexagon";
  * que las dos explicaciones no puedan divergir nunca.
  */
 export type GameIntroContent = {
-  /** Emoji del juego; decorativo, el nombre ya va en el título. */
-  emoji: string;
+  /**
+   * Dibujo del juego, el mismo de su ficha en el panal. Decorativo: el nombre
+   * ya va en el título.
+   */
+  image: string;
   title: string;
   /** Qué debe lograr el jugador, en una frase. */
   goal: string;
@@ -48,7 +51,7 @@ type GameIntroProps = GameIntroContent & {
 };
 
 export default function GameIntro({
-  emoji,
+  image,
   title,
   goal,
   howTo,
@@ -81,19 +84,30 @@ export default function GameIntro({
           aria-hidden="true"
         >
           <span
-            className="flex aspect-[0.8660254] w-[clamp(7.5rem,32vw,11rem)] items-center justify-center bg-sun text-[clamp(3.5rem,15vw,5.5rem)] leading-none"
+            className="flex aspect-[0.8660254] w-[clamp(7.5rem,32vw,11rem)] items-center justify-center bg-sun"
             style={{ clipPath: HEXAGON_CLIP }}
           >
-            {emoji}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image}
+              alt=""
+              draggable={false}
+              className="w-[62%] select-none"
+            />
           </span>
         </span>
       )}
 
       <div>
         {isDialog && (
-          <p className="text-4xl" aria-hidden="true">
-            {emoji}
-          </p>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="mx-auto h-14 w-14 select-none"
+          />
         )}
         <h1
           className={`font-extrabold text-ink ${isDialog ? "mt-2" : ""} ${
