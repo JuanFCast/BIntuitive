@@ -19,3 +19,9 @@ docs/
 # `public/art/colors/`. No se publican: pesan 19 MB y lo que sirve la app son
 # los de 384 px ya recortados. Guardar una copia fuera del repositorio.
 imagesChatGPT/
+
+# Skills de diseño instaladas en el proyecto (frontend-design, ui-ux-pro-max,
+# web-design-guidelines, webapp-testing). Son 3,7 MB de datos de terceros y
+# herramienta de trabajo, no código de BIntuitive. Para que viajen con el
+# repositorio, basta con borrar esta línea.
+.claude/skills/

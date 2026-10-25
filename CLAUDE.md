@@ -304,6 +304,54 @@ al panal de la raíz). Un redirect `permanent` se queda meses en la caché del n
 darle la vuelta a uno, comprobar que no se cierra un ciclo con el que ya está publicado —es justo
 lo que obliga a `/hexagons` a servir la página en vez de redirigir.
 
+## Skills de diseño: en qué orden se usan
+
+En `.claude/skills/` hay cinco skills de diseño instaladas (ignoradas por git:
+son herramienta, no código de BIntuitive). Se solapan entre sí, así que el
+orden importa — sin él darían consejos contradictorios sobre la misma
+pantalla. Para cualquier trabajo visual, en este orden y **solo los pasos que
+la tarea necesite**:
+
+1. **`ui-ux-pro-max`** — decide el sistema: paleta, tipografía, escala,
+   densidad, patrón de interacción. Trae un buscador propio
+   (`scripts/search.py`, Python, sin red) con paletas y guías por tipo de
+   producto. Es el único que decide; los demás aplican lo que este fije.
+2. **`frontend-design`** — implementa la pantalla con ese sistema ya decidido.
+   Empuja hacia lo distintivo y en contra del aspecto de plantilla.
+3. **`impeccable`** — refina lo ya implementado: detalle, jerarquía,
+   espaciado, microinteracciones, acabado. Entra **después** de que exista
+   algo que pulir, nunca antes; si se invoca sobre una pantalla sin sistema
+   decidido, rehace decisiones del paso 1.
+4. **`web-design-guidelines`** (Vercel) — audita accesibilidad, responsive y
+   usabilidad. Es revisión, no diseño: sus hallazgos se arreglan, no se
+   discuten con el paso 1.
+5. **`webapp-testing`** — comprueba en un navegador que funciona de verdad.
+   **No puede ejecutarse hoy**: sus scripts necesitan Playwright para Python,
+   que no está instalado y se decidió no instalar. Para probar se usa el panel
+   de navegador de Claude Code, que no necesita nada.
+
+Tres reglas para que no se contradigan entre sí:
+
+- **La paleta, la tipografía y el espaciado los decide una sola vez el paso 1**,
+  y los demás trabajan dentro de lo que fijó. Si el paso 4 encuentra un
+  problema de contraste, se corrige el token del sistema, no la pantalla
+  suelta.
+- **Impeccable refina, no rediseña.** Donde proponga cambiar paleta o
+  tipografía, manda el paso 1.
+- **Ninguna de las cinco manda sobre lo que ya está decidido en este
+  documento.** Los tokens de `globals.css`, el panal, la regla de que una
+  opción nunca lleva escrita su respuesta, los colores de enseñanza frente a
+  los de la marca: eso es producto, no estilo, y una recomendación genérica de
+  cualquier skill que lo contradiga se descarta.
+
+Impeccable trae además cuatro subagentes en `.claude/agents/` y sus hooks en
+`.claude/settings.json`, que corren su motor en SessionStart, **tras cada
+Edit/Write** y en Stop. El motor es un binario propio que se descargó a
+`~/.impeccable/bin/` —fuera del proyecto— la primera vez que se usó. Su
+telemetría está apagada con `IMPECCABLE_NO_TELEMETRY` y `DO_NOT_TRACK` en el
+`env` de ese mismo `settings.json`. Para quitarlo todo: borrar esas tres cosas
+y la carpeta `~/.impeccable`.
+
 ## Cosas a tener en cuenta
 
 - **Progress solo enseña lo que ya está guardado.** `/progress` lee `getProgress()` y no
