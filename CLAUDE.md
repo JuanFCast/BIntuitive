@@ -113,18 +113,26 @@ src/lib/
   porque no hay emoji de granja ni de selva y se usaban 🚜 y 🌳, así que a "dónde viven las
   vacas y las gallinas" se respondía con un tractor. Dentro de una pregunta no se mezclan
   dibujo y emoji: se ven como dos juegos distintos.
-- **Dos tipos de dibujo, y la razón no es estética**. Las figuras geométricas de Colores
-  —círculo, cuadrado y corazón en diez colores— y los once lugares son **SVG** escritos a
-  mano: son primitivas y arquitectura, pesan nada, y en el caso de las figuras el SVG es lo
-  que garantiza el color exacto que se enseña. Los catorce objetos de Colores —animales,
-  fruta, flores, la nube— son **PNG de 384 px**, ilustraciones generadas, porque un flamenco
-  escrito con coordenadas a mano no parece un flamenco; el primer intento parecía cualquier
-  otra cosa. Al sustituir uno: mantener el nombre de archivo, fondo transparente, recortar el
-  margen y reescalar a 384 px con el dibujo ocupando el 92% del lado largo —si no, los
-  objetos altos y estrechos (el flamenco, la zanahoria) se ven mucho más pequeños que los
-  redondos puestos al lado—. Lo blanco sobre blanco es el caso límite: la nube y la margarita
-  se pintan sobre una ficha blanca y necesitan sombreado propio que marque la silueta, no
-  blanco puro.
+- **Dos tipos de dibujo, y la razón no es estética**. Lo único que sigue siendo **SVG**
+  escrito a mano son las treinta figuras geométricas de Colores —círculo, cuadrado y corazón
+  en diez colores—: son primitivas, pesan nada, y el vector es lo que garantiza que el rojo
+  que se enseña sea exactamente el rojo que se pregunta; una imagen daría un rojo aproximado
+  y distinto en cada una. Todo lo demás —los catorce objetos de Colores y los once lugares—
+  son **PNG de 384 px**, ilustraciones generadas, porque un flamenco o una escuela escritos
+  con coordenadas a mano no parecen un flamenco ni una escuela; los primeros intentos
+  parecían cualquier otra cosa. Al sustituir uno: mantener el nombre de archivo, fondo
+  transparente, recortar el margen y reescalar a 384 px con el dibujo ocupando el 92% del
+  lado largo —si no, los objetos altos y estrechos (el flamenco, la zanahoria) se ven mucho
+  más pequeños que los redondos puestos al lado—.
+- **Dos casos límite al encargar un dibujo nuevo.** En Colores, lo blanco sobre blanco: la
+  nube y la margarita se pintan sobre una ficha blanca y necesitan sombreado propio que
+  marque la silueta, no blanco puro. En Lugares, **que no se parezcan entre sí**: los once se
+  usan como las respuestas falsas unos de otros, así que una escuela que parezca una casa
+  convierte "toca el lugar donde aprendes" en una pregunta con dos respuestas buenas. Lo que
+  los separa hoy: escuela con bandera y reloj, hospital con cruz roja, tienda con toldo de
+  rayas y vitrina, casa de una planta con tejado rojo, granja con granero y vaca; selva
+  espesa frente a parque con columpios; desierto sin una gota de agua frente a playa. Un
+  lugar nuevo se revisa **en pareja con sus distractores**, no suelto.
 - **Colorear crece cambiando de mecánica, no de tamaño**: los escalones 1 y 2 dicen en voz
   alta qué zona pintar y de qué color, y van zona por zona, así que sirven a quien todavía no
   reconoce cifras; del 3 al 5 cada zona lleva un número, la paleta dice qué color es cada

@@ -396,7 +396,7 @@ function PlacesExample() {
         enseñar exactamente lo que va a salir después.
       */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/art/places/playa.svg" alt="" aria-hidden="true" className="h-9 w-9" />
+      <img src="/art/places/playa.png" alt="" aria-hidden="true" className="h-9 w-9" />
     </ExampleRow>
   );
 }
