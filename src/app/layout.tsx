@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Baloo_2 } from "next/font/google";
+import { Baloo_2, Bricolage_Grotesque } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n";
 import { siteDescription, siteName, siteUrl } from "./siteMetadata";
 import AppShell from "@/components/AppShell";
@@ -12,6 +12,22 @@ const baloo = Baloo_2({
   weight: ["400", "600", "700", "800"],
 });
 
+/*
+ * La tipografía de AUM, aquí solo para los títulos.
+ *
+ * Es el vínculo de marca más directo que hay: quien vea BIntuitive y luego
+ * aumcrsp.com reconoce la misma letra en los titulares. Baloo se queda para
+ * todo lo demás —instrucciones, etiquetas, los juegos— porque su redondez se
+ * lee mejor a los cuatro años y porque la geometría del panal está medida
+ * contra sus métricas. Dos familias con un papel claro cada una, no dos
+ * fuentes compitiendo.
+ */
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+  weight: ["600", "700", "800"],
+});
+
 const title = siteName;
 const description = siteDescription;
 const socialImageUrl = `${siteUrl}/bintuitive-og.png`;
@@ -19,7 +35,7 @@ const socialImageUrl = `${siteUrl}/bintuitive-og.png`;
 const IOS_CHROME_RECOVERY_STYLE = `
 html.bintuitive-ios-booting,
 html.bintuitive-ios-booting body {
-  background: #f7f4ea !important;
+  background: #f5f4ee !important;
 }
 
 html.bintuitive-ios-booting body {
@@ -217,7 +233,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={baloo.variable}>
+    <html lang="en" className={`${baloo.variable} ${bricolage.variable}`}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: IOS_CHROME_RECOVERY_STYLE }} />
         <script
