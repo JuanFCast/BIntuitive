@@ -23,7 +23,9 @@ type AnswerOptionProps = {
 
 const stateClasses: Record<OptionState, string> = {
   idle: "bg-white border-sky/40 active:scale-95 hover:border-sky",
-  wrong: "bg-coralsoft border-coral animate-shake opacity-60",
+  // Al 80% y no al 60%: más apagada se leía como un botón roto o un castigo,
+  // y el coral ya dice por sí solo "esta no era".
+  wrong: "bg-coralsoft border-coral animate-shake opacity-80",
   correct: "bg-mintsoft border-mint animate-pop ring-4 ring-mint",
   revealed: "bg-mintsoft border-mint ring-4 ring-mint animate-pop",
   locked: "bg-white border-sky/30 opacity-70",
@@ -78,21 +80,27 @@ export default function AnswerOption({
           alt=""
           aria-hidden="true"
           draggable={false}
-          className="h-20 w-20 select-none sm:h-28 sm:w-28"
+          /*
+           * En un iPad la ficha mide 360px de ancho y el dibujo se quedaba en
+           * 112: medio tablero vacío. Crece con el alto de la pantalla y se
+           * detiene en 13rem, que en una tableta apaisada con cuatro opciones
+           * todavía deja caber las dos filas sin desplazar.
+           */
+          className="h-20 w-20 select-none sm:h-[min(13rem,22svh)] sm:w-[min(13rem,22svh)]"
         />
       ) : option.emoji ? (
         <span
           aria-hidden="true"
           className={
             isGroup
-              ? "text-3xl leading-tight sm:text-5xl"
-              : "text-6xl sm:text-8xl"
+              ? "text-3xl leading-tight sm:text-5xl md:text-[min(4rem,7svh)]"
+              : "text-6xl sm:text-8xl md:text-[min(8.5rem,15svh)]"
           }
         >
           {option.emoji}
         </span>
       ) : (
-        <span aria-hidden="true" className="text-6xl font-extrabold sm:text-8xl">
+        <span aria-hidden="true" className="text-6xl font-extrabold sm:text-8xl md:text-[min(8.5rem,15svh)]">
           {option.label}
         </span>
       )}

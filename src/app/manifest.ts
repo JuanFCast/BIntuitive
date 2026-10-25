@@ -40,7 +40,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     // Los colores de la marca: crema es el fondo de la aplicación, así que la
     // pantalla de arranque no da un salto de color al entrar.
-    background_color: "#f7f4ea",
+    background_color: "#f5f4ee",
     theme_color: "#ffc400",
     // Sin `orientation`: el panal está pensado para el alto en el teléfono y
     // para el ancho en la tableta, y fijar una obligaría a la peor de las dos.

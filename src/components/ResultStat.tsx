@@ -41,7 +41,7 @@ export default function ResultStat({
         dos o tres líneas, y se le permite partir palabras: antes que
         apretarlas, la tarjeta crece a lo alto.
       */}
-      <p className="mt-1 hyphens-auto break-words text-xs font-bold uppercase leading-snug text-ink/50 sm:tracking-wide sm:text-sm">
+      <p className="mt-1 hyphens-auto break-words text-xs font-bold leading-snug text-ink/70 sm:text-sm">
         {label}
       </p>
     </div>

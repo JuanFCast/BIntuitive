@@ -64,31 +64,28 @@ export default function BottomNavigation() {
 }
 
 /*
- * La casa del panal: el panal de la portada con un tejado en el sitio de su
- * fila de arriba, así que debajo quedan cinco celdas, tres y dos.
+ * La casa del panal: un tejado sobre siete celdas en flor —dos, tres y dos—,
+ * la forma más pequeña que ya se lee como panal y no como fila.
  *
  * No es la casita genérica de cualquier aplicación ni el panal a secas: las
- * celdas son las fichas de la pantalla —el mismo hexagono pointy-top, con la
- * fila de abajo corrida media ficha— y el tejado dice que aquí se entra. Son
- * cinco y no siete porque a 1.55rem siete celdas apagadas, solo contorno, se
- * juntan en una trama. Se dibujan al 80% de su celda para que el hueco entre
- * vecinas sobreviva al relleno del estado activo, que es cuando dos siluetas
- * pegadas se leerían como una mancha.
+ * celdas son las fichas de la pantalla —el mismo hexagono pointy-top, con las
+ * filas corridas media ficha— y el tejado dice que aquí se entra. Las tres
+ * filas mandan el tamaño, porque la altura se reparte con el tejado. Se
+ * dibujan al 76% de su celda y con un trazo algo más fino que el del tejado
+ * para que el hueco entre vecinas sobreviva en los dos estados: apagadas,
+ * siete contornos pegados se juntarían en una trama; encendidas, siete
+ * siluetas pegadas se leerían como una mancha.
  */
-const HOME_HEX_RADIUS = 4;
-const HOME_HEX_SCALE = 0.8;
+const HOME_HEX_RADIUS = 3.4;
+const HOME_HEX_SCALE = 0.76;
 const HOME_HEX_WIDTH = HOME_HEX_RADIUS * HEXAGON_WIDTH_RATIO;
-const HOME_HEX_LEFT = (24 - 3 * HOME_HEX_WIDTH) / 2;
-// La fila de tres empieza algo más de una unidad por debajo del alero, lo
+// La primera fila empieza algo más de una unidad por debajo del alero, lo
 // justo para que el tejado y las celdas no se toquen en ningún estado.
-const HOME_HEX_FIRST_ROW = 9.4 + HOME_HEX_RADIUS * HOME_HEX_SCALE;
+const HOME_HEX_FIRST_ROW = 7.6 + HOME_HEX_RADIUS * HOME_HEX_SCALE;
 
-const HOME_HEXAGONS = [3, 2].flatMap((count, row) =>
+const HOME_HEXAGONS = [2, 3, 2].flatMap((count, row) =>
   Array.from({ length: count }, (_, column) => ({
-    cx:
-      HOME_HEX_LEFT +
-      (row + 1) * (HOME_HEX_WIDTH / 2) +
-      column * HOME_HEX_WIDTH,
+    cx: 12 + (column - (count - 1) / 2) * HOME_HEX_WIDTH,
     cy: HOME_HEX_FIRST_ROW + row * HOME_HEX_RADIUS * 1.5,
   })),
 );
@@ -96,9 +93,9 @@ const HOME_HEXAGONS = [3, 2].flatMap((count, row) =>
 function HomeIcon({ active }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" role="presentation">
-      {/* El tejado, tan ancho como la fila de tres que cubre. */}
+      {/* El tejado, tan ancho como la fila de tres, la más ancha de la flor. */}
       <polygon
-        points="12,1.4 22,8 2,8"
+        points="12,1 20.8,6.4 3.2,6.4"
         fill={active ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth="1.5"
@@ -106,7 +103,7 @@ function HomeIcon({ active }: IconProps) {
       />
       {/*
         Encendidas, las celdas van rellenas y SIN trazo: el contorno crece
-        hacia fuera y se comeria el hueco que las separa, y cinco hexagonos
+        hacia fuera y se comeria el hueco que las separa, y siete hexagonos
         pegados dejan de leerse como panal para leerse como mancha.
       */}
       {HOME_HEXAGONS.map(({ cx, cy }) => (
@@ -115,7 +112,7 @@ function HomeIcon({ active }: IconProps) {
           points={hexagonPoints(cx, cy, HOME_HEX_RADIUS * HOME_HEX_SCALE)}
           fill={active ? "currentColor" : "none"}
           stroke={active ? "none" : "currentColor"}
-          strokeWidth="1.1"
+          strokeWidth="1"
           strokeLinejoin="round"
         />
       ))}

@@ -217,7 +217,7 @@ function ProfileEditor({
       }}
     >
       <label
-        className="block px-1 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45"
+        className="block px-1 text-base font-extrabold text-ink/80"
         htmlFor="profile-name"
       >
         {t("profileNameLabel")}
@@ -235,7 +235,7 @@ function ProfileEditor({
       />
 
       <p
-        className="mt-4 px-1 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45"
+        className="mt-4 px-1 text-base font-extrabold text-ink/80"
         id="avatar-label"
       >
         {t("profileAvatarLabel")}
@@ -314,7 +314,7 @@ function Section({
     <section className="mt-8" aria-labelledby={id}>
       <h2
         id={id}
-        className="px-1 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45"
+        className="px-1 text-lg font-extrabold text-ink"
       >
         {title}
       </h2>

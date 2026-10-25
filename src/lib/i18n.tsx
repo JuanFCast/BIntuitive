@@ -90,6 +90,7 @@ const messages = {
     signIn: "Sign in",
     createAccount: "Create an account",
     continueAsGuest: "Continue as guest",
+    landingGrownUps: "For grown-ups",
     accountsComingSoon:
       "Accounts are coming soon. You can continue playing as a guest.",
     accountsComingSoonForm:
@@ -152,7 +153,8 @@ const messages = {
     resultsStarsAria: "You earned {stars} out of {total} stars",
     goldMedal: "🏅 Gold medal!",
     playAgain: "🔁 Play again",
-    backToHexagons: "Back to hexagons",
+    backHome: "Home",
+    backHomeAction: "Back to Home",
     progressHeading: "Your progress",
     progressIntro: "See how much you have learned so far.",
     progressEmptyTitle: "Your learning journey starts here",
@@ -401,6 +403,7 @@ const messages = {
     signIn: "Iniciar sesión",
     createAccount: "Crear una cuenta",
     continueAsGuest: "Continuar como invitado",
+    landingGrownUps: "Para adultos",
     accountsComingSoon:
       "Las cuentas estarán disponibles próximamente. Puedes continuar jugando como invitado.",
     accountsComingSoonForm:
@@ -463,7 +466,8 @@ const messages = {
     resultsStarsAria: "Ganaste {stars} de {total} estrellas",
     goldMedal: "🏅 ¡Medalla de oro!",
     playAgain: "🔁 Jugar otra vez",
-    backToHexagons: "Volver a los hexágonos",
+    backHome: "Inicio",
+    backHomeAction: "Volver al inicio",
     progressHeading: "Tu progreso",
     progressIntro: "Descubre lo que has logrado mientras aprendes.",
     progressEmptyTitle: "Tu aprendizaje empieza aquí",

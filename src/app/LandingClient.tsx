@@ -46,18 +46,19 @@ export default function LandingClient() {
 
           <section className="w-full max-w-md">
             <div className="rounded-3xl border border-ink/10 bg-white p-5 shadow-[0_18px_48px_rgba(74,56,0,0.12)] sm:p-7">
+              {/*
+                La puerta grande es la que funciona. Iniciar sesión y crear
+                cuenta son prototipos, y antes eran el botón amarillo: el que
+                un niño —o un adulto con prisa— toca primero llevaba a una
+                pantalla que dice que aún no existe. Ahora entrar a jugar es lo
+                primero, y las cuentas quedan agrupadas aparte, para adultos.
+              */}
               <Link
-                href={SIGN_IN}
-                className="flex min-h-14 w-full items-center justify-center break-words rounded-2xl border-b-8 border-[#9b7600] bg-sun px-5 py-3 text-xl font-extrabold leading-snug text-black shadow-lg transition-transform active:scale-95 active:border-b-4"
+                href={EXPLORE}
+                className="flex min-h-16 w-full items-center justify-center gap-2 break-words rounded-2xl border-b-8 border-[#9b7600] bg-sun px-5 py-3 text-2xl font-extrabold leading-snug text-black shadow-lg transition-transform active:scale-95 active:border-b-4"
               >
-                {t("signIn")}
-              </Link>
-
-              <Link
-                href={SIGN_UP}
-                className="mt-3 flex min-h-14 w-full items-center justify-center break-words rounded-2xl border-b-8 border-ink/15 bg-white px-5 py-3 text-xl font-extrabold leading-snug text-ink shadow-md transition-transform active:scale-95 active:border-b-4"
-              >
-                {t("createAccount")}
+                <span aria-hidden="true">▶</span>
+                {t("continueAsGuest")}
               </Link>
 
               <div
@@ -69,14 +70,25 @@ export default function LandingClient() {
                 <span className="h-px flex-1 bg-ink/10" />
               </div>
 
-              <Link
-                href={EXPLORE}
-                className="flex min-h-14 w-full items-center justify-center break-words rounded-2xl border-b-8 border-mint bg-mintsoft px-5 py-3 text-xl font-extrabold leading-snug text-ink shadow-md transition-transform active:scale-95 active:border-b-4"
-              >
-                {t("continueAsGuest")}
-              </Link>
+              <p className="text-center text-base font-extrabold text-ink/70">
+                {t("landingGrownUps")}
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+                <Link
+                  href={SIGN_IN}
+                  className="flex min-h-12 w-full items-center justify-center break-words rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 py-2 text-lg font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-2"
+                >
+                  {t("signIn")}
+                </Link>
+                <Link
+                  href={SIGN_UP}
+                  className="flex min-h-12 w-full items-center justify-center break-words rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 py-2 text-lg font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-2"
+                >
+                  {t("createAccount")}
+                </Link>
+              </div>
 
-              <p className="mt-4 break-words px-1 text-center text-sm font-semibold leading-snug text-ink/55">
+              <p className="mt-4 break-words px-1 text-center text-sm font-semibold leading-snug text-ink/70">
                 {t("accountsComingSoon")}
               </p>
             </div>
