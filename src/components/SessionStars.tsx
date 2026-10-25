@@ -32,7 +32,7 @@ export default function SessionStars({
         role="img"
         aria-label={t("sessionStarsAria", { stars })}
       >
-        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#9b7400]">
+        <p className="text-sm font-extrabold text-[#7a5c00]">
           {t("sessionStars")}
         </p>
         <p className="text-4xl leading-none sm:text-5xl" aria-hidden="true">

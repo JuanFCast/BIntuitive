@@ -280,8 +280,8 @@ export default function ColoringGame() {
       }
     >
       {phase === "playing" && round && (
-        <section className="coloring-play mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:gap-3 sm:pt-4">
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-ink/45 sm:text-sm">
+        <section className="coloring-play mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:min-h-[calc(100svh-6rem)] sm:max-w-3xl sm:justify-center sm:gap-4 sm:pt-4">
+          <p className="text-sm font-extrabold text-ink/70 sm:text-base">
             {t("coloringProgress", {
               current: roundIndex + 1,
               total: rounds.length,
@@ -400,7 +400,7 @@ export default function ColoringGame() {
                    * a una segunda fila. 48 sigue por encima del objetivo
                    * táctil mínimo y las seis entran en una línea.
                    */
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border-4 text-lg font-extrabold text-white transition-transform active:scale-95 sm:h-16 sm:w-16 ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border-4 text-lg font-extrabold text-white transition-transform active:scale-95 sm:h-16 sm:w-16 md:h-20 md:w-20 md:text-2xl ${
                     chosen
                       ? "border-ink shadow-lg ring-4 ring-sun"
                       : "border-ink/20 shadow-sm"
@@ -445,7 +445,7 @@ export default function ColoringGame() {
             <p className="mt-2 text-xl font-semibold text-ink/65">
               {t("coloringResultsText", { total: rounds.length })}
             </p>
-            <p className="mt-1 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45">
+            <p className="mt-1 text-sm font-extrabold text-ink/70">
               {t("coloringLevelLabel", { level })}
             </p>
           </div>

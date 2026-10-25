@@ -13,6 +13,10 @@
  */
 export const HEXAGON_WIDTH_RATIO = Math.sqrt(3);
 
+/** La misma figura como `clip-path`, para las fichas que son HTML y no SVG. */
+export const HEXAGON_CLIP =
+  "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
+
 export function hexagonPoints(cx: number, cy: number, radius: number) {
   const half = (radius * HEXAGON_WIDTH_RATIO) / 2;
 

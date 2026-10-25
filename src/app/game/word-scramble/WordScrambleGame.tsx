@@ -262,10 +262,10 @@ export default function WordScrambleGame() {
       onOverlayOpenChange={handleOverlayOpenChange}
     >
       {phase === "playing" && word && (
-        <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 pb-4 pt-3 sm:gap-6 sm:pt-6">
+        <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 pb-4 pt-3 sm:min-h-[calc(100svh-6rem)] sm:justify-center sm:gap-8 sm:pt-6">
           <div className="flex w-full items-center justify-between gap-3">
             <span
-              className="rounded-full border-2 border-ink/10 bg-white px-4 py-1.5 font-mono text-base font-extrabold tabular-nums text-ink/70 shadow-sm sm:text-lg"
+              className="rounded-full border-2 border-ink/10 bg-white px-4 py-1.5 text-base font-extrabold tabular-nums text-ink/70 shadow-sm sm:text-lg"
               role="status"
               aria-label={t("scrambleProgressAria", {
                 current: Math.min(wordIndex + 1, WORD_SCRAMBLE_WORDS_PER_SESSION),
@@ -275,7 +275,7 @@ export default function WordScrambleGame() {
               {Math.min(wordIndex + 1, WORD_SCRAMBLE_WORDS_PER_SESSION)} / {WORD_SCRAMBLE_WORDS_PER_SESSION}
             </span>
             <span
-              className="flex items-center gap-2 rounded-full border-2 border-mint bg-mintsoft px-4 py-1.5 text-sm font-extrabold uppercase tracking-wide text-ink/70 shadow-sm sm:text-base"
+              className="flex items-center gap-2 rounded-full border-2 border-mint bg-mintsoft px-4 py-1.5 text-sm font-extrabold text-ink/70 shadow-sm sm:text-base"
               aria-label={t("scrambleLevelAria", {
                 level,
                 total: WORD_SCRAMBLE_MAX_LEVEL,
@@ -309,7 +309,7 @@ export default function WordScrambleGame() {
           </div>
 
           <div className="w-full text-center">
-            <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-[#9b7400] sm:text-base">
+            <p className="text-sm font-extrabold text-[#7a5c00] sm:text-base">
               {t("scrambleInstruction")}
             </p>
 
@@ -336,7 +336,7 @@ export default function WordScrambleGame() {
                   <span
                     key={index}
                     aria-hidden="true"
-                    className={`flex h-[clamp(3rem,11vw,4.5rem)] w-[clamp(2.6rem,9vw,4rem)] items-center justify-center rounded-2xl border-[3px] text-[clamp(1.5rem,5.5vw,2.5rem)] font-extrabold uppercase leading-none shadow-sm transition-colors duration-200 ${stateClass}`}
+                    className={`flex h-[clamp(3rem,11vw,4.5rem)] w-[clamp(2.6rem,9vw,4rem)] items-center justify-center rounded-2xl border-[3px] text-[clamp(1.5rem,5.5vw,2.5rem)] sm:h-[clamp(4.5rem,10vw,6rem)] sm:w-[clamp(4rem,9vw,5.25rem)] sm:text-[clamp(2.5rem,5vw,3.25rem)] font-extrabold uppercase leading-none shadow-sm transition-colors duration-200 ${stateClass}`}
                   >
                     {tile?.letter ?? ""}
                   </span>
@@ -384,7 +384,7 @@ export default function WordScrambleGame() {
                   onClick={() => handleTapLetter(tile)}
                   disabled={used || locked}
                   aria-label={t("scrambleLetterAria", { letter: tile.letter })}
-                  className={`flex h-[clamp(3.5rem,13vw,5rem)] w-[clamp(3.2rem,12vw,4.75rem)] items-center justify-center rounded-2xl border-[3px] text-[clamp(1.75rem,6.5vw,2.75rem)] font-extrabold uppercase leading-none text-ink shadow-[0_6px_0_rgba(74,56,0,0.08)] transition-transform duration-150 active:scale-90 disabled:opacity-25 disabled:shadow-none ${stateClass}`}
+                  className={`flex h-[clamp(3.5rem,13vw,5rem)] w-[clamp(3.2rem,12vw,4.75rem)] items-center justify-center rounded-2xl border-[3px] text-[clamp(1.75rem,6.5vw,2.75rem)] sm:h-[clamp(5rem,10.5vw,6.5rem)] sm:w-[clamp(4.75rem,9.5vw,6.25rem)] sm:text-[clamp(2.75rem,5.5vw,3.5rem)] font-extrabold uppercase leading-none text-ink shadow-[0_6px_0_rgba(74,56,0,0.08)] transition-transform duration-150 active:scale-90 disabled:opacity-25 disabled:shadow-none ${stateClass}`}
                 >
                   <span aria-hidden="true">{tile.letter}</span>
                 </button>
@@ -459,7 +459,7 @@ function ScrambleExample() {
       aria-label={t("scrambleExampleAria")}
     >
       <p
-        className="font-mono text-lg font-extrabold tracking-[0.15em] text-ink/50"
+        className="text-lg font-extrabold tracking-[0.15em] text-ink/60"
         aria-hidden="true"
       >
         {t("scrambleExampleLetters")}

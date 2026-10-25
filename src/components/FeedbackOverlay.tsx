@@ -1,5 +1,6 @@
 "use client";
 
+import BrandMark from "./BrandMark";
 import Confetti from "./Confetti";
 import { useLanguage } from "@/lib/i18n";
 
@@ -23,12 +24,15 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
         aria-live="polite"
       >
         <Confetti />
-        <div className="animate-pop flex items-center gap-4 rounded-3xl border-4 border-black bg-white px-8 py-5 shadow-xl">
-          <span
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sun text-4xl font-black text-black"
-            aria-hidden="true"
-          >
-            ✓
+        {/*
+          El acierto es el momento por el que se juega, así que tiene la forma
+          de un premio y no de un aviso: la tarjeta es de menta con el canto
+          grueso de los botones, y la abeja de la marca entra con un pequeño
+          rebote. La abeja es decorativa; lo que se anuncia es el texto.
+        */}
+        <div className="animate-enter flex items-center gap-4 rounded-3xl border-4 border-b-[10px] border-mint border-b-[#43c27e] bg-mintsoft py-3 pl-3 pr-7 shadow-xl sm:gap-5 sm:pr-9">
+          <span className="animate-bee-in block shrink-0" aria-hidden="true">
+            <BrandMark size={72} className="h-16 w-16 sm:h-[72px] sm:w-[72px]" />
           </span>
           <p className="text-3xl font-extrabold text-ink sm:text-4xl">
             {t("feedbackCorrect")}
@@ -74,9 +78,9 @@ export default function FeedbackOverlay({ type, hint }: FeedbackOverlayProps) {
       role="status"
       aria-live="polite"
     >
-      <div className="flex items-center gap-3 rounded-3xl border-4 border-black bg-white px-6 py-4 shadow-xl">
+      <div className="flex items-center gap-3 rounded-3xl border-4 border-sky bg-white px-6 py-4 shadow-xl">
         <span
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black text-2xl font-black text-sun"
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-skysoft text-2xl font-black text-ink"
           aria-hidden="true"
         >
           →

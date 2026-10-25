@@ -176,7 +176,7 @@ function Section({
 }) {
   return (
     <section className="mt-7">
-      <h2 className="px-1 pb-2 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45">
+      <h2 className="px-1 pb-2 text-lg font-extrabold text-ink">
         {title}
       </h2>
       {children}

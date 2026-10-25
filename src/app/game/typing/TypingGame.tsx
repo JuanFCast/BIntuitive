@@ -236,11 +236,11 @@ export default function TypingGame() {
         <section className="mx-auto flex w-full max-w-4xl flex-col gap-2 pb-3 pt-2 sm:gap-4 sm:pb-5 sm:pt-5">
           <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm sm:items-end sm:gap-4 sm:px-4 sm:py-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-ink/55 sm:text-sm">
+              <p className="text-xs font-bold text-ink/70 sm:text-sm">
                 {t("typingTime")}
               </p>
               <p
-                className={`font-mono text-2xl font-extrabold tabular-nums sm:text-3xl ${
+                className={`text-2xl font-extrabold tabular-nums sm:text-3xl ${
                   remaining <= 10 ? "text-coral" : "text-ink"
                 }`}
               >
@@ -278,7 +278,7 @@ export default function TypingGame() {
               <p
                 id="typing-passage"
                 translate="no"
-                className="notranslate pointer-events-none whitespace-pre-wrap break-words font-mono text-base font-semibold leading-6 sm:text-2xl sm:leading-10"
+                className="notranslate pointer-events-none whitespace-pre-wrap break-words text-lg font-bold leading-8 sm:text-2xl sm:leading-10"
               >
                 {[...passage].map((character, index) => {
                   let className = "text-ink/75";
@@ -364,10 +364,10 @@ export default function TypingGame() {
 function CompactStat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="text-center">
-      <p className="font-mono text-lg font-extrabold text-ink sm:text-2xl">
+      <p className="text-lg font-extrabold tabular-nums text-ink sm:text-2xl">
         {value}
       </p>
-      <p className="text-[0.6rem] font-bold uppercase tracking-wide text-ink/45 sm:text-xs">
+      <p className="text-xs font-bold text-ink/70 sm:text-sm">
         {label}
       </p>
     </div>
@@ -390,12 +390,12 @@ function TypingExample() {
       role="img"
       aria-label={t("typingExampleAria")}
     >
-      <p className="font-mono text-base font-extrabold" aria-hidden="true">
+      <p className="text-base font-extrabold" aria-hidden="true">
         <span className="text-ink">{typed}</span>
         <span className="text-ink/30">{pending}</span>
       </p>
       <p
-        className="mt-2 rounded-xl border-2 border-ink/15 bg-cream px-3 py-2 text-left font-mono text-base font-bold text-ink"
+        className="mt-2 rounded-xl border-2 border-ink/15 bg-cream px-3 py-2 text-left text-base font-bold text-ink"
         aria-hidden="true"
       >
         {typed}

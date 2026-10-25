@@ -3,9 +3,7 @@ import type { CSSProperties } from "react";
 import type { Hexagon } from "@/data/categories";
 import { localizeHexagon } from "@/data/localization";
 import type { Language } from "@/lib/language";
-
-const HEXAGON_CLIP =
-  "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
+import { HEXAGON_CLIP } from "@/lib/hexagon";
 
 type HexagonCardProps = {
   hexagon: Hexagon;

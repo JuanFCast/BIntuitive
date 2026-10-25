@@ -50,7 +50,7 @@ export default function LevelPicker({
   return (
     <div className="w-full max-w-sm">
       <p
-        className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#9b7400]"
+        className="text-sm font-extrabold text-[#7a5c00]"
         id={labelId}
       >
         {t("levelPick")}
