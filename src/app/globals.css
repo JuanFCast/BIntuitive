@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #f7f4ea;
+  --color-cream: #f5f4ee;
   --color-sun: #ffc400;
   --color-sunsoft: #fff0a6;
   --color-sky: #6ec6ff;
@@ -12,9 +12,51 @@
   --color-coralsoft: #ffe4e1;
   --color-berry: #b388ff;
   --color-berrysoft: #eee7ff;
-  --color-ink: #171717;
+  --color-ink: #18251d;
+
+  /*
+   * Lo que BIntuitive hereda de AUM Creative Specialists.
+   *
+   * No es un cambio de marca: el amarillo sigue siendo el color de
+   * BIntuitive y el panal sigue siendo suyo —AUM no usa un solo hexágono—.
+   * Lo que se comparte es el papel y la estructura. `canvas` es exactamente
+   * el fondo de aumcrsp.com, que ya era casi el crema de aquí; `ink` es su
+   * negro verdoso en vez de un gris neutro, así que cada texto y cada
+   * contorno tiran hacia la familia sin que se note; y `forest` y `leaf` son
+   * su verde, que aquí estructura —cabecera, pestaña activa, trazos— en vez
+   * de decorar. Quien vea las dos reconoce el mismo origen sin que una
+   * parezca copia de la otra.
+   */
+  --color-canvas: #f5f4ee;
+  --color-forest: #214a39;
+  --color-leaf: #add194;
+  --color-tint: #e6edda;
+  --color-line: rgb(24 37 29 / 0.16);
+
+  /*
+   * La escala de espaciado de AUM, de 8 en 8. La geometría del panal es
+   * exacta; los huecos alrededor también deberían serlo.
+   */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+
+  /*
+   * Las curvas de AUM, medidas en su sitio. Dos y solo dos: una para color y
+   * posición, otra —más corta y más seca— para la respuesta al toque.
+   */
+  --ease-ui: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-press: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-ui: 200ms;
+  --dur-press: 160ms;
 
   --font-sans: var(--font-baloo), "Comic Sans MS", system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-baloo), system-ui, sans-serif;
 
   --animate-pop: pop 0.35s ease-out;
   --animate-shake: shake 0.4s ease-in-out;
@@ -574,167 +616,93 @@ button {
   );
 }
 
+/*
+ * El panal.
+ *
+ * Las posiciones ya no se escriben aquí: las calcula `honeycomb.ts` a partir
+ * del número de hexágonos y de las columnas de cada tamaño, y llegan como
+ * variables en el `style` de cada ficha. Antes había una regla
+ * `:nth-child(N)` por ficha y por punto de ruptura —más de ciento cincuenta
+ * líneas— y el `aspect-ratio` de la rejilla se recalculaba a mano cada vez
+ * que se añadía una. Añadir la undécima ya no toca este archivo.
+ *
+ * Lo que sí decide el CSS es cuál de los tres juegos de valores se usa, y
+ * cuánto sitio tiene el panal: en móvil el ancho lo manda la altura de la
+ * ventana, para que las filas quepan enteras entre la cabecera y la barra
+ * inferior sin hacer scroll. Se mide contra `svh`, el viewport pequeño, que
+ * es el que no cambia al plegarse las barras del navegador: así el panal no
+ * se redimensiona bajo el dedo. Si aun así no cupiera —texto muy grande,
+ * pantalla muy baja— la página se desplaza; los hexágonos no se encogen.
+ */
+/*
+ * Todas las fichas del amarillo de la marca. Se probó darles color por
+ * familia de actividad para que diez celdas iguales no se leyeran como una
+ * mancha, y se descartó: el panal es de miel y eso pesa más que la ayuda a
+ * recorrerlo con la vista. Lo que sí quedó de aquel intento es el hueco de
+ * dos píxeles entre celdas y el foco en verde, que separan sin recolorear.
+ */
+.hexagon-face {
+  background: var(--color-sun);
+}
+
+.hexagon-card:hover .hexagon-face,
+.hexagon-card:focus-visible .hexagon-face {
+  background: #ffd229;
+}
+
+/*
+ * El foco de teclado va dentro: el `clip-path` de la ficha recorta cualquier
+ * anillo exterior. En el verde de AUM, que contrasta con el amarillo.
+ */
+.hexagon-card:focus-visible .hexagon-face {
+  box-shadow: inset 0 0 0 4px var(--color-forest);
+}
+
 .hexagons-grid {
-  /*
-   * El panal movil son dos columnas, no una: en un telefono el ancho lo manda
-   * la altura de la ventana, para que las cinco filas quepan enteras entre la
-   * cabecera y la barra inferior sin hacer scroll. Se mide contra `svh`, el
-   * viewport pequeno: es el que no cambia al plegarse las barras del
-   * navegador, asi que el panal no se redimensiona bajo el dedo. Si aun asi no
-   * cupiera —texto muy grande, pantalla muy baja— la pagina se desplaza; los
-   * hexagonos no se encogen para forzar que quepa.
-   *
-   * Geometria: la ficha es un hexagono pointy-top de aspect-ratio 0.8660254
-   * (raiz de 3 partido por 2) y las filas se solapan con el paso vertical de
-   * 3/4 de la altura de ficha propio del teselado. Las filas alternan entre
-   * pegadas al borde y corridas media ficha, asi que la rejilla mide dos
-   * fichas y media de ancho: la ficha es el 40% de la rejilla. Cinco filas dan
-   * una altura de 4 pasos mas una ficha —4 alturas de ficha—, de ahi el
-   * aspect-ratio 2.5 * 0.8660254 / 4 = 0.5412659.
-   */
-  width: min(100%, calc((100svh - 17rem) * 0.5412659));
+  --hc-aspect: var(--hc-aspect-sm);
+  width: min(100%, calc((100svh - 17rem) * var(--hc-aspect)));
   max-width: 30rem;
-  aspect-ratio: 0.5412659;
-  filter: drop-shadow(0 6px 10px rgb(120 88 0 / 0.08));
+  aspect-ratio: var(--hc-aspect);
+  filter: drop-shadow(0 10px 18px rgb(24 37 29 / 0.07));
 }
 
 .hexagon-card {
-  width: 40%;
   aspect-ratio: 0.8660254;
+  width: var(--hc-cell-sm);
+  left: var(--hc-left-sm);
+  top: var(--hc-top-sm);
 }
 
-/*
- * Panal de 9 hexagonos en movil: cuatro filas de dos y una novena ficha que
- * abre la quinta.
- * Las filas impares nacen en el borde izquierdo (0 y 40%) y las pares van
- * corridas media ficha (20% y 60%), con el paso constante de 3/4 de altura:
- * 0, 18.75%, 37.5%, 56.25% y 75% de la altura total.
- *
- * La novena deja su pareja vacia a la derecha: el panal se lee incompleto, que
- * es lo que es. Una decima cae justo en ese hueco (left: 60%, top: 75%) y no
- * cambia ni el numero de filas ni el `aspect-ratio`.
- */
-.hexagon-card:nth-child(1) {
-  left: 0;
-  top: 0;
-}
-
-.hexagon-card:nth-child(2) {
-  left: 40%;
-  top: 0;
-}
-
-.hexagon-card:nth-child(3) {
-  left: 20%;
-  top: 18.75%;
-}
-
-.hexagon-card:nth-child(4) {
-  left: 60%;
-  top: 18.75%;
-}
-
-.hexagon-card:nth-child(5) {
-  left: 0;
-  top: 37.5%;
-}
-
-.hexagon-card:nth-child(6) {
-  left: 40%;
-  top: 37.5%;
-}
-
-.hexagon-card:nth-child(7) {
-  left: 20%;
-  top: 56.25%;
-}
-
-.hexagon-card:nth-child(8) {
-  left: 60%;
-  top: 56.25%;
-}
-
-.hexagon-card:nth-child(9) {
-  left: 0;
-  top: 75%;
-}
-
-/*
- * La decima cae en el hueco que la novena dejo a su derecha, asi que no abre
- * fila y ningun aspect-ratio cambia. La siguiente si abriria una.
- */
-.hexagon-card:nth-child(10) {
-  left: 60%;
-  top: 75%;
-}
-
+/* Tableta: tres columnas. No es el panal del móvil encogido, son otras filas. */
 @media (min-width: 640px) {
-  /*
-   * Dos filas de 4 y una novena ficha que abre la tercera, alineada con la
-   * primera. La rejilla mide cuatro fichas y media de ancho, asi que la ficha
-   * es el 22.2222%. Tres filas son dos pasos mas una ficha —2.5 alturas de
-   * ficha—, de ahi el aspect-ratio 4.5 * 0.8660254 / 2.5 = 1.5588457.
-   */
   .hexagons-grid {
-    width: min(100%, calc((100svh - 13rem) * 1.5588457));
-    max-width: 48rem;
-    aspect-ratio: 1.5588457;
+    --hc-aspect: var(--hc-aspect-md);
+    width: min(100%, calc((100svh - 14rem) * var(--hc-aspect)));
+    max-width: 42rem;
   }
 
   .hexagon-card {
-    width: 22.2222%;
-  }
-
-  .hexagon-card:nth-child(1) {
-    left: 0;
-    top: 0;
-  }
-
-  .hexagon-card:nth-child(2) {
-    left: 22.2222%;
-    top: 0;
-  }
-
-  .hexagon-card:nth-child(3) {
-    left: 44.4444%;
-    top: 0;
-  }
-
-  .hexagon-card:nth-child(4) {
-    left: 66.6667%;
-    top: 0;
-  }
-
-  .hexagon-card:nth-child(5) {
-    left: 11.1111%;
-    top: 30%;
-  }
-
-  .hexagon-card:nth-child(6) {
-    left: 33.3333%;
-    top: 30%;
-  }
-
-  .hexagon-card:nth-child(7) {
-    left: 55.5556%;
-    top: 30%;
-  }
-
-  .hexagon-card:nth-child(8) {
-    left: 77.7778%;
-    top: 30%;
-  }
-
-  .hexagon-card:nth-child(9) {
-    left: 0;
-    top: 60%;
-  }
-
-  .hexagon-card:nth-child(10) {
-    left: 22.2222%;
-    top: 60%;
+    width: var(--hc-cell-md);
+    left: var(--hc-left-md);
+    top: var(--hc-top-md);
   }
 }
+
+/* Escritorio: cuatro columnas y un panal ancho que ocupa la pantalla. */
+@media (min-width: 1024px) {
+  .hexagons-grid {
+    --hc-aspect: var(--hc-aspect-lg);
+    width: min(100%, calc((100svh - 15rem) * var(--hc-aspect)));
+    max-width: 60rem;
+  }
+
+  .hexagon-card {
+    width: var(--hc-cell-lg);
+    left: var(--hc-left-lg);
+    top: var(--hc-top-lg);
+  }
+}
+
 
 @media (max-height: 650px) and (max-width: 639px) {
   .hexagons-header {
