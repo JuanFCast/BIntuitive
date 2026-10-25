@@ -14,6 +14,7 @@ import {
   TYPING_DURATION_SECONDS,
   type TypingStats,
 } from "@/lib/typingGame";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "ready" | "playing" | "results";
 
@@ -220,7 +221,7 @@ export default function TypingGame() {
   return (
     <GameShell
       intro={{
-        emoji: "⌨️",
+        image: hexagonImage("typing"),
         title: t("typingTitle"),
         goal: t("typingIntro"),
         howTo: t("typingHowTo"),

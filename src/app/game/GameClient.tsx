@@ -210,7 +210,7 @@ export default function GameClient() {
   if (!category) return null;
 
   const intro = {
-    emoji: category.emoji,
+    image: category.image,
     title: localizeHexagon(category, language).name,
     goal: t(CATEGORY_INTRO[category.slug].goal),
     howTo: t(CATEGORY_INTRO[category.slug].howTo),

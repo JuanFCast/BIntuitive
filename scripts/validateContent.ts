@@ -403,7 +403,13 @@ function validateHexagons(): void {
     if (isBlank(hexagon.description)) {
       fail(bank, hexagon.id, "descripción vacía");
     }
-    if (isBlank(hexagon.emoji)) fail(bank, hexagon.id, "emoji vacío");
+    // Igual que en las preguntas: la ruta se escribe a mano, y una errata
+    // dejaría la ficha del panal sin dibujo en producción.
+    if (!hexagon.image.startsWith(ART_PREFIX)) {
+      fail(bank, hexagon.id, "el dibujo vive fuera de " + ART_PREFIX);
+    } else if (!existsSync(join(PUBLIC_DIR, hexagon.image))) {
+      fail(bank, hexagon.id, "no existe el dibujo " + hexagon.image);
+    }
 
     const english = englishHexagons[hexagon.id];
     if (!english) {

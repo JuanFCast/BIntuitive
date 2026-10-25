@@ -784,7 +784,7 @@ button {
   /*
    * Estos tres tamaños NO escalan a propósito. En pantallas bajas el panal
    * ocupa el alto que le queda (`100svh - 14rem`), así que un título más alto
-   * dejaría los hexágonos fuera de la pantalla, y el emoji y el nombre del
+   * dejaría los hexágonos fuera de la pantalla, y el dibujo y el nombre del
    * hexágono son geometría de la ficha, no texto de lectura.
    */
   .hexagons-header h1 {
@@ -797,13 +797,26 @@ button {
     width: min(100%, calc((100svh - 14rem) * 0.5412659));
   }
 
-  .hexagon-emoji {
-    font-size: 1.9rem;
+  .hexagon-art {
+    width: 38%;
+  }
+
+  /*
+   * Aquí la ficha mide entre 74 y 90px, y a 0.9rem fijos las palabras largas
+   * no cabían enteras: "Scrambl / e", "Agilida / d", "Colorea / r". Una
+   * palabra cortada a mitad se lee peor que una letra un poco más pequeña,
+   * así que el nombre escala con la pantalla, con 0.8rem de tope, y aprovecha
+   * casi todo el ancho de la ficha: a media altura el hexágono es ancho del
+   * todo, y es ahí donde va el nombre.
+   */
+  .hexagon-face {
+    padding-inline: 0.25rem;
   }
 
   .hexagon-name {
     margin-top: 0.125rem;
-    font-size: 0.9rem;
+    max-width: 94%;
+    font-size: min(0.8rem, 3.3vw);
   }
 }
 
@@ -1037,8 +1050,6 @@ button {
   aspect-ratio: 0.8660254;
   background: var(--color-sun);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  font-size: clamp(1.4rem, 6vw, 2.2rem);
-  line-height: 1;
   animation: landing-hive-float 7s ease-in-out infinite;
 }
 
@@ -1054,8 +1065,9 @@ button {
   content: "";
 }
 
-.landing-hive-cell > span {
+.landing-hive-cell > img {
   position: relative;
+  width: 58%;
 }
 
 /* Filas 2-3-2: las de los extremos corridas media ficha. */

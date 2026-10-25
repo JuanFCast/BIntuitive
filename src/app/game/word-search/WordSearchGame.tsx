@@ -37,6 +37,7 @@ import {
   type Cell,
   type WordSearchStats,
 } from "@/lib/wordSearch";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 
@@ -494,7 +495,7 @@ export default function WordSearchGame() {
   return (
     <GameShell
       intro={{
-        emoji: "🔠",
+        image: hexagonImage("search"),
         title: t("searchTitle"),
         goal: t("searchIntro"),
         howTo: t("searchHowTo"),

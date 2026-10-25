@@ -28,6 +28,7 @@ import {
   type ScrambleWord,
   type WordScrambleStats,
 } from "@/lib/wordScramble";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 
@@ -249,7 +250,7 @@ export default function WordScrambleGame() {
   return (
     <GameShell
       intro={{
-        emoji: "🧩",
+        image: hexagonImage("scramble"),
         title: t("scrambleTitle"),
         goal: t("scrambleIntro"),
         howTo: t("scrambleHowTo"),

@@ -17,6 +17,7 @@ import {
   VISUAL_ROUNDS,
   type VisualCard,
 } from "@/lib/visualGame";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 type Flash = { id: string; type: "correct" | "wrong" } | null;
@@ -139,7 +140,7 @@ export default function VisualGame() {
   return (
     <GameShell
       intro={{
-        emoji: "👀",
+        image: hexagonImage("visual"),
         title: t("visualTitle"),
         goal: t("visualIntro"),
         howTo: t("visualHowTo"),
