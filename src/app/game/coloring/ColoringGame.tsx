@@ -18,7 +18,9 @@ import {
   coloringAttemptKey,
   coloringBrushesForLevel,
   coloringBrushRadius,
+  coloringRegionCells,
   coloringRegionIsFull,
+  coloringRunsPath,
   coloringSampleGrid,
   coloringSessionStars,
   coloringStrokeCovers,
@@ -26,12 +28,14 @@ import {
   COLORING_COLORS,
   COLORING_DEFAULT_BRUSH,
   COLORING_FILL_MS,
+  COLORING_GRID,
   COLORING_MAX_LEVEL,
   COLORING_MIN_STEP,
   COLORING_PICTURES_PER_SESSION,
   type ColorId,
   type ColoringBrushId,
   type ColoringLevel,
+  type ColoringPicture,
   type ColoringPoint,
   type ColoringRound,
   type ColoringTask,
@@ -66,10 +70,72 @@ type Stroke = {
   points: ColoringPoint[];
 };
 
-/** El papel y la tinta del dibujo, los mismos que usaba el SVG de antes. */
+/** El papel del dibujo, y la tinta de los botones de pincel sin color. */
 const PAPER = "#ffffff";
 const OUTLINE = "#171717";
-const OUTLINE_WIDTH = 1.6;
+
+/**
+ * Lo que cuenta como tinta al leer la imagen en la rejilla: 0,4 de opacidad.
+ * El borde suavizado de la línea queda a medias, y con este corte la línea
+ * sigue cerrada sin engordar.
+ */
+const INK_ALPHA = 102;
+
+/**
+ * Las zonas de cada lámina, como caminos, ya calculadas: leer la imagen y
+ * buscar sus zonas se hace una vez por lámina y por visita, no cada vez que
+ * vuelve a salir. Se guarda la promesa y no el resultado para que dos rondas
+ * que piden la misma imagen a la vez no la lean dos veces.
+ */
+const shapesCache = new Map<string, Promise<string[]>>();
+
+/**
+ * Lee la tinta de la lámina en la rejilla del juego y devuelve el camino de
+ * cada zona, en el orden de sus zonas.
+ */
+function loadPictureShapes(picture: ColoringPicture): Promise<string[]> {
+  const cached = shapesCache.get(picture.id);
+  if (cached) return cached;
+
+  const promise = new Promise<string[]>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = COLORING_GRID;
+      canvas.height = COLORING_GRID;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) {
+        reject(new Error("sin lienzo"));
+        return;
+      }
+      ctx.drawImage(image, 0, 0, COLORING_GRID, COLORING_GRID);
+      const { data } = ctx.getImageData(0, 0, COLORING_GRID, COLORING_GRID);
+      const ink = new Uint8Array(COLORING_GRID * COLORING_GRID);
+      for (let cell = 0; cell < ink.length; cell += 1) {
+        ink[cell] = data[cell * 4 + 3] > INK_ALPHA ? 1 : 0;
+      }
+
+      const { runs, problems } = coloringRegionCells(
+        ink,
+        COLORING_GRID,
+        picture.regions,
+      );
+      // No rompe la partida —la zona afectada simplemente no se puede
+      // pintar—, pero quien cambió la imagen tiene que enterarse.
+      for (const problem of problems) {
+        console.warn(`Colorear, ${picture.id}: ${problem}`);
+      }
+      resolve(runs.map((zone) => coloringRunsPath(zone, COLORING_GRID)));
+    };
+    image.onerror = () => reject(new Error(`no carga ${picture.image}`));
+    image.src = picture.image;
+  });
+
+  // Un fallo de red no puede quedarse guardado: la próxima vez se reintenta.
+  promise.catch(() => shapesCache.delete(picture.id));
+  shapesCache.set(picture.id, promise);
+  return promise;
+}
 
 /** El tope del lienzo: por encima pesa cuatro veces más y no se nota. */
 const MAX_PIXEL_RATIO = 2;
@@ -82,6 +148,11 @@ export default function ColoringGame() {
   const [roundIndex, setRoundIndex] = useState(0);
   /** Qué color lleva ya cada zona terminada de la lámina en curso. */
   const [filled, setFilled] = useState<Record<string, ColorId>>({});
+  /**
+   * El camino de cada zona de la lámina en curso, o `null` mientras se lee la
+   * imagen: hasta entonces no hay zonas que tocar ni números que enseñar.
+   */
+  const [shapes, setShapes] = useState<string[] | null>(null);
   const [selected, setSelected] = useState<ColorId | null>(null);
   const [brush, setBrush] = useState<ColoringBrushId>(COLORING_DEFAULT_BRUSH);
   /** En los escalones hablados, qué zona toca ahora. */
@@ -106,7 +177,7 @@ export default function ColoringGame() {
 
   const boardRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  /** Los caminos de la lámina, en el mismo orden que sus zonas. */
+  /** Los caminos de las zonas, en el mismo orden que la lámina. */
   const pathsRef = useRef<Path2D[]>([]);
   /** Los puntos con los que se mide cada zona. */
   const samplesRef = useRef<ColoringPoint[][]>([]);
@@ -151,8 +222,8 @@ export default function ColoringGame() {
   /* ───────────────────── Pintar el lienzo ────────────────────── */
 
   /**
-   * Todo se dibuja en el lienzo de 100 × 100 del dibujo, no en píxeles: así los
-   * caminos, los radios del pincel y los puntos de medida hablan en la misma
+   * Todo se dibuja en el lienzo de 100 × 100 del dibujo, no en píxeles: así las
+   * zonas, los radios del pincel y los puntos de medida hablan en la misma
    * unidad y el lienzo puede tener la resolución que quiera.
    */
   const scaleToPicture = (
@@ -163,17 +234,13 @@ export default function ColoringGame() {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
   };
 
-  /** El papel de una zona —o su color, si ya está lista— y su contorno. */
+  /** Una zona ya terminada, rellena entera de su color. */
   const paintRegion = (ctx: CanvasRenderingContext2D, index: number) => {
     const path = pathsRef.current[index];
-    if (!path) return;
     const done = filledRef.current.get(index);
-    ctx.fillStyle = done ? COLORING_COLORS[done].hex : PAPER;
+    if (!path || !done) return;
+    ctx.fillStyle = COLORING_COLORS[done].hex;
     ctx.fill(path);
-    ctx.strokeStyle = OUTLINE;
-    ctx.lineWidth = OUTLINE_WIDTH;
-    ctx.lineJoin = "round";
-    ctx.stroke(path);
   };
 
   const strokeBrush = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
@@ -220,11 +287,12 @@ export default function ColoringGame() {
     if (!canvas || !ctx) return;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     scaleToPicture(ctx, canvas);
 
-    // En el orden de la lámina, que es orden de apilado: la puerta va sobre la
-    // pared y la aleta sobre el cuerpo del pez porque están escritas después.
+    // Las zonas salen de la imagen y no se pisan entre sí, así que el orden
+    // da igual: las líneas no van aquí, sino en la imagen que hay encima.
     for (let index = 0; index < pathsRef.current.length; index += 1) {
       paintRegion(ctx, index);
       paintStrokes(ctx, index);
@@ -232,13 +300,10 @@ export default function ColoringGame() {
   }, []);
 
   /**
-   * Un tramo de pincel, nada más, para que el trazo vaya al ritmo del dedo.
-   *
-   * Después hay que rehacer dos cosas: el contorno de la zona, porque el pincel
-   * va centrado en el borde y lo tapa a medias, y las zonas de encima, porque
-   * geométricamente caen dentro de esta y el recorte no las protege. Son cuatro
-   * caminos en el peor caso; un repintado entero por movimiento del dedo sí se
-   * notaría en un iPad viejo.
+   * Un tramo de pincel, nada más, para que el trazo vaya al ritmo del dedo: un
+   * repintado entero por movimiento sí se notaría en un iPad viejo. No hay que
+   * rehacer nada alrededor, porque el recorte deja la pintura en su zona y las
+   * líneas están en otra capa, por encima del lienzo.
    */
   const drawSegment = (
     index: number,
@@ -256,16 +321,6 @@ export default function ColoringGame() {
     ctx.clip(path);
     strokeBrush(ctx, { ...stroke, points: [from, to] });
     ctx.restore();
-
-    ctx.strokeStyle = OUTLINE;
-    ctx.lineWidth = OUTLINE_WIDTH;
-    ctx.lineJoin = "round";
-    ctx.stroke(path);
-
-    for (let above = index + 1; above < pathsRef.current.length; above += 1) {
-      paintRegion(ctx, above);
-      paintStrokes(ctx, above);
-    }
   };
 
   /**
@@ -290,20 +345,16 @@ export default function ColoringGame() {
     redraw();
   }, [redraw]);
 
-  // Cada lámina nueva trae sus caminos y sus puntos de medida. Sembrarlos
-  // cuesta una vez por dibujo y ahorra leer los píxeles del lienzo en cada
-  // movimiento del dedo.
+  // Cada lámina nueva trae sus zonas y sus puntos de medida. Sacarlas de la
+  // imagen y sembrarlas cuesta una vez por dibujo y ahorra leer los píxeles
+  // del lienzo en cada movimiento del dedo.
   useEffect(() => {
     if (!round) return;
-    const measure = measuringContext();
 
-    pathsRef.current = round.tasks.map((task) => new Path2D(task.path));
-    samplesRef.current = pathsRef.current.map((path) =>
-      measure
-        ? coloringSampleGrid((x, y) => measure.isPointInPath(path, x, y))
-        : [],
-    );
-    coveredRef.current = pathsRef.current.map(() => new Set<number>());
+    pathsRef.current = [];
+    samplesRef.current = [];
+    coveredRef.current = [];
+    setShapes(null);
     strokesRef.current = [];
     filledRef.current = new Map();
     activeRef.current = null;
@@ -314,6 +365,28 @@ export default function ColoringGame() {
 
     resizeCanvas();
     redraw();
+
+    let current = true;
+    loadPictureShapes(round.picture)
+      .then((paths) => {
+        if (!current) return;
+        const measure = measuringContext();
+        pathsRef.current = paths.map((d) => new Path2D(d));
+        samplesRef.current = pathsRef.current.map((path) =>
+          measure
+            ? coloringSampleGrid((x, y) => measure.isPointInPath(path, x, y))
+            : [],
+        );
+        coveredRef.current = pathsRef.current.map(() => new Set<number>());
+        setShapes(paths);
+        redraw();
+      })
+      // Sin imagen no hay lámina: el tablero se queda en blanco y sin zonas,
+      // que es lo mismo que pasaría con cualquier otro dibujo que no cargue.
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
   }, [round, resizeCanvas, redraw]);
 
   useEffect(() => {
@@ -392,8 +465,8 @@ export default function ColoringGame() {
   const regionAt = (point: ColoringPoint) => {
     const measure = measuringContext();
     if (!measure) return -1;
-    // De arriba abajo: la que se dibuja última es la que se ve y la que se
-    // toca, igual que en el apilado.
+    // Las zonas no se pisan, salvo una celda en el centro de la línea que las
+    // separa: ahí gana cualquiera, porque es tinta y no se ve el color.
     for (let index = pathsRef.current.length - 1; index >= 0; index -= 1) {
       if (measure.isPointInPath(pathsRef.current[index], point.x, point.y)) {
         return index;
@@ -604,6 +677,10 @@ export default function ColoringGame() {
     releaseStroke();
     const startingLevel = selectedLevel;
     const session = buildColoringSession(startingLevel);
+    // La segunda lámina se lee ya, mientras se pinta la primera.
+    for (const next of session) {
+      loadPictureShapes(next.picture).catch(() => undefined);
+    }
     setLevel(startingLevel);
     setRounds(session);
     setRoundIndex(0);
@@ -757,12 +834,13 @@ export default function ColoringGame() {
           </div>
 
           {/*
-            El dibujo son dos capas sobre el mismo cuadrado. Abajo el lienzo,
-            que es donde se pinta y donde van el papel y los contornos, porque
-            el pincel tiene que quedar recortado a su zona y por debajo de las
-            zonas de encima. Arriba un SVG que no recibe toques: los números, y
-            una zona enfocable por cada una para que el juego siga siendo
-            jugable con teclado o con lector de pantalla.
+            El dibujo son tres capas sobre el mismo cuadrado. Abajo el lienzo,
+            que es el papel y donde se pinta, recortado a cada zona. Encima la
+            imagen de la lámina, que es solo tinta sobre transparente: tapa el
+            borde de la pintura y hace que el color llegue justo a la línea.
+            Arriba un SVG que no recibe toques: los números, y una zona
+            enfocable por cada una para que el juego siga siendo jugable con
+            teclado o con lector de pantalla.
           */}
           <div
             ref={boardRef}
@@ -777,19 +855,27 @@ export default function ColoringGame() {
               className="absolute inset-0 h-full w-full"
               aria-hidden="true"
             />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={round.picture.image}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              className="pointer-events-none absolute inset-0 h-full w-full select-none"
+            />
             <svg
               viewBox="0 0 100 100"
               className="pointer-events-none absolute inset-0 h-full w-full"
               role="group"
               aria-label={round.picture.name[language]}
             >
-              {round.tasks.map((task, index) => {
+              {shapes && round.tasks.map((task, index) => {
                 const paint = filled[task.id];
                 const rejected = wrongRegion === task.id;
                 return (
                   <g key={task.id}>
                     <path
-                      d={task.path}
+                      d={shapes[index]}
                       role="button"
                       tabIndex={paint ? -1 : 0}
                       aria-label={
@@ -817,32 +903,37 @@ export default function ColoringGame() {
                         if (event.detail !== 0) return;
                         paintWithoutPointer(index, task);
                       }}
-                      className={`outline-none focus-visible:stroke-sky ${
+                      /*
+                        Se marca con relleno y no con contorno: la zona es una
+                        pila de franjas de la rejilla, y su contorno dibujaría
+                        cada franja. Un velo encima se lee igual de bien.
+                      */
+                      className={`outline-none focus-visible:fill-sky/45 ${
                         rejected ? "animate-shake" : ""
                       }`}
-                      fill="none"
-                      stroke={rejected ? COLORING_COLORS.rojo.hex : "transparent"}
-                      strokeWidth="2.6"
-                      strokeLinejoin="round"
+                      fill={rejected ? "rgba(226, 59, 46, 0.35)" : "transparent"}
                     />
                     {/*
                       El número solo mientras la zona está sin terminar: puesto
                       encima del color sobraría, y sobre un morado oscuro ni se
                       leería.
                     */}
-                    {round.mode === "key" && !paint && (
-                      <text
-                        x={task.labelAt.x}
-                        y={task.labelAt.y}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        className="pointer-events-none select-none fill-ink/70 font-extrabold"
-                        style={{ fontSize: "7px" }}
-                        aria-hidden="true"
-                      >
-                        {task.key}
-                      </text>
-                    )}
+                    {round.mode === "key" &&
+                      !paint &&
+                      task.labelAt.map((point) => (
+                        <text
+                          key={`${point.x},${point.y}`}
+                          x={point.x}
+                          y={point.y}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          className="pointer-events-none select-none fill-ink/70 font-extrabold"
+                          style={{ fontSize: "7px" }}
+                          aria-hidden="true"
+                        >
+                          {task.key}
+                        </text>
+                      ))}
                   </g>
                 );
               })}

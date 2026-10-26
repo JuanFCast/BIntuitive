@@ -20,6 +20,7 @@ import { hexagons } from "../src/data/categories";
 import {
   COLORING_COLORS,
   COLORING_LEVELS,
+  COLORING_MAX_SWATCHES,
   COLORING_PICTURES,
   COLORING_PICTURES_PER_SESSION,
   picturesForLevel,
@@ -333,8 +334,25 @@ function validateColoring(): void {
       }
     }
 
+    // La imagen es la lámina entera: sin ella no hay zonas que pintar, y la
+    // ruta se escribe a mano como la de cualquier otro dibujo.
+    if (!picture.image.startsWith(ART_PREFIX)) {
+      fail(bank, at, "el dibujo vive fuera de " + ART_PREFIX);
+    } else if (!existsSync(join(PUBLIC_DIR, picture.image))) {
+      fail(bank, at, "no existe el dibujo " + picture.image);
+    }
+
     if (picture.regions.length < 2) {
       fail(bank, at, "una lámina necesita al menos dos zonas que pintar");
+    }
+    // Cada zona pone a lo sumo un color en la paleta: con más zonas que
+    // fichas caben en una fila, la paleta podría no caber.
+    if (picture.regions.length > COLORING_MAX_SWATCHES) {
+      fail(
+        bank,
+        at,
+        picture.regions.length + " zonas, y la paleta no pasa de " + COLORING_MAX_SWATCHES,
+      );
     }
     for (const repeated of duplicates(picture.regions.map((r) => r.id))) {
       fail(bank, at, "id de zona repetido: " + repeated);
@@ -342,24 +360,38 @@ function validateColoring(): void {
 
     for (const region of picture.regions) {
       const where = at + "/" + region.id;
-      if (isBlank(region.path)) fail(bank, where, "zona sin camino");
       for (const language of LANGUAGES) {
         if (isBlank(region.label[language])) {
           fail(bank, where, "zona sin nombre en " + language);
         }
       }
-      // El número se pinta en ese punto: fuera del lienzo no se vería, y es
-      // el tipo de errata que no da error en ningún sitio.
-      const { x, y } = region.labelAt;
-      if (x < 0 || x > 100 || y < 0 || y > 100) {
-        fail(bank, where, "el punto del número cae fuera del lienzo");
+      // Los puntos dicen qué espacio de la imagen es la zona y dónde va su
+      // número: sin ninguno la zona no existe, y fuera del lienzo no se vería.
+      // Si caen en el espacio correcto lo dice el juego al cargar la imagen,
+      // porque leerla necesita un lienzo.
+      if (region.labelAt.length === 0) {
+        fail(bank, where, "zona sin ningún punto");
+      }
+      for (const { x, y } of region.labelAt) {
+        if (x < 0 || x > 100 || y < 0 || y > 100) {
+          fail(bank, where, "un punto cae fuera del lienzo");
+        }
+      }
+      if (region.colors.length === 0) {
+        fail(bank, where, "zona sin colores posibles");
+      }
+      for (const repeated of duplicates([...region.colors])) {
+        fail(bank, where, "color repetido: " + repeated);
+      }
+      for (const colorId of region.colors) {
+        if (!COLORING_COLORS[colorId]) fail(bank, where, "color desconocido: " + colorId);
       }
     }
   }
 
   for (const key of Object.keys(COLORING_LEVELS)) {
     const level = Number(key) as ColoringLevel;
-    const { palette } = COLORING_LEVELS[level];
+    const { paletteSize } = COLORING_LEVELS[level];
     const pictures = picturesForLevel(level);
 
     if (pictures.length < COLORING_PICTURES_PER_SESSION) {
@@ -372,34 +404,14 @@ function validateColoring(): void {
       );
     }
 
-    // Con un solo color, dos zonas vecinas saldrían del mismo tono y la
-    // lámina parecería a medio pintar: el reparto en rueda necesita dos.
-    if (palette.length < 2) {
-      fail(bank, "nivel " + level, "la paleta necesita al menos dos colores");
-    }
-    for (const repeated of duplicates([...palette])) {
-      fail(bank, "nivel " + level, "color repetido en la paleta: " + repeated);
-    }
-    for (const colorId of palette) {
-      if (!COLORING_COLORS[colorId]) {
-        fail(bank, "nivel " + level, "color desconocido: " + colorId);
-      }
-    }
-
-    // Los colores se reparten en rueda, así que una paleta con más colores
-    // que zonas deja fichas que no pintan nada en ninguna lámina.
-    for (const picture of pictures) {
-      if (palette.length > picture.regions.length) {
-        fail(
-          bank,
-          "nivel " + level + "/" + picture.id,
-          "la paleta tiene " +
-            palette.length +
-            " colores y la lámina solo " +
-            picture.regions.length +
-            " zonas: sobrarían fichas",
-        );
-      }
+    // Con menos de dos fichas no hay nada que elegir, y con más de las que
+    // caben en una fila la paleta saltaría a dos.
+    if (paletteSize < 2 || paletteSize > COLORING_MAX_SWATCHES) {
+      fail(
+        bank,
+        "nivel " + level,
+        "la paleta debe tener entre 2 y " + COLORING_MAX_SWATCHES + " fichas",
+      );
     }
   }
 }

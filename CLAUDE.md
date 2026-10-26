@@ -76,7 +76,7 @@ src/lib/
   visualGame.ts         Lógica pura de Agilidad visual
   memoryGame.ts         Banco, tablero y estadísticas de Parejas
   tracingGame.ts        Caminos, tolerancia, estrellas y banco de Trazos
-  coloringGame.ts       Láminas, paleta de enseñanza y reparto de color de Colorear
+  coloringGame.ts       Láminas, zonas sacadas de la imagen y colores de verdad de Colorear
   typingGame.ts         Lógica pura de Type Rush
   wordScramble.ts       Banco bilingüe, fichas y dificultad de Word Scramble
   wordSearch.ts         Banco bilingüe, generador de tablero y selección de Word Search
@@ -153,11 +153,22 @@ src/lib/
   alta qué zona pintar y de qué color, y van zona por zona, así que sirven a quien todavía no
   reconoce cifras; del 3 al 5 cada zona lleva un número, la paleta dice qué color es cada
   número y se pinta en el orden que se quiera. Es un solo juego con dos formas de pedir lo
-  mismo, y es lo que hace que los cinco escalones sean cinco cosas distintas. Los colores
-  **no** se guardan en la lámina: se reparten en rueda sobre la paleta revuelta al empezar
-  cada ronda, lo que garantiza de una vez que dos zonas vecinas nunca salgan del mismo tono
-  —las zonas están escritas en orden de vecindad— y que la paleta no tenga fichas que no
-  pinten nada. Por eso doce láminas bastan: la misma casa sale distinta cada vez.
+  mismo, y es lo que hace que los cinco escalones sean cinco cosas distintas.
+- **En Colorear se piden los colores de la realidad.** Cada zona declara en `colors` los
+  que puede llevar —las hojas, verdes; el tronco, café; el mar, azul; el arcoíris, en su
+  orden— y al empezar cada ronda se elige entre ellos, prefiriendo uno que no lleve
+  todavía ninguna otra zona y, si no queda, evitando el de la zona anterior salvo que la
+  realidad lo pida (el tallo y la hoja). "Pinta las hojas de amarillo" no enseña nada: el
+  color se aprende junto con lo que lleva ese color. Lo que puede ser de cualquier color
+  —una pared, una vela, un pez— sigue variando, y por eso doce láminas bastan. Lo que en
+  la realidad va igual es **una sola zona con varios pedazos** (las alas de arriba de la
+  mariposa, las ventanas de la casa, las ruedas, las torres del castillo): pedirlas de dos
+  colores no es ninguna mariposa. Las nubes del arcoíris no son zona y se quedan blancas,
+  que es lo que son; la paleta no tiene blanco ni negro a propósito. Al escribir una zona
+  hay que mirar la de al lado: la pared que rodea unas ventanas azules no lleva azul. El
+  escalón no elige colores sino cuántas fichas hay (`paletteSize`): si la lámina usa menos,
+  se completan con colores que no pinta nadie, y nunca pasan de seis
+  (`COLORING_MAX_SWATCHES`), que son las que caben en una fila de 375 px.
 - **En Colorear se pinta arrastrando, con el grosor que se elija.** Un toque que
   rellenaba la zona entera convertía colorear en señalar, que es lo que ya hacen las
   lecciones de preguntas: ahora la mano trabaja, como en Trazos pero sin la exigencia de
@@ -180,21 +191,30 @@ src/lib/
   píxeles del lienzo: `coloringGame.ts` no puede tocar el DOM porque `validate:content` lo
   compila sin él, así que `coloringSampleGrid` recibe el "está dentro" en vez de
   calcularlo.
-- **El dibujo de Colorear son dos capas sobre el mismo cuadrado.** Abajo un `<canvas>` con
-  el papel, las pasadas de pincel y los contornos, en el orden de las zonas: ese orden es
-  el que hace que la puerta se vea sobre la pared y la aleta sobre el cuerpo del pez, y por
-  eso el pincel, además de recortarse a su zona, obliga a repintar las zonas de encima y el
-  contorno propio tras cada tramo. Un SVG encima, que **no recibe toques**, pone los
-  números y una zona enfocable por cada una: sin puntero no hay arrastre, así que activar
-  una zona con el teclado la pinta entera y el juego sigue siendo jugable con lector de
-  pantalla. Las dos capas no se pueden fundir en una: un SVG con relleno blanco sobre el
-  lienzo taparía lo que se está pintando debajo.
-- **Las láminas de Colorear son geometría a propósito**: una casa son un triángulo y unos
-  rectángulos, y eso es justo lo que un camino SVG escrito a mano hace bien. El `labelAt` de
-  cada zona —dónde se pinta su número— va escrito y es obligatorio: el centro de la caja del
-  camino no sirve, porque en una banda del arcoíris cae en el hueco del arco, en los pétalos
-  cae sobre el centro de la flor, que es otra zona, y en las dos ruedas del tren cae entre
-  ellas, en el aire.
+- **El dibujo de Colorear son tres capas sobre el mismo cuadrado.** Abajo un `<canvas>` con
+  el papel y las pasadas de pincel, recortadas a su zona. Encima la imagen de la lámina,
+  que es solo tinta: tapa el borde de la pintura, así que el color llega justo a la línea y
+  el pincel no tiene que repintar nada alrededor. Arriba un SVG que **no recibe toques**,
+  con los números y una zona enfocable por cada una: sin puntero no hay arrastre, así que
+  activar una zona con el teclado la pinta entera y el juego sigue siendo jugable con lector
+  de pantalla. La zona enfocable se marca con un velo de relleno y no con contorno: es una
+  pila de franjas de la rejilla, y su contorno dibujaría cada franja.
+- **Las láminas de Colorear son páginas de colorear, y las zonas salen de la imagen.** Son
+  PNG en `public/art/coloring/` con el `id` de la lámina por nombre: tinta negra sobre
+  transparente, cuadrados, a 1024 px y recortados con un 4 % de margen. Antes eran caminos
+  SVG escritos a mano y un árbol era un óvalo sobre un rectángulo. Al cargar cada lámina el
+  cliente lee la tinta en una rejilla de 256 (`COLORING_GRID`) y `coloringRegionCells` hace
+  el resto, sin DOM: cada zona es el espacio cerrado que contiene alguno de sus puntos
+  `labelAt`, crece dos celdas bajo la línea para que no quede un hilo blanco, y lo que no
+  contiene ningún punto es fondo. Los mismos puntos son donde se pinta el número, uno por
+  pedazo, y van en el punto más hondo de cada uno, no en el centro de su caja: en una banda
+  del arcoíris el centro cae en el hueco del arco. Si un punto cae en la línea o dos zonas
+  comparten espacio —una línea con un hueco—, el juego lo avisa en la consola. **Al
+  encargar una lámina** hay que pedir contornos cerrados, una línea donde se tocan dos
+  partes ("la prueba del bote de pintura") y nada de detalles interiores, porque cada
+  espacio cerrado es una zona; y revisarla con sus puntos antes de subirla. `validate:content`
+  comprueba que la imagen exista, que haya puntos y que estén dentro del lienzo, pero no
+  puede leer la imagen.
 - **Los colores que se enseñan no son los de la marca**: la paleta de la interfaz es pastel
   (`sky` es un celeste, `coral` un salmón) y sirve para la interfaz. Los dibujos de la
   categoría Colores usan colores plenos y canónicos, que viven en los propios SVG. Enseñar

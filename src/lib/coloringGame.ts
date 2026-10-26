@@ -13,10 +13,12 @@ import type { Language } from "./language";
  * mismo juego creciendo con el niño, y es lo que hace que los cinco escalones
  * sean cinco cosas distintas y no el mismo ejercicio con más piezas.
  *
- * Los dibujos son geometría a propósito: una casa son un triángulo y unos
- * rectángulos, y eso es exactamente lo que un camino SVG escrito a mano sabe
- * hacer bien. Las ilustraciones de Colores tuvieron que venir de fuera porque
- * un flamenco no es geometría; una página de colorear sí.
+ * Los dibujos son páginas de colorear de verdad: tinta negra sobre fondo
+ * transparente, en `public/art/coloring/`. Antes eran geometría escrita a mano
+ * —un árbol era un óvalo sobre un rectángulo— y no se reconocían. Las zonas
+ * no se escriben: salen de la propia imagen, porque cada espacio cerrado por
+ * la tinta es una zona (`coloringRegionCells`). La lámina solo dice qué zona
+ * es cuál, con un punto dentro de cada pedazo.
  *
  * **Se pinta pasando el dedo o el Apple Pencil, con el grosor que se elija.**
  * No es adorno: un toque que rellenaba la zona entera convertía colorear en
@@ -29,10 +31,16 @@ import type { Language } from "./language";
  * (`coverageToFill` de cada escalón), no cuando está perfecta: pedir el 100 %
  * castigaría el pulso, que no es lo que este juego mide.
  *
- * Los colores **no se guardan en el dibujo**: se reparten al empezar cada
- * sesión desde la paleta del escalón. Así la misma casa sale distinta cada vez
- * y repetir un nivel no es repetir la misma lámina, que es lo que permite que
- * el banco sea pequeño sin que el juego se agote.
+ * **Los colores que se piden son los de la realidad.** Cada zona dice qué
+ * colores tiene sentido pedirle —las hojas, verdes; el tronco, café; el mar,
+ * azul; el arcoíris, en su orden— y se elige entre ellos al empezar cada
+ * ronda. Pedir "pinta las hojas de amarillo" o un tronco azul no enseña nada:
+ * el color se aprende junto con lo que lleva ese color. Lo que de verdad
+ * puede ser de cualquier color —una pared, una vela, un pez— sigue variando,
+ * y por eso la misma casa sale distinta cada vez y el banco puede ser
+ * pequeño sin que el juego se agote. Lo que en la realidad va igual —las dos
+ * alas de arriba de una mariposa, las ventanas de una casa— es una sola zona
+ * con varios pedazos, para que nunca se pidan de dos colores.
  */
 
 export const COLORING_MAX_LEVEL = 5;
@@ -88,16 +96,17 @@ export const COLORING_COLORS: Record<
 };
 
 /**
- * Qué cambia en cada escalón: cómo se pide la zona y con cuántos colores
- * distintos se reparte el dibujo.
+ * Qué cambia en cada escalón: cómo se pide la zona y cuántas fichas tiene la
+ * paleta.
  *
  * Cuántas zonas tiene el dibujo lo dice el dibujo, no el escalón: por eso cada
  * lámina declara a qué nivel pertenece y el banco crece por ahí.
  *
- * Los colores del 1 al 3 son los primarios más el verde, que son los que un
- * niño reconoce antes; los escalones altos añaden los que se confunden entre
- * sí —morado con azul, rosado con rojo, naranja con amarillo— y esa confusión
- * es justo la dificultad.
+ * Qué colores se usan lo dice lo que se pinta (ver `ColoringRegion.colors`),
+ * así que el escalón no elige colores: elige cuántas fichas hay que mirar.
+ * `paletteSize` es el mínimo, y si la lámina usa menos colores, los que faltan
+ * se completan con otros que no pinta ninguna zona. Un árbol necesita verde y
+ * café, y con solo esas dos fichas no habría nada que decidir.
  *
  * La mano también pide más al subir, pero sin castigar nunca salirse: la
  * pintura sigue recortada a la zona en todos los escalones. Lo que cambia es
@@ -111,38 +120,38 @@ export const COLORING_LEVELS: Record<
   ColoringLevel,
   {
     mode: ColoringMode;
-    palette: readonly ColorId[];
+    paletteSize: number;
     brushes: readonly ColoringBrushId[];
     coverageToFill: number;
   }
 > = {
   1: {
     mode: "spoken",
-    palette: ["rojo", "azul", "amarillo"],
+    paletteSize: 3,
     brushes: ["fino", "medio", "grueso"],
     coverageToFill: 0.7,
   },
   2: {
     mode: "spoken",
-    palette: ["rojo", "azul", "amarillo", "verde"],
+    paletteSize: 4,
     brushes: ["fino", "medio", "grueso"],
     coverageToFill: 0.7,
   },
   3: {
     mode: "key",
-    palette: ["rojo", "azul", "amarillo", "verde"],
+    paletteSize: 4,
     brushes: ["fino", "medio", "grueso"],
     coverageToFill: 0.75,
   },
   4: {
     mode: "key",
-    palette: ["rojo", "azul", "amarillo", "verde", "naranja"],
+    paletteSize: 5,
     brushes: ["fino", "medio"],
     coverageToFill: 0.8,
   },
   5: {
     mode: "key",
-    palette: ["rojo", "azul", "verde", "naranja", "morado", "rosado"],
+    paletteSize: 6,
     brushes: ["fino", "medio"],
     coverageToFill: 0.85,
   },
@@ -166,11 +175,11 @@ export type ColoringBrushId = "fino" | "medio" | "grueso";
  * que un niño de tres años todavía no tiene— y además no se puede nombrar en
  * voz alta ni leer con un lector de pantalla. Tres botones sí.
  *
- * Los radios están elegidos contra las zonas de verdad, no al azar: la franja
- * más estrecha del arcoíris mide 10 de lado a lado, así que el grueso (19 de
- * diámetro) la cubre de una pasada, el medio pide dos y el fino sirve para la
- * ventana y las ruedas. Ninguno estropea nada por grande, porque la pintura se
- * recorta a la zona.
+ * Los radios están elegidos contra las zonas de verdad, no al azar: una franja
+ * del arcoíris mide unos 6 de lado a lado y el tallo de la flor unos 5, así
+ * que el grueso (19 de diámetro) y el medio las cubren de una pasada y el fino
+ * sirve para la ventana del cohete y la cabeza de la mariposa. Ninguno
+ * estropea nada por grande, porque la pintura se recorta a la zona.
  */
 export const COLORING_BRUSHES: readonly {
   id: ColoringBrushId;
@@ -225,7 +234,7 @@ export const COLORING_MIN_STEP = 0.4;
  * Siembra el lienzo de 100 × 100 de puntos y devuelve los que caen dentro.
  *
  * Recibe el "está dentro" en vez de calcularlo porque quien sabe si un punto
- * cae dentro de un camino SVG es el navegador (`isPointInPath`), y este
+ * cae dentro del camino de una zona es el navegador (`isPointInPath`), y este
  * archivo no puede depender de él: `validate:content` lo compila sin las
  * librerías del DOM justo para que el contenido no acabe importando código de
  * navegador.
@@ -320,7 +329,7 @@ export function coloringAttemptKey(regionId: string, colorId: ColorId): string {
 }
 
 /**
- * Una zona del dibujo: su camino y cómo se llama.
+ * Una zona del dibujo: cómo se llama, dónde está y qué colores puede llevar.
  *
  * El nombre no es decoración: en los escalones hablados es lo que se dice en
  * voz alta, y en todos es el nombre accesible del botón. Una zona sin nombre
@@ -328,40 +337,200 @@ export function coloringAttemptKey(regionId: string, colorId: ColorId): string {
  */
 export type ColoringRegion = {
   id: string;
-  /** Camino SVG en un lienzo de 100 × 100. */
-  path: string;
   label: Record<Language, string>;
   /**
-   * Dónde se pinta el número de la zona en los escalones numerados.
+   * Un punto dentro de cada pedazo de la zona, en el lienzo de 100 × 100.
    *
-   * Va escrito a mano y es obligatorio porque el centro de la caja del camino
-   * no sirve: en una banda del arcoíris cae en el hueco del arco, en los
-   * pétalos cae sobre el centro de la flor —que es otra zona— y en las dos
-   * ruedas del tren cae entre ellas, en el aire. Exigirlo obliga a mirar
-   * dónde cae antes de añadir una lámina nueva.
+   * Hace dos cosas. Dice qué espacio cerrado de la imagen es esta zona —el
+   * espacio que contiene el punto, y todos los que lo contengan si la zona
+   * tiene varios pedazos, como los pétalos o las ruedas— y es donde se pinta
+   * su número en los escalones numerados. Por eso va en el punto más hondo de
+   * cada pedazo, el más lejos de las líneas, y no en el centro de su caja:
+   * en una banda del arcoíris el centro cae en el hueco del arco.
    */
-  labelAt: { x: number; y: number };
+  labelAt: ColoringPoint[];
+  /**
+   * Los colores que puede llevar, los que tiene en la realidad.
+   *
+   * Uno solo cuando no hay duda —las hojas, verdes; el mar, azul— y varios
+   * cuando la cosa puede ser de muchos colores, como una pared o un pez. Al
+   * escribir una lámina hay que mirar también la zona de al lado: si la
+   * ventana es azul, la pared que la rodea no puede serlo, o "pinta la pared
+   * de azul" pediría pintarlas iguales.
+   */
+  colors: readonly ColorId[];
 };
 
 /**
  * Una lámina.
  *
- * Tiene la forma de una fila de base de datos —id, nivel, nombre y zonas— por
- * lo mismo que los ejercicios de Trazos: para que el día que el contenido
- * venga de una tabla haya que cambiar de dónde sale, no el juego.
+ * Tiene la forma de una fila de base de datos —id, nivel, nombre, dibujo y
+ * zonas— por lo mismo que los ejercicios de Trazos: para que el día que el
+ * contenido venga de una tabla haya que cambiar de dónde sale, no el juego.
  */
 export type ColoringPicture = {
   id: string;
   level: ColoringLevel;
   name: Record<Language, string>;
+  /** La tinta de la página, cuadrada y con el fondo transparente. */
+  image: string;
   /**
-   * En orden de pintado, que es también el orden en que se dibujan: una zona
-   * posterior puede montarse encima de otra —la puerta sobre la pared—. Dos
-   * zonas seguidas nunca reciben el mismo color, así que el orden vale además
-   * como orden de vecindad.
+   * En el orden en que se piden en los escalones hablados. Cada zona prefiere
+   * un color que todavía no lleve ninguna otra, así que en la práctica las
+   * vecinas nunca salen iguales; y una zona nunca repite el color de la
+   * anterior salvo que la realidad lo pida (el tallo y la hoja, verdes los
+   * dos).
    */
   regions: ColoringRegion[];
 };
+
+/* ──────────────── Las zonas, sacadas de la imagen ────────────── */
+
+/**
+ * El lado de la rejilla en la que se buscan las zonas de una imagen.
+ *
+ * 256 es de sobra: la línea de las láminas mide unas cuatro celdas, así que
+ * ningún espacio cerrado se escapa por un hueco que no existe, y la zona más
+ * pequeña del banco —la cabeza de la mariposa— tiene centenares de celdas.
+ * Contar en la imagen entera, de 1024, sería dieciséis veces más trabajo en
+ * el momento de empezar cada lámina y no cambiaría ninguna zona.
+ */
+export const COLORING_GRID = 256;
+
+/**
+ * Cuántas celdas se mete cada zona dentro de la línea que la rodea.
+ *
+ * La pintura se recorta a la zona, y la zona en celdas tiene bordes en
+ * escalera. Metiéndola un poco bajo la tinta, la escalera queda tapada por la
+ * línea, que se pinta encima, y entre el color y el contorno no queda ni un
+ * hilo blanco. Dos celdas son la mitad de la línea: dos zonas vecinas se
+ * encuentran en el centro de la raya que las separa y ninguna asoma al otro
+ * lado.
+ */
+export const COLORING_GROW = 2;
+
+/** Una fila de celdas seguidas de una zona: fila, primera y última columna. */
+export type ColoringRun = { y: number; x0: number; x1: number };
+
+/**
+ * Las celdas de cada zona de una lámina, en tramos de fila.
+ *
+ * `ink` es la rejilla de `size × size` con un 1 donde hay tinta; quien la lee
+ * de la imagen es el cliente, que es quien tiene un lienzo, y aquí solo se
+ * cuenta. Cada zona es el espacio cerrado —sin tinta, unido de lado a lado—
+ * que contiene alguno de sus puntos; lo que no contiene ninguno es fondo y no
+ * se pinta, como el cielo bajo el arco del arcoíris o el hueco entre dos
+ * ruedas.
+ *
+ * Devuelve también lo que salió mal, en vez de callarlo: un punto que cae
+ * sobre la tinta, o dos zonas que reclaman el mismo espacio porque la línea
+ * que debía separarlas tiene un hueco. Las dos cosas pasan al cambiar una
+ * imagen sin mirar sus puntos.
+ */
+export function coloringRegionCells(
+  ink: Uint8Array,
+  size: number,
+  regions: readonly { labelAt: readonly ColoringPoint[] }[],
+): { runs: ColoringRun[][]; problems: string[] } {
+  const owner = new Int16Array(size * size);
+  const problems: string[] = [];
+
+  regions.forEach((region, index) => {
+    const mark = index + 1;
+    for (const point of region.labelAt) {
+      const cx = Math.min(size - 1, Math.max(0, Math.floor((point.x / 100) * size)));
+      const cy = Math.min(size - 1, Math.max(0, Math.floor((point.y / 100) * size)));
+      const start = cy * size + cx;
+      if (ink[start]) {
+        problems.push(`zona ${index}: el punto (${point.x}, ${point.y}) cae sobre la línea`);
+        continue;
+      }
+      if (owner[start] === mark) continue;
+      if (owner[start] !== 0) {
+        problems.push(`zona ${index}: comparte el espacio con la zona ${owner[start] - 1}`);
+        continue;
+      }
+
+      // Relleno de cuatro vecinos: dos celdas que solo se tocan en diagonal
+      // están separadas por la línea, aunque la línea sea fina en ese punto.
+      const queue = [start];
+      owner[start] = mark;
+      for (let head = 0; head < queue.length; head += 1) {
+        const cell = queue[head];
+        const x = cell % size;
+        const neighbours = [
+          x > 0 ? cell - 1 : -1,
+          x < size - 1 ? cell + 1 : -1,
+          cell - size,
+          cell + size,
+        ];
+        for (const next of neighbours) {
+          if (next < 0 || next >= owner.length) continue;
+          if (ink[next] || owner[next] !== 0) continue;
+          owner[next] = mark;
+          queue.push(next);
+        }
+      }
+    }
+  });
+
+  // Crecer bajo la tinta, una celda por pasada y desde la foto de la pasada
+  // anterior, para que ninguna zona avance dos celdas de golpe hacia un lado.
+  for (let pass = 0; pass < COLORING_GROW; pass += 1) {
+    const before = owner.slice();
+    for (let cell = 0; cell < owner.length; cell += 1) {
+      if (!ink[cell] || before[cell] !== 0) continue;
+      const x = cell % size;
+      const found =
+        (x > 0 && before[cell - 1]) ||
+        (x < size - 1 && before[cell + 1]) ||
+        (cell >= size && before[cell - size]) ||
+        (cell + size < owner.length && before[cell + size]) ||
+        0;
+      if (found) owner[cell] = found;
+    }
+  }
+
+  const runs: ColoringRun[][] = regions.map(() => []);
+  for (let y = 0; y < size; y += 1) {
+    let x = 0;
+    while (x < size) {
+      const mark = owner[y * size + x];
+      if (mark === 0) {
+        x += 1;
+        continue;
+      }
+      let end = x;
+      while (end + 1 < size && owner[y * size + end + 1] === mark) end += 1;
+      runs[mark - 1].push({ y, x0: x, x1: end });
+      x = end + 1;
+    }
+  }
+
+  regions.forEach((_, index) => {
+    if (runs[index].length === 0) problems.push(`zona ${index}: no ocupa nada`);
+  });
+  return { runs, problems };
+}
+
+/**
+ * Los tramos de una zona como camino SVG en el lienzo de 100 × 100: un
+ * rectángulo por tramo. El mismo texto sirve para `Path2D`, que es con lo que
+ * el lienzo recorta la pintura y pregunta qué zona hay bajo el dedo, y para el
+ * `<path>` enfocable de la capa accesible.
+ */
+export function coloringRunsPath(runs: readonly ColoringRun[], size: number): string {
+  const cell = 100 / size;
+  const round = (value: number) => Math.round(value * 1000) / 1000;
+  return runs
+    .map(
+      ({ y, x0, x1 }) =>
+        `M${round(x0 * cell)} ${round(y * cell)}h${round((x1 - x0 + 1) * cell)}v${round(cell)}h${round(-(x1 - x0 + 1) * cell)}z`,
+    )
+    .join("");
+}
+
+const art = (id: string) => `/art/coloring/${id}.png`;
 
 export const COLORING_PICTURES: ColoringPicture[] = [
   // ─── Nivel 1: tres zonas ──────────────────────────────────
@@ -369,24 +538,25 @@ export const COLORING_PICTURES: ColoringPicture[] = [
     id: "casa",
     level: 1,
     name: { en: "House", es: "Casa" },
+    image: art("casa"),
     regions: [
       {
         id: "techo",
-        path: "M50 10 L92 44 L8 44 Z",
         label: { en: "the roof", es: "el techo" },
-        labelAt: { x: 50, y: 33 },
+        labelAt: [{ x: 49.8, y: 26.4 }],
+        colors: ["rojo", "cafe", "naranja"],
       },
       {
         id: "pared",
-        path: "M16 44 H84 V92 H16 Z",
         label: { en: "the wall", es: "la pared" },
-        labelAt: { x: 26, y: 56 },
+        labelAt: [{ x: 25.6, y: 61.5 }],
+        colors: ["amarillo", "azul", "rosado", "verde"],
       },
       {
         id: "puerta",
-        path: "M40 62 H60 V92 H40 Z",
         label: { en: "the door", es: "la puerta" },
-        labelAt: { x: 50, y: 79 },
+        labelAt: [{ x: 49.8, y: 72.9 }],
+        colors: ["cafe", "rojo", "azul"],
       },
     ],
   },
@@ -394,24 +564,25 @@ export const COLORING_PICTURES: ColoringPicture[] = [
     id: "arbol",
     level: 1,
     name: { en: "Tree", es: "Árbol" },
+    image: art("arbol"),
     regions: [
       {
         id: "copa",
-        path: "M50 8 C76 8 90 28 83 47 C77 62 60 67 50 67 C40 67 23 62 17 47 C10 28 24 8 50 8 Z",
         label: { en: "the leaves", es: "las hojas" },
-        labelAt: { x: 50, y: 36 },
+        labelAt: [{ x: 47.9, y: 33.4 }],
+        colors: ["verde"],
       },
       {
         id: "tronco",
-        path: "M41 62 H59 V88 H41 Z",
         label: { en: "the trunk", es: "el tronco" },
-        labelAt: { x: 50, y: 75 },
+        labelAt: [{ x: 49.8, y: 76 }],
+        colors: ["cafe"],
       },
       {
         id: "suelo",
-        path: "M4 88 H96 V97 H4 Z",
-        label: { en: "the ground", es: "el suelo" },
-        labelAt: { x: 50, y: 93 },
+        label: { en: "the grass", es: "el pasto" },
+        labelAt: [{ x: 50, y: 90 }],
+        colors: ["verde"],
       },
     ],
   },
@@ -419,66 +590,65 @@ export const COLORING_PICTURES: ColoringPicture[] = [
     id: "pez",
     level: 1,
     name: { en: "Fish", es: "Pez" },
+    image: art("pez"),
     regions: [
       {
         id: "cuerpo",
-        path: "M18 52 C18 34 38 25 58 30 C72 34 80 43 80 52 C80 61 72 70 58 74 C38 79 18 70 18 52 Z",
         label: { en: "the body", es: "el cuerpo" },
-        labelAt: { x: 44, y: 55 },
+        labelAt: [{ x: 42.8, y: 56.8 }],
+        colors: ["naranja", "amarillo", "azul", "rojo"],
       },
       {
         id: "cola",
-        path: "M79 52 L97 32 V72 Z",
         label: { en: "the tail", es: "la cola" },
-        labelAt: { x: 88, y: 52 },
+        labelAt: [{ x: 81.1, y: 66.2 }],
+        colors: ["naranja", "amarillo", "azul", "rojo", "morado"],
       },
       {
         id: "aleta",
-        // Se monta sobre el cuerpo a propósito: dibujada justo encima del
-        // lomo parecía un plátano suelto flotando sobre el pez.
-        path: "M38 36 C44 14 64 12 71 29 C60 27 47 30 38 36 Z",
         label: { en: "the fin", es: "la aleta" },
-        labelAt: { x: 54, y: 25 },
+        labelAt: [{ x: 50.2, y: 26 }],
+        colors: ["naranja", "amarillo", "azul", "rojo", "morado"],
       },
     ],
   },
 
-  // ─── Nivel 2: cuatro zonas ────────────────────────────────
+  // ─── Nivel 2: cuatro y cinco zonas ────────────────────────
   {
     id: "flor",
     level: 2,
     name: { en: "Flower", es: "Flor" },
+    image: art("flor"),
     regions: [
       {
         id: "petalos",
-        path: [
-          "M57 36 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z",
-          "M46 55 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z",
-          "M26 55 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z",
-          "M15 36 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z",
-          "M26 17 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z",
-          "M46 17 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z",
-        ].join(" "),
         label: { en: "the petals", es: "los pétalos" },
-        labelAt: { x: 50, y: 17 },
+        labelAt: [
+          { x: 48.2, y: 15.8 },
+          { x: 30.3, y: 29.1 },
+          { x: 68.9, y: 29.1 },
+          { x: 63.1, y: 51.4 },
+          { x: 35.7, y: 51.8 },
+        ],
+        colors: ["rojo", "amarillo", "rosado", "morado", "azul", "naranja"],
       },
       {
         id: "centro",
-        path: "M36 36 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z",
         label: { en: "the middle", es: "el centro" },
-        labelAt: { x: 50, y: 36 },
+        labelAt: [{ x: 49.4, y: 37.7 }],
+        colors: ["amarillo", "naranja", "cafe"],
       },
       {
         id: "tallo",
-        path: "M45 54 H55 V94 H45 Z",
         label: { en: "the stem", es: "el tallo" },
-        labelAt: { x: 50, y: 78 },
+        labelAt: [{ x: 49.4, y: 75.2 }],
+        colors: ["verde"],
       },
       {
         id: "hoja",
-        path: "M55 70 C72 60 86 70 81 83 C66 88 57 80 55 70 Z",
         label: { en: "the leaf", es: "la hoja" },
-        labelAt: { x: 68, y: 74 },
+        labelAt: [{ x: 63.5, y: 74.8 }],
+        colors: ["verde"],
       },
     ],
   },
@@ -486,30 +656,32 @@ export const COLORING_PICTURES: ColoringPicture[] = [
     id: "barco",
     level: 2,
     name: { en: "Boat", es: "Barco" },
+    image: art("barco"),
     regions: [
       {
         id: "vela-grande",
-        path: "M53 14 L84 66 H53 Z",
         label: { en: "the big sail", es: "la vela grande" },
-        labelAt: { x: 66, y: 53 },
+        labelAt: [{ x: 35.7, y: 46.7 }],
+        colors: ["rojo", "amarillo", "azul", "naranja", "morado", "verde"],
       },
       {
         id: "vela-pequena",
-        path: "M47 24 L20 66 H47 Z",
         label: { en: "the small sail", es: "la vela pequeña" },
-        labelAt: { x: 36, y: 55 },
+        labelAt: [{ x: 71.3, y: 54.5 }],
+        colors: ["rojo", "amarillo", "azul", "naranja", "morado", "verde"],
       },
       {
+        // Sin azul: el casco está pegado al mar, que lo es siempre.
         id: "casco",
-        path: "M8 68 H92 L80 88 H20 Z",
         label: { en: "the hull", es: "el casco" },
-        labelAt: { x: 50, y: 78 },
+        labelAt: [{ x: 50, y: 77.5 }],
+        colors: ["cafe", "rojo", "amarillo", "naranja"],
       },
       {
         id: "mar",
-        path: "M2 88 H98 V98 H2 Z",
         label: { en: "the sea", es: "el mar" },
-        labelAt: { x: 50, y: 93 },
+        labelAt: [{ x: 50, y: 88.1 }],
+        colors: ["azul"],
       },
     ],
   },
@@ -517,69 +689,82 @@ export const COLORING_PICTURES: ColoringPicture[] = [
     id: "cohete",
     level: 2,
     name: { en: "Rocket", es: "Cohete" },
+    image: art("cohete"),
     regions: [
       {
         id: "punta",
-        path: "M50 4 C63 17 68 28 68 36 H32 C32 28 37 17 50 4 Z",
         label: { en: "the nose", es: "la punta" },
-        labelAt: { x: 50, y: 26 },
+        labelAt: [{ x: 49.8, y: 15.4 }],
+        colors: ["rojo", "naranja", "azul"],
       },
       {
+        // Sin azul: la ventana, que va dentro, es azul siempre.
         id: "cuerpo",
-        path: "M32 36 H68 V80 H32 Z",
         label: { en: "the body", es: "el cuerpo" },
-        labelAt: { x: 50, y: 70 },
-      },
-      {
-        id: "aletas",
-        path: "M32 56 L14 88 H32 Z M68 56 L86 88 H68 Z",
-        label: { en: "the fins", es: "las aletas" },
-        labelAt: { x: 23, y: 80 },
+        labelAt: [{ x: 49, y: 71.3 }],
+        colors: ["rojo", "amarillo", "morado", "verde", "naranja"],
       },
       {
         id: "ventana",
-        path: "M39 50 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 Z",
         label: { en: "the window", es: "la ventana" },
-        labelAt: { x: 50, y: 50 },
+        labelAt: [{ x: 49.8, y: 45.1 }],
+        colors: ["azul"],
+      },
+      {
+        id: "aletas",
+        label: { en: "the fins", es: "las aletas" },
+        labelAt: [
+          { x: 26, y: 80.3 },
+          { x: 74, y: 80.7 },
+        ],
+        colors: ["rojo", "naranja", "azul", "verde", "morado"],
+      },
+      {
+        id: "base",
+        label: { en: "the base", es: "la base" },
+        labelAt: [{ x: 49.8, y: 90.8 }],
+        colors: ["naranja", "amarillo", "rojo"],
       },
     ],
   },
 
-  // ─── Nivel 3: cinco zonas ─────────────────────────────────
+  // ─── Nivel 3: el primero numerado ─────────────────────────
   {
+    // Las alas van de dos en dos porque una mariposa es simétrica: pedir el
+    // ala izquierda de un color y la derecha de otro no es ninguna mariposa.
     id: "mariposa",
     level: 3,
     name: { en: "Butterfly", es: "Mariposa" },
+    image: art("mariposa"),
     regions: [
       {
-        id: "ala-sup-izq",
-        path: "M46 32 C30 6 6 10 8 30 C10 46 30 52 46 50 Z",
-        label: { en: "the top left wing", es: "el ala de arriba a la izquierda" },
-        labelAt: { x: 26, y: 32 },
+        id: "alas-arriba",
+        label: { en: "the top wings", es: "las alas de arriba" },
+        labelAt: [
+          { x: 26, y: 38.5 },
+          { x: 74, y: 38.5 },
+        ],
+        colors: ["azul", "morado", "naranja", "amarillo", "rosado", "rojo"],
       },
       {
-        id: "ala-sup-der",
-        path: "M54 32 C70 6 94 10 92 30 C90 46 70 52 54 50 Z",
-        label: { en: "the top right wing", es: "el ala de arriba a la derecha" },
-        labelAt: { x: 74, y: 32 },
+        id: "alas-abajo",
+        label: { en: "the bottom wings", es: "las alas de abajo" },
+        labelAt: [
+          { x: 26, y: 73.6 },
+          { x: 74, y: 73.6 },
+        ],
+        colors: ["azul", "morado", "naranja", "amarillo", "rosado", "rojo"],
       },
       {
-        id: "ala-inf-izq",
-        path: "M46 54 C31 51 12 58 17 76 C22 90 41 84 46 72 Z",
-        label: { en: "the bottom left wing", es: "el ala de abajo a la izquierda" },
-        labelAt: { x: 30, y: 68 },
-      },
-      {
-        id: "ala-inf-der",
-        path: "M54 54 C69 51 88 58 83 76 C78 90 59 84 54 72 Z",
-        label: { en: "the bottom right wing", es: "el ala de abajo a la derecha" },
-        labelAt: { x: 70, y: 68 },
-      },
-      {
+        // El cuerpo y la cabeza son dos espacios en la imagen y una sola cosa
+        // en la mariposa.
         id: "cuerpo",
-        path: "M45 22 H55 V80 C55 88 45 88 45 80 Z",
         label: { en: "the body", es: "el cuerpo" },
-        labelAt: { x: 50, y: 78 },
+        labelAt: [
+          { x: 49.8, y: 53.3 },
+          { x: 49.8, y: 33.8 },
+        ],
+        colors: ["cafe"],
       },
     ],
   },
@@ -587,81 +772,85 @@ export const COLORING_PICTURES: ColoringPicture[] = [
     id: "tren",
     level: 3,
     name: { en: "Train", es: "Tren" },
+    image: art("tren"),
     regions: [
       {
         id: "cuerpo",
-        path: "M8 48 H62 V76 H8 Z",
         label: { en: "the body", es: "el cuerpo" },
-        labelAt: { x: 34, y: 62 },
+        labelAt: [{ x: 36.5, y: 49.8 }],
+        colors: ["rojo", "azul", "verde"],
       },
       {
         id: "cabina",
-        path: "M62 30 H90 V76 H62 Z",
         label: { en: "the cabin", es: "la cabina" },
-        labelAt: { x: 76, y: 52 },
+        labelAt: [{ x: 76.4, y: 38.5 }],
+        colors: ["rojo", "azul", "amarillo", "verde"],
       },
       {
         id: "chimenea",
-        path: "M16 26 H34 V48 H16 Z",
         label: { en: "the chimney", es: "la chimenea" },
-        labelAt: { x: 25, y: 37 },
+        labelAt: [{ x: 29.9, y: 30.7 }],
+        colors: ["cafe", "rojo"],
       },
       {
         id: "ruedas",
-        path: "M14 82 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 Z M64 82 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 Z",
         label: { en: "the wheels", es: "las ruedas" },
-        labelAt: { x: 25, y: 82 },
+        labelAt: [
+          { x: 23.6, y: 62.3 },
+          { x: 49.4, y: 62.3 },
+          { x: 75.2, y: 62.3 },
+        ],
+        colors: ["rojo", "amarillo", "azul"],
       },
       {
         id: "via",
-        path: "M2 92 H98 V98 H2 Z",
         label: { en: "the track", es: "la vía" },
-        labelAt: { x: 50, y: 95 },
+        labelAt: [{ x: 90, y: 73.6 }],
+        colors: ["cafe"],
       },
     ],
   },
 
-  // ─── Nivel 4: seis zonas ──────────────────────────────────
+  // ─── Nivel 4: cinco y seis zonas ──────────────────────────
   {
     id: "casa-grande",
     level: 4,
     name: { en: "Big house", es: "Casa grande" },
+    image: art("casa-grande"),
     regions: [
       {
         id: "sol",
-        path: "M72 18 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0 Z",
         label: { en: "the sun", es: "el sol" },
-        labelAt: { x: 84, y: 18 },
+        labelAt: [{ x: 20.5, y: 19.7 }],
+        colors: ["amarillo", "naranja"],
       },
       {
         id: "techo",
-        path: "M50 8 L93 42 L7 42 Z",
         label: { en: "the roof", es: "el techo" },
-        labelAt: { x: 50, y: 32 },
+        labelAt: [{ x: 54.1, y: 38.1 }],
+        colors: ["rojo", "cafe", "naranja"],
       },
       {
+        // Sin azul: las ventanas, que van dentro, son azules siempre.
         id: "pared",
-        path: "M15 42 H85 V93 H15 Z",
         label: { en: "the wall", es: "la pared" },
-        labelAt: { x: 25, y: 80 },
+        labelAt: [{ x: 43.9, y: 62.7 }],
+        colors: ["amarillo", "rosado", "verde", "naranja"],
       },
       {
-        id: "ventana-izq",
-        path: "M23 50 H41 V68 H23 Z",
-        label: { en: "the left window", es: "la ventana izquierda" },
-        labelAt: { x: 32, y: 59 },
-      },
-      {
-        id: "ventana-der",
-        path: "M59 50 H77 V68 H59 Z",
-        label: { en: "the right window", es: "la ventana derecha" },
-        labelAt: { x: 68, y: 59 },
+        id: "ventanas",
+        label: { en: "the windows", es: "las ventanas" },
+        labelAt: [
+          { x: 33, y: 72.5 },
+          { x: 75.6, y: 72.5 },
+        ],
+        colors: ["azul"],
       },
       {
         id: "puerta",
-        path: "M40 68 H60 V93 H40 Z",
         label: { en: "the door", es: "la puerta" },
-        labelAt: { x: 50, y: 82 },
+        labelAt: [{ x: 54.1, y: 73.2 }],
+        colors: ["cafe", "rojo"],
       },
     ],
   },
@@ -669,154 +858,149 @@ export const COLORING_PICTURES: ColoringPicture[] = [
     id: "camion",
     level: 4,
     name: { en: "Truck", es: "Camión" },
+    image: art("camion"),
     regions: [
       {
         id: "caja",
-        path: "M5 32 H56 V72 H5 Z",
         label: { en: "the box", es: "la caja" },
-        labelAt: { x: 30, y: 52 },
+        labelAt: [{ x: 34.6, y: 40.8 }],
+        colors: ["rojo", "azul", "amarillo", "naranja", "verde"],
       },
       {
+        // Sin azul: la ventana, que va dentro, es azul siempre.
         id: "cabina",
-        path: "M56 46 H85 L95 62 V72 H56 Z",
         label: { en: "the cabin", es: "la cabina" },
-        labelAt: { x: 72, y: 67 },
+        labelAt: [{ x: 84.6, y: 51 }],
+        colors: ["rojo", "amarillo", "naranja", "verde"],
       },
       {
         id: "ventana",
-        path: "M61 50 H81 L86 61 H61 Z",
         label: { en: "the window", es: "la ventana" },
-        labelAt: { x: 72, y: 55 },
+        labelAt: [{ x: 71.3, y: 37.3 }],
+        colors: ["azul"],
       },
       {
-        id: "rueda-trasera",
-        path: "M14 78 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0 Z",
-        label: { en: "the back wheel", es: "la rueda de atrás" },
-        labelAt: { x: 26, y: 78 },
+        id: "ruedas",
+        label: { en: "the wheels", es: "las ruedas" },
+        labelAt: [
+          { x: 23.2, y: 67 },
+          { x: 76, y: 66.6 },
+        ],
+        colors: ["rojo", "amarillo", "azul", "naranja"],
       },
       {
-        id: "rueda-delantera",
-        path: "M64 78 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0 Z",
-        label: { en: "the front wheel", es: "la rueda de adelante" },
-        labelAt: { x: 76, y: 78 },
+        id: "parte-de-abajo",
+        label: { en: "the bottom", es: "la parte de abajo" },
+        labelAt: [{ x: 50, y: 70.9 }],
+        colors: ["cafe", "amarillo", "rojo"],
       },
       {
         id: "suelo",
-        path: "M2 90 H98 V98 H2 Z",
         label: { en: "the ground", es: "el suelo" },
-        labelAt: { x: 50, y: 94 },
+        labelAt: [{ x: 50, y: 79.1 }],
+        colors: ["cafe", "verde"],
       },
     ],
   },
 
-  // ─── Nivel 5: ocho zonas ──────────────────────────────────
+  // ─── Nivel 5: los dibujos más grandes ─────────────────────
   {
+    // Las franjas van en el orden del arcoíris y las nubes se quedan blancas,
+    // que es como son: en la paleta no hay blanco porque sobre el papel no se
+    // vería pintado.
+    // Los números de las franjas van repartidos por el arco, cada uno a una
+    // altura: una franja mide menos que una cifra y, uno junto a otro, se
+    // pisarían.
     id: "arcoiris",
     level: 5,
     name: { en: "Rainbow", es: "Arcoíris" },
+    image: art("arcoiris"),
     regions: [
       {
         id: "banda-1",
-        path: "M4 84 A46 46 0 0 1 96 84 H86 A36 36 0 0 0 14 84 Z",
         label: { en: "the outside stripe", es: "la franja de afuera" },
-        labelAt: { x: 50, y: 43 },
+        labelAt: [{ x: 16.6, y: 57.2 }],
+        colors: ["rojo"],
       },
       {
         id: "banda-2",
-        path: "M14 84 A36 36 0 0 1 86 84 H76 A26 26 0 0 0 24 84 Z",
         label: { en: "the second stripe", es: "la segunda franja" },
-        labelAt: { x: 50, y: 53 },
+        labelAt: [{ x: 36.1, y: 42 }],
+        colors: ["naranja"],
       },
       {
         id: "banda-3",
-        path: "M24 84 A26 26 0 0 1 76 84 H66 A16 16 0 0 0 34 84 Z",
         label: { en: "the third stripe", es: "la tercera franja" },
-        labelAt: { x: 50, y: 63 },
+        labelAt: [{ x: 63.5, y: 47.9 }],
+        colors: ["amarillo"],
       },
       {
         id: "banda-4",
-        path: "M34 84 A16 16 0 0 1 66 84 H56 A6 6 0 0 0 44 84 Z",
         label: { en: "the inside stripe", es: "la franja de adentro" },
-        labelAt: { x: 50, y: 73 },
-      },
-      {
-        id: "nube-izq",
-        path: "M2 84 a11 11 0 0 1 4 -20 a13 13 0 0 1 24 3 a9 9 0 0 1 -2 17 Z",
-        label: { en: "the left cloud", es: "la nube de la izquierda" },
-        labelAt: { x: 16, y: 75 },
-      },
-      {
-        id: "nube-der",
-        path: "M70 84 a9 9 0 0 1 -2 -17 a13 13 0 0 1 24 -3 a11 11 0 0 1 4 20 Z",
-        label: { en: "the right cloud", es: "la nube de la derecha" },
-        labelAt: { x: 84, y: 75 },
+        labelAt: [{ x: 67, y: 63.1 }],
+        colors: ["verde"],
       },
       {
         id: "sol",
-        path: "M38 16 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 Z",
         label: { en: "the sun", es: "el sol" },
-        labelAt: { x: 49, y: 16 },
+        labelAt: [{ x: 80.3, y: 20.1 }],
+        colors: ["amarillo", "naranja"],
       },
       {
         id: "suelo",
-        path: "M2 86 H98 V97 H2 Z",
-        label: { en: "the ground", es: "el suelo" },
-        labelAt: { x: 50, y: 91 },
+        label: { en: "the hill", es: "la colina" },
+        labelAt: [{ x: 44.7, y: 86.9 }],
+        colors: ["verde"],
       },
     ],
   },
   {
+    // Las tres torres son una sola zona porque son de la misma piedra; los
+    // techos, en cambio, pueden ser cada uno de su color, como en los cuentos.
     id: "castillo",
     level: 5,
     name: { en: "Castle", es: "Castillo" },
+    image: art("castillo"),
     regions: [
       {
         id: "techo-izq",
-        path: "M4 46 L18 24 L32 46 Z",
-        label: { en: "the left tower roof", es: "el techo de la torre izquierda" },
-        labelAt: { x: 18, y: 39 },
+        label: { en: "the left roof", es: "el techo de la izquierda" },
+        labelAt: [{ x: 22.1, y: 35.7 }],
+        colors: ["rojo", "azul", "morado", "rosado"],
       },
       {
         id: "techo-centro",
-        path: "M34 36 L50 10 L66 36 Z",
-        label: { en: "the middle tower roof", es: "el techo de la torre del medio" },
-        labelAt: { x: 50, y: 27 },
+        label: { en: "the middle roof", es: "el techo del medio" },
+        labelAt: [{ x: 49.8, y: 24.8 }],
+        colors: ["rojo", "azul", "morado", "rosado"],
       },
       {
         id: "techo-der",
-        path: "M68 46 L82 24 L96 46 Z",
-        label: { en: "the right tower roof", es: "el techo de la torre derecha" },
-        labelAt: { x: 82, y: 39 },
+        label: { en: "the right roof", es: "el techo de la derecha" },
+        labelAt: [{ x: 77.5, y: 35.7 }],
+        colors: ["rojo", "azul", "morado", "rosado"],
       },
       {
-        id: "torre-izq",
-        path: "M7 46 H29 V90 H7 Z",
-        label: { en: "the left tower", es: "la torre izquierda" },
-        labelAt: { x: 18, y: 70 },
-      },
-      {
-        id: "torre-centro",
-        path: "M36 36 H64 V90 H36 Z",
-        label: { en: "the middle tower", es: "la torre del medio" },
-        labelAt: { x: 50, y: 48 },
-      },
-      {
-        id: "torre-der",
-        path: "M71 46 H93 V90 H71 Z",
-        label: { en: "the right tower", es: "la torre derecha" },
-        labelAt: { x: 82, y: 70 },
+        id: "torres",
+        label: { en: "the towers", es: "las torres" },
+        labelAt: [
+          { x: 22.5, y: 56.4 },
+          { x: 48.6, y: 49 },
+          { x: 76.8, y: 56.8 },
+        ],
+        colors: ["amarillo", "naranja", "rosado"],
       },
       {
         id: "puerta",
-        path: "M42 62 C42 54 58 54 58 62 V90 H42 Z",
         label: { en: "the gate", es: "la puerta" },
-        labelAt: { x: 50, y: 78 },
+        labelAt: [{ x: 49.8, y: 70.9 }],
+        colors: ["cafe"],
       },
       {
         id: "suelo",
-        path: "M2 90 H98 V97 H2 Z",
-        label: { en: "the ground", es: "el suelo" },
-        labelAt: { x: 50, y: 93 },
+        label: { en: "the grass", es: "el pasto" },
+        labelAt: [{ x: 50, y: 88.5 }],
+        colors: ["verde"],
       },
     ],
   },
@@ -857,28 +1041,52 @@ export type ColoringRound = {
 /**
  * Reparte los colores de una lámina.
  *
- * Va en rueda sobre la paleta ya revuelta, que consigue dos cosas de una vez:
- * **dos zonas seguidas nunca llevan el mismo color** —y como las zonas están
- * escritas en orden de vecindad, eso evita el dibujo con el techo y la pared
- * del mismo tono, que parece a medio pintar— y todos los colores de la paleta
- * acaban usándose, así que la paleta nunca tiene una ficha que no sirva para
- * nada.
+ * Cada zona elige al azar entre sus colores de verdad (`colors`), y entre
+ * ellos prefiere uno que todavía no lleve ninguna otra zona: así el dibujo
+ * sale variado y dos zonas vecinas casi nunca coinciden sin tener que
+ * escribir quién toca a quién. Si todos sus colores ya están usados, evita al
+ * menos el de la zona anterior; y si ni eso puede —el tallo y la hoja de la
+ * flor no pueden ser más que verdes—, repite, porque la realidad manda más que
+ * la variedad.
  *
- * Al revolver la paleta en cada ronda, la misma casa sale distinta cada vez.
+ * La paleta son los colores usados, completados hasta `paletteSize` con otros
+ * que no pinta nadie y revueltos. El número de cada zona es el de su color en
+ * esa paleta, así que dos zonas del mismo color llevan el mismo número.
  */
 export function buildColoringRound(
   picture: ColoringPicture,
   level: ColoringLevel,
 ): ColoringRound {
-  const { mode, palette } = COLORING_LEVELS[level];
-  const shuffled = shuffleColoringItems(palette);
+  const { mode, paletteSize } = COLORING_LEVELS[level];
 
-  const tasks = picture.regions.map((region, index) => {
-    const slot = index % shuffled.length;
-    return { ...region, colorId: shuffled[slot], key: slot + 1 };
+  const used = new Set<ColorId>();
+  let previous: ColorId | null = null;
+  const chosen = picture.regions.map((region) => {
+    const fresh = region.colors.filter((colorId) => !used.has(colorId));
+    const notPrevious = region.colors.filter((colorId) => colorId !== previous);
+    const pool =
+      fresh.length > 0 ? fresh : notPrevious.length > 0 ? notPrevious : region.colors;
+    const colorId = pool[Math.floor(Math.random() * pool.length)];
+    used.add(colorId);
+    previous = colorId;
+    return colorId;
   });
 
-  return { picture, mode, palette: shuffled, tasks };
+  const spare = shuffleColoringItems(
+    (Object.keys(COLORING_COLORS) as ColorId[]).filter((colorId) => !used.has(colorId)),
+  );
+  const palette = shuffleColoringItems([
+    ...used,
+    ...spare.slice(0, Math.max(0, paletteSize - used.size)),
+  ]);
+
+  const tasks = picture.regions.map((region, index) => ({
+    ...region,
+    colorId: chosen[index],
+    key: palette.indexOf(chosen[index]) + 1,
+  }));
+
+  return { picture, mode, palette, tasks };
 }
 
 /** Las láminas de una sesión, al azar y sin repetir dentro de la sesión. */
@@ -922,11 +1130,11 @@ export function coloringSessionStars(
 export const COLORING_FILL_MS = 420;
 
 /**
- * El tope de zonas que puede tener una lámina. Lo usa `validate:content` para
- * comprobar que la paleta de cada escalón da para numerarlas todas.
+ * El tope de fichas de la paleta. Con seis, las fichas de 48 px de un teléfono
+ * de 375 caben en una sola fila; con más, la última bajaría sola a otra fila
+ * y el tablero saltaría. Como cada zona pone a lo sumo un color, una lámina
+ * no puede tener más zonas que esto, y `validate:content` lo comprueba.
  */
-export const COLORING_MAX_REGIONS = Math.max(
-  ...COLORING_PICTURES.map((picture) => picture.regions.length),
-);
+export const COLORING_MAX_SWATCHES = 6;
 
 export type { Difficulty };
