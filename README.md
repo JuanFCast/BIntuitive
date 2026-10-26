@@ -8,7 +8,7 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
-- **A public welcome page:** the site root introduces BIntuitive and offers three doors — sign in, create an account, or continue as a guest. The first two are honest visual prototypes: there is no identity provider, no database and no session yet, and the screens say so instead of pretending otherwise. Nothing is stored, and no fake account is ever written to the browser.
+- **A public welcome page:** the site root introduces BIntuitive and offers three doors — sign in, create an account, or continue as a guest. The first two are honest visual prototypes: there is no identity provider, no database and no session yet, and the screens say so instead of pretending otherwise. Nothing is stored, and no fake account is ever written to the browser. Store builds (`NEXT_PUBLIC_BUILD_TARGET=store`) hide both account doors, and their routes return 404.
 - **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which lives at `/explore` and is where every house button, exit and "back to the start" inside the app leads. There is no separate games section.
 - **10 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, Tracing, and Coloring.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.

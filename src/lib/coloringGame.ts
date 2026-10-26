@@ -83,7 +83,7 @@ export const COLORING_COLORS: Record<
   verde: { hex: "#3ea757", label: { en: "green", es: "verde" } },
   naranja: { hex: "#f07c1f", label: { en: "orange", es: "naranja" } },
   morado: { hex: "#8e44c8", label: { en: "purple", es: "morado" } },
-  rosado: { hex: "#f58ab8", label: { en: "pink", es: "pink" } },
+  rosado: { hex: "#f58ab8", label: { en: "pink", es: "rosado" } },
   cafe: { hex: "#8b5a2b", label: { en: "brown", es: "café" } },
 };
 

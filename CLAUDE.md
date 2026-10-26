@@ -23,7 +23,9 @@ sesión, crear una cuenta y continuar como invitado. Las dos primeras son **prot
 visuales**: no hay proveedor de identidad, ni base de datos, ni sesión, y las pantallas lo
 dicen en vez de fingirlo. No guardan correos, ni contraseñas, ni cuentas falsas en
 `localStorage`. La tercera es la que lleva a la aplicación de verdad, y por eso es la grande y
-va primero; las dos de cuenta van debajo, agrupadas "para adultos".
+va primero; las dos de cuenta van debajo, agrupadas bajo "Tu cuenta". El build de tienda
+(`NEXT_PUBLIC_BUILD_TARGET=store`, en `src/lib/buildTarget.ts`) no las enseña y sus rutas dan
+404: en una tienda, una función que no funciona es motivo de rechazo.
 
 **El panal (`/explore`) es la única superficie de descubrimiento.** Es la pantalla de entrada
 de la aplicación —la pestaña se llama Home (Inicio en español), aunque la ruta sea `/explore`— y todo lo que dentro significa "volver al
@@ -86,6 +88,7 @@ src/lib/
   profile.ts            Nombre, avatar y fecha de inicio de quien juega en este dispositivo
   routes.ts             Las direcciones de la aplicación, escritas una sola vez
   authForm.ts           Validación visual de los formularios de cuenta (sin backend)
+  buildTarget.ts        IS_STORE_BUILD: qué cambia entre la web y el build de tienda
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
