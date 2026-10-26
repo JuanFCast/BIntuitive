@@ -58,11 +58,19 @@
   --font-sans: var(--font-baloo), "Comic Sans MS", system-ui, sans-serif;
   --font-display: var(--font-bricolage), var(--font-baloo), system-ui, sans-serif;
 
-  --animate-pop: pop 0.35s ease-out;
+  /*
+   * `backwards` en las que pueden llevar retraso: sin él, una estrella con
+   * `animation-delay` se pintaba a tamaño completo, encogía al empezar su
+   * turno y volvía a crecer, un parpadeo en la pantalla de resultados.
+   */
+  --animate-pop: pop 0.35s ease-out backwards;
   --animate-shake: shake 0.4s ease-in-out;
   --animate-float: float 2.5s ease-in-out infinite;
   --animate-wiggle: wiggle 0.8s ease-in-out infinite;
-  --animate-fall: fall 1.4s ease-in forwards;
+  --animate-fall: fall 1.4s ease-in both;
+  /* La entrada del premio: aparece desde un poco más pequeña, con rebote. */
+  --animate-enter: enter 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  --animate-bee-in: bee-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s backwards;
   --animate-fade-up: fade-up 0.4s ease-out;
 }
 
@@ -117,13 +125,70 @@
   }
 }
 
+/* Cada pieza del confeti trae su deriva y su giro en `--drift` y `--spin`. */
 @keyframes fall {
   0% {
-    transform: translateY(-10vh) rotate(0deg);
+    transform: translate(0, -10vh) rotate(0deg);
     opacity: 1;
   }
   100% {
-    transform: translateY(70vh) rotate(320deg);
+    transform: translate(var(--drift, 0px), 70vh) rotate(var(--spin, 320deg));
+    opacity: 0;
+  }
+}
+
+@keyframes enter {
+  0% {
+    transform: scale(0.9) translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes bee-in {
+  0% {
+    transform: rotate(-14deg) scale(0.85);
+  }
+  100% {
+    transform: rotate(-4deg) scale(1);
+  }
+}
+
+/*
+ * Con movimiento reducido no se queda todo quieto: se queda lo que informa y
+ * se va lo que viaja. Lo que aparece (premios, avisos, estrellas) entra con un
+ * fundido corto; lo que se agita o cae —sacudidas, el altavoz que baila, el
+ * confeti— no se mueve. Va sin capa a propósito, para ganar a las utilidades
+ * de Tailwind, que viven en `@layer utilities`.
+ */
+@keyframes reduced-fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop,
+  .animate-enter,
+  .animate-fade-up {
+    animation: reduced-fade 0.2s ease-out backwards;
+  }
+
+  .animate-bee-in,
+  .animate-shake,
+  .animate-wiggle,
+  .animate-float {
+    animation: none;
+  }
+
+  .animate-fall {
+    animation: none;
     opacity: 0;
   }
 }
@@ -719,7 +784,7 @@ button {
   /*
    * Estos tres tamaños NO escalan a propósito. En pantallas bajas el panal
    * ocupa el alto que le queda (`100svh - 14rem`), así que un título más alto
-   * dejaría los hexágonos fuera de la pantalla, y el emoji y el nombre del
+   * dejaría los hexágonos fuera de la pantalla, y el dibujo y el nombre del
    * hexágono son geometría de la ficha, no texto de lectura.
    */
   .hexagons-header h1 {
@@ -732,13 +797,26 @@ button {
     width: min(100%, calc((100svh - 14rem) * 0.5412659));
   }
 
-  .hexagon-emoji {
-    font-size: 1.9rem;
+  .hexagon-art {
+    width: 38%;
+  }
+
+  /*
+   * Aquí la ficha mide entre 74 y 90px, y a 0.9rem fijos las palabras largas
+   * no cabían enteras: "Scrambl / e", "Agilida / d", "Colorea / r". Una
+   * palabra cortada a mitad se lee peor que una letra un poco más pequeña,
+   * así que el nombre escala con la pantalla, con 0.8rem de tope, y aprovecha
+   * casi todo el ancho de la ficha: a media altura el hexágono es ancho del
+   * todo, y es ahí donde va el nombre.
+   */
+  .hexagon-face {
+    padding-inline: 0.25rem;
   }
 
   .hexagon-name {
     margin-top: 0.125rem;
-    font-size: 0.9rem;
+    max-width: 94%;
+    font-size: min(0.8rem, 3.3vw);
   }
 }
 
@@ -787,10 +865,15 @@ button {
   );
 }
 
+/*
+ * Desde 640px el tope sube a 44rem: con 26rem un iPad dejaba el tablero en la
+ * mitad de arriba y la de abajo vacía, y quien juega tiene cuatro años y
+ * dedos de cuatro años. Lo que manda entonces es el alto libre de la fórmula.
+ */
 @media (min-width: 640px) {
   .memory-board {
     max-width: min(
-      26rem,
+      44rem,
       calc(
         (100vh - 10.25rem - 3.75rem * var(--text-scale) -
             env(safe-area-inset-bottom, 0px)) *
@@ -798,7 +881,7 @@ button {
       )
     );
     max-width: min(
-      26rem,
+      44rem,
       calc(
         (100svh - 10.25rem - 3.75rem * var(--text-scale) -
             env(safe-area-inset-bottom, 0px)) *
@@ -821,7 +904,9 @@ button {
 /*
  * El lienzo de Colorear. Cuadrado, y limitado por el alto que queda libre:
  * encima lleva la consigna y debajo la paleta y los grosores de pincel, que
- * son alto fijo, y el texto de ambos crece con la preferencia de tamanio.
+ * son alto fijo, y el texto de ambos crece con la preferencia de tamanio. La
+ * fila de pinceles son 3.5rem de los que se reservan aqui: 3 del boton y 0.5
+ * del hueco.
  *
  * `position: relative` porque dentro van dos capas superpuestas: el lienzo
  * donde se pinta y el SVG con los numeros y las zonas enfocables. Y
@@ -852,12 +937,18 @@ button {
   );
 }
 
+/*
+ * Igual que Parejas: en una tableta lo que limita es el alto, no un tope fijo.
+ * La reserva es 5rem mayor que en móvil: 1.5rem porque desde 768px la paleta
+ * crece a fichas de 80px, y 3.5rem porque la fila de pinceles crece con ella y
+ * el hueco entre filas pasa de 0.5rem a 1rem.
+ */
 @media (min-width: 640px) {
   .coloring-board {
     max-width: min(
-      24rem,
+      40rem,
       calc(
-        100svh - 22rem - 3.75rem * var(--text-scale) -
+        100svh - 24.5rem - 3.75rem * var(--text-scale) -
           env(safe-area-inset-bottom, 0px)
       )
     );
@@ -900,7 +991,7 @@ button {
 @media (min-width: 640px) {
   .word-search-board {
     gap: 0.3rem;
-    width: min(100%, 32rem, calc(100dvh - 19rem));
+    width: min(100%, 44rem, calc(100dvh - 19rem));
   }
 }
 
@@ -974,8 +1065,6 @@ button {
   aspect-ratio: 0.8660254;
   background: var(--color-sun);
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  font-size: clamp(1.4rem, 6vw, 2.2rem);
-  line-height: 1;
   animation: landing-hive-float 7s ease-in-out infinite;
 }
 
@@ -991,8 +1080,9 @@ button {
   content: "";
 }
 
-.landing-hive-cell > span {
+.landing-hive-cell > img {
   position: relative;
+  width: 58%;
 }
 
 /* Filas 2-3-2: las de los extremos corridas media ficha. */

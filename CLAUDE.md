@@ -22,7 +22,8 @@ automáticas son esas cuatro: los seis comandos son la verificación.
 sesión, crear una cuenta y continuar como invitado. Las dos primeras son **prototipos
 visuales**: no hay proveedor de identidad, ni base de datos, ni sesión, y las pantallas lo
 dicen en vez de fingirlo. No guardan correos, ni contraseñas, ni cuentas falsas en
-`localStorage`. La tercera es la que lleva a la aplicación de verdad.
+`localStorage`. La tercera es la que lleva a la aplicación de verdad, y por eso es la grande y
+va primero; las dos de cuenta van debajo, agrupadas "para adultos".
 
 **El panal (`/explore`) es la única superficie de descubrimiento.** Es la pantalla de entrada
 de la aplicación —la pestaña se llama Home (Inicio en español), aunque la ruta sea `/explore`— y todo lo que dentro significa "volver al
@@ -124,6 +125,18 @@ src/lib/
   transparente, recortar el margen y reescalar a 384 px con el dibujo ocupando el 92% del
   lado largo —si no, los objetos altos y estrechos (el flamenco, la zanahoria) se ven mucho
   más pequeños que los redondos puestos al lado—.
+- **Las fichas del panal tienen su propio dibujo**, en `public/art/hexagons/`, y es un estilo
+  distinto a propósito: iconos planos, no ilustraciones pintadas. Una ficha es un icono que se
+  reconoce de lejos y a 60 px; una opción de pregunta es un objeto que hay que mirar. Derivan
+  de Twemoji (© Twitter y colaboradores, **CC BY 4.0**), recoloreados y combinados, y la
+  licencia pide atribución allí donde se usan: por eso hay una línea de crédito al pie de la
+  portada y otra en el README. **No quitarlas.** El dibujo de cada hexágono se escribe una
+  sola vez, en el campo `image` de `categories.ts`; la introducción y la ayuda de cada juego
+  lo piden con `hexagonImage(id)` y la portada también, así que no hay una ruta repetida a
+  mano en ningún juego. Ninguno lleva el color de la ficha (`sun`) como color principal: se
+  perdería sobre ella. Mismo tratamiento que los demás PNG —384 px, el dibujo al 92% del lado
+  largo— y además reducidos a 256 colores, que en dibujos planos no se nota y deja los diez en
+  124 KB. `validate:content` comprueba que cada ruta exista.
 - **Dos casos límite al encargar un dibujo nuevo.** En Colores, lo blanco sobre blanco: la
   nube y la margarita se pintan sobre una ficha blanca y necesitan sombreado propio que
   marque la silueta, no blanco puro. En Lugares, **que no se parezcan entre sí**: los once se
@@ -269,9 +282,26 @@ src/lib/
   automática. `AudioButton` comprueba `isMuted()` en los dos caminos.
 - **Paleta**: tokens `@theme` en `globals.css` — `cream` (fondo), `sun`/`sunsoft` (marca),
   `sky`/`skysoft`, `mint`/`mintsoft` (acierto), `coral`/`coralsoft` (error), `berry`/`berrysoft`, `ink`.
+  El acierto de las lecciones es menta con el canto grueso de los botones y la abeja de la
+  marca, y su confeti son celdas del panal en estos colores, no emoji.
   Botones con `border-b-8` + `active:scale-95` + `active:border-b-4`.
 - **Accesibilidad**: `aria-label` en cada control, emoji siempre `aria-hidden="true"` acompañado
   de texto o label; objetivos táctiles `min-h-12` o más.
+- **Las partidas llenan la tableta**: el iPad es el primer dispositivo, y un tablero con tope
+  fijo en rem (`26rem`, `32rem`) se quedaba en la mitad de arriba con la otra mitad vacía.
+  Desde 640px los tableros tienen topes amplios y los limita el alto libre de la ventana
+  (`.memory-board`, `.coloring-board`, `.word-search-board`, el tablero de Trazos), las
+  secciones de juego se centran en vertical, y en las lecciones la pregunta va pegada a sus
+  respuestas. Un contenedor flexible centrado se encoge a su contenido: si un tablero usa
+  `min(100%, …)`, su columna necesita `w-full` o el 100% se resuelve contra casi nada.
+- **Letra de niño, no de panel de control**: nada de `font-mono` (los números van en Baloo con
+  `tabular-nums`, que no baila con el reloj) ni de etiquetas diminutas en mayúsculas
+  espaciadas dentro de los juegos; quien juega no sabe leer todavía o lee despacio, y esas
+  etiquetas quedaban además por debajo de 4.5:1. Las etiquetas van en minúscula normal, a
+  `text-ink/70` como mínimo. La única excepción son las letras de juego (sopa, fichas).
+- **Movimiento reducido**: `globals.css` tiene una regla global que cambia `pop`, `enter` y
+  `fade-up` por un fundido corto y para sacudidas, bailes y confeti. Una animación nueva
+  tiene que entrar en esa regla.
 - **Sonido**: `playCorrectSound` / `playWrongSound` / `playTapSound` / `playCelebrationSound`;
   todos respetan `isMuted()` internamente, no hay que comprobarlo.
 - **Preferencias**: idioma, sonido y tamaño de texto son globales y cada una tiene su clave
@@ -302,33 +332,27 @@ src/lib/
    rondas y cálculo de estadísticas. Sin React.
 2. `src/app/game/<id>/page.tsx` — server component con `metadata` (`"<Nombre> · BIntuitive"`).
 3. `src/app/game/<id>/<Nombre>Game.tsx` — `"use client"`, fases intro/playing/results.
-   Todo el render va dentro de `<GameShell intro={{ emoji, title, goal, howTo, example }}
+   Todo el render va dentro de `<GameShell intro={{ image, title, goal, howTo, example }}
    showIntro={phase === "intro"} startLabel onStart />`, y los hijos son solo las fases de
    juego y resultados: el encabezado, la introducción y la ayuda ya vienen dadas. El
    `example` es un componente propio del juego, pequeño y estático, definido al final de su
    propio archivo como los demás ayudantes de presentación; `GameIntro` solo lo enmarca y
    nunca sabe de qué juego es.
 4. `src/data/categories.ts` — añadir el id al union de `GameHexagon["id"]` y una entrada en
-   `gameHexagons` (nombre y descripción **en español**, emoji, `href: "/game/<id>"`).
+   `gameHexagons` (nombre y descripción **en español**, `image` con su dibujo en
+   `public/art/hexagons/`, `href: "/game/<id>"`). La introducción toma ese mismo dibujo con
+   `image: hexagonImage("<id>")`.
    Con eso el juego ya aparece en el panal: **no hay ningún índice de juegos que actualizar**.
 5. `src/data/localization.ts` — añadir la entrada en inglés a `englishHexagons` (el `Record` es
    exhaustivo sobre `Hexagon["id"]`: si falta, TypeScript falla).
 6. `src/lib/i18n.tsx` — añadir todas las claves nuevas a `messages.en` **y** `messages.es`
    (el tipo `MessageKey` sale de `en`, así que faltar en `es` rompe el build).
-7. `src/app/globals.css` — **importante**: el panal de `/` posiciona cada hexágono con
-   `.hexagon-card:nth-child(N)` a mano, en dos layouts (móvil 2-2-2-2-1 y ≥640px 4-4-1). Hoy
-   está cableado para 10 hexágonos. En móvil van de dos en dos: las filas impares nacen en el
-   borde izquierdo (0 y 40%) y las pares van corridas media ficha (20% y 60%), así que la
-   rejilla mide dos fichas y media de ancho y cada ficha es el 40%. En ≥640px son filas de
-   cuatro corridas media ficha: cuatro fichas y media de ancho, cada una el 22.2222%. El noveno
-   abrió la última fila en los dos y dejó el hueco a su derecha, que es donde cayó el décimo
-   (móvil `left: 60%, top: 75%`; ≥640px `left: 22.2222%, top: 60%`) sin tocar ningún
-   `aspect-ratio`. **Ese hueco ya está ocupado**: el undécimo sí abre fila y hay que recalcular
-   los dos `aspect-ratio`, porque la altura crece 3/4 de ficha por cada fila de más.
-   La geometría: hexágono pointy-top con `aspect-ratio` 0.8660254 (√3/2), las filas se
-   solapan con paso vertical de 3/4 de la altura de la ficha y desplazamiento horizontal de
-   media ficha. El `aspect-ratio` de `.hexagons-grid` debe recalcularse con el nuevo número
-   de filas y de fichas por fila.
+7. **El panal no se toca.** Las posiciones de cada hexágono las calcula `src/lib/honeycomb.ts`
+   a partir del índice y del número de columnas (dos en móvil, tres en tableta y cuatro en
+   escritorio), igual que el `aspect-ratio` de la rejilla: añadir una entrada en
+   `gameHexagons` basta, sin una sola línea de CSS. Las fichas son todas amarillas a
+   propósito —colorearlas por familia se probó y se descartó: el panal es de miel— y las
+   separa un hueco de 2px entre celdas.
 8. `README.md` — actualizar features, estructura y el conteo de hexágonos.
 9. `npm run build` para validar tipos y contenido.
 

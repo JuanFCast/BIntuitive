@@ -47,6 +47,7 @@ import {
   getUnassignedGameProgress,
   saveColoringResult,
 } from "@/lib/storage";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 
@@ -707,7 +708,7 @@ export default function ColoringGame() {
   return (
     <GameShell
       intro={{
-        emoji: "🖍️",
+        image: hexagonImage("coloring"),
         title: t("coloringTitle"),
         goal: t("coloringIntro"),
         howTo: t("coloringHowTo"),
@@ -729,8 +730,8 @@ export default function ColoringGame() {
       }
     >
       {phase === "playing" && round && (
-        <section className="coloring-play mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:gap-3 sm:pt-4">
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-ink/45 sm:text-sm">
+        <section className="coloring-play mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:min-h-[calc(100svh-6rem)] sm:max-w-3xl sm:justify-center sm:gap-4 sm:pt-4">
+          <p className="text-sm font-extrabold text-ink/70 sm:text-base">
             {t("coloringProgress", {
               current: roundIndex + 1,
               total: rounds.length,
@@ -879,7 +880,7 @@ export default function ColoringGame() {
                    * a una segunda fila. 48 sigue por encima del objetivo
                    * táctil mínimo y las seis entran en una línea.
                    */
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border-4 text-lg font-extrabold text-white transition-transform active:scale-95 sm:h-16 sm:w-16 ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border-4 text-lg font-extrabold text-white transition-transform active:scale-95 sm:h-16 sm:w-16 md:h-20 md:w-20 md:text-2xl ${
                     chosen
                       ? "border-ink shadow-lg ring-4 ring-sun"
                       : "border-ink/20 shadow-sm"
@@ -921,7 +922,13 @@ export default function ColoringGame() {
                   onClick={() => pickBrush(id)}
                   aria-pressed={chosen}
                   aria-label={t(BRUSH_LABEL[id])}
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border-4 bg-white transition-transform active:scale-95 sm:h-14 sm:w-14 ${
+                  /*
+                   * Un escalón por debajo de la paleta en cada tamaño: el
+                   * color es lo que se pregunta y el pincel es la herramienta,
+                   * pero en una tableta con fichas de 80 px un botón de 56 se
+                   * leería como deshabilitado.
+                   */
+                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border-4 bg-white transition-transform active:scale-95 sm:h-14 sm:w-14 md:h-16 md:w-16 ${
                     chosen
                       ? "border-ink shadow-lg ring-4 ring-sun"
                       : "border-ink/20 shadow-sm"
@@ -929,14 +936,16 @@ export default function ColoringGame() {
                 >
                   {/*
                     El punto guarda la proporción de los tres radios, así que
-                    el botón enseña el grosor en vez de describirlo.
+                    el botón enseña el grosor en vez de describirlo. Va en
+                    porcentaje del hueco del botón —40 px de lado en móvil—
+                    para crecer con él en los tres tamaños sin repetir aquí
+                    cada escalón.
                   */}
                   <span
                     aria-hidden="true"
-                    className="rounded-full"
+                    className="aspect-square rounded-full"
                     style={{
-                      width: `${radius * 2.1}px`,
-                      height: `${radius * 2.1}px`,
+                      width: `${((radius * 2.1) / 40) * 100}%`,
                       backgroundColor: selected
                         ? COLORING_COLORS[selected].hex
                         : OUTLINE,
@@ -970,7 +979,7 @@ export default function ColoringGame() {
             <p className="mt-2 text-xl font-semibold text-ink/65">
               {t("coloringResultsText", { total: rounds.length })}
             </p>
-            <p className="mt-1 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45">
+            <p className="mt-1 text-sm font-extrabold text-ink/70">
               {t("coloringLevelLabel", { level })}
             </p>
           </div>
@@ -1040,10 +1049,10 @@ function ColoringExample() {
           ayuda vuelve a enseñar este mismo ejemplo encima de la partida.
         */}
         <path
-          d="M26 39 H74 M32 30 H68 M43 21.5 H57"
+          d="M28 40 H72 M33 30.5 H67 M44 21 H56"
           fill="none"
           stroke={COLORING_COLORS.rojo.hex}
-          strokeWidth="9"
+          strokeWidth="7"
           strokeLinecap="round"
         />
         <path
@@ -1085,7 +1094,7 @@ function ColoringExample() {
               backgroundColor:
                 id === COLORING_DEFAULT_BRUSH
                   ? COLORING_COLORS.azul.hex
-                  : "rgba(23,23,23,0.25)",
+                  : "rgba(23,23,23,0.35)",
             }}
           />
         ))}

@@ -23,6 +23,7 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
+- **Activity icons:** every honeycomb tile, game introduction and the welcome page use one flat icon per activity, kept in `public/art/hexagons/`.
 - **Social sharing:** Open Graph and Twitter cards use the official BIntuitive brand mark, with favicon and Apple touch icon support.
 - **Local profile:** a name, an avatar and the date you started, saved on the device — no working sign-in yet, no email, no password. The profile screen shows them next to your stars and lessons.
 - **Local progress:** total stars, recent sessions, per-category levels, the levels and best marks of the word games and Tracing, language preference, and mute preference are stored in `localStorage`, each under its own key.
@@ -231,3 +232,10 @@ CloudFront currently delivers the application, but BIntuitive does not yet
 have a remote application backend, user authentication, or database. The
 profile, the progress and the preferences continue to be stored locally in the
 browser, each under its own key.
+
+## Credits
+
+Activity icons in `public/art/hexagons/` are adapted from
+[Twemoji](https://github.com/twitter/twemoji), © Twitter and contributors,
+licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). They
+were recoloured, reframed and combined with additional shapes for BIntuitive.

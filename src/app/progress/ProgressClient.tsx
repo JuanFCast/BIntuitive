@@ -176,7 +176,7 @@ function Section({
 }) {
   return (
     <section className="mt-7">
-      <h2 className="px-1 pb-2 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45">
+      <h2 className="px-1 pb-2 text-lg font-extrabold text-ink">
         {title}
       </h2>
       {children}
@@ -324,10 +324,11 @@ function ActivityRow({
       }`}
     >
       <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sunsoft text-xl"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sunsoft"
         aria-hidden="true"
       >
-        {localized.emoji}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={localized.image} alt="" draggable={false} className="h-8 w-8" />
       </span>
       {/*
         En un móvil estrecho el nivel se coloca debajo del nombre: como chip a
@@ -395,7 +396,12 @@ function SessionRow({
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-skysoft text-xl"
         aria-hidden="true"
       >
-        {localized?.emoji ?? "🎯"}
+        {localized ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={localized.image} alt="" draggable={false} className="h-8 w-8" />
+        ) : (
+          "🎯"
+        )}
       </span>
       {/*
         Sin recortar: el nombre de la categoría envuelve antes que perder

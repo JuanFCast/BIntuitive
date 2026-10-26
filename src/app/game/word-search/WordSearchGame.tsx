@@ -37,6 +37,7 @@ import {
   type Cell,
   type WordSearchStats,
 } from "@/lib/wordSearch";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 
@@ -494,7 +495,7 @@ export default function WordSearchGame() {
   return (
     <GameShell
       intro={{
-        emoji: "🔠",
+        image: hexagonImage("search"),
         title: t("searchTitle"),
         goal: t("searchIntro"),
         howTo: t("searchHowTo"),
@@ -510,7 +511,7 @@ export default function WordSearchGame() {
         <section className="mx-auto flex w-full max-w-5xl flex-col items-center gap-3 pb-6 pt-3 sm:gap-4 sm:pt-5">
           <div className="flex w-full flex-wrap items-center justify-between gap-2">
             <span
-              className="rounded-full border-2 border-ink/10 bg-white px-4 py-1.5 font-mono text-base font-extrabold tabular-nums text-ink/70 shadow-sm sm:text-lg"
+              className="rounded-full border-2 border-ink/10 bg-white px-4 py-1.5 text-base font-extrabold tabular-nums text-ink/70 shadow-sm sm:text-lg"
               role="status"
               aria-label={t("searchProgressAria", {
                 current: boardIndex + 1,
@@ -520,13 +521,13 @@ export default function WordSearchGame() {
               {boardIndex + 1} / {WORD_SEARCH_BOARDS_PER_SESSION}
             </span>
             <span
-              className="rounded-full border-2 border-sky bg-skysoft px-4 py-1.5 font-mono text-base font-extrabold tabular-nums text-ink/70 shadow-sm sm:text-lg"
+              className="rounded-full border-2 border-sky bg-skysoft px-4 py-1.5 text-base font-extrabold tabular-nums text-ink/70 shadow-sm sm:text-lg"
               aria-hidden="true"
             >
               {formatSearchTime(elapsed)}
             </span>
             <span
-              className="flex items-center gap-2 rounded-full border-2 border-mint bg-mintsoft px-4 py-1.5 text-sm font-extrabold uppercase tracking-wide text-ink/70 shadow-sm sm:text-base"
+              className="flex items-center gap-2 rounded-full border-2 border-mint bg-mintsoft px-4 py-1.5 text-sm font-extrabold text-ink/70 shadow-sm sm:text-base"
               aria-label={t("searchLevelAria", {
                 level,
                 total: WORD_SEARCH_MAX_LEVEL,
@@ -548,7 +549,7 @@ export default function WordSearchGame() {
 
           <div className="flex w-full flex-col items-center gap-4 lg:flex-row lg:items-start lg:justify-center lg:gap-8">
             <div className="w-full lg:order-2 lg:w-64">
-              <p className="text-center text-sm font-extrabold uppercase tracking-[0.2em] text-[#9b7400] lg:text-left">
+              <p className="text-center text-sm font-extrabold text-[#7a5c00] lg:text-left">
                 {t("searchWordsHeading")}
               </p>
               <ul className="mt-2 flex flex-wrap justify-center gap-2 lg:flex-col lg:justify-start">
@@ -584,7 +585,12 @@ export default function WordSearchGame() {
               </ul>
             </div>
 
-            <div className="flex flex-col items-center gap-3 lg:order-1">
+            {/*
+              Ancho explícito: sin él esta columna se encogía a su contenido, y
+              el `min(100%, …)` del tablero se resolvía contra ella, así que en
+              un iPad la sopa se quedaba en 340px con media pantalla vacía.
+            */}
+            <div className="flex w-full flex-col items-center gap-3 lg:order-1 lg:max-w-[44rem] lg:flex-1">
               <div
                 ref={boardRef}
                 onPointerDown={handlePointerDown}

@@ -3,9 +3,7 @@ import type { CSSProperties } from "react";
 import type { Hexagon } from "@/data/categories";
 import { localizeHexagon } from "@/data/localization";
 import type { Language } from "@/lib/language";
-
-const HEXAGON_CLIP =
-  "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
+import { HEXAGON_CLIP } from "@/lib/hexagon";
 
 type HexagonCardProps = {
   hexagon: Hexagon;
@@ -45,12 +43,20 @@ export default function HexagonCard({
         className="hexagon-face absolute inset-[2px] flex flex-col items-center justify-center px-2 text-center text-ink transition-colors duration-[--dur-ui] ease-[--ease-ui] motion-reduce:transition-none sm:px-4"
         style={{ clipPath: HEXAGON_CLIP }}
       >
-        <span
-          className="hexagon-emoji text-[clamp(2rem,9vw,3.5rem)] leading-none"
+        {/*
+          El dibujo mide en proporción a la ficha y no a la ventana: el panal
+          pasa de dos a tres y a cuatro columnas, y un tamaño atado al ancho
+          de la pantalla se salía de las fichas pequeñas o se perdía en las
+          grandes. Decorativo: el nombre accesible va en el enlace.
+        */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={localizedHexagon.image}
+          alt=""
           aria-hidden="true"
-        >
-          {localizedHexagon.emoji}
-        </span>
+          draggable={false}
+          className="hexagon-art aspect-square w-[46%] select-none"
+        />
         <span className="hexagon-name mt-1 max-w-[86%] text-balance break-words text-[clamp(0.85rem,3.4vw,1.15rem)] font-extrabold leading-[1.05]">
           {localizedHexagon.name}
         </span>

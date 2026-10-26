@@ -210,7 +210,7 @@ export default function GameClient() {
   if (!category) return null;
 
   const intro = {
-    emoji: category.emoji,
+    image: category.image,
     title: localizeHexagon(category, language).name,
     goal: t(CATEGORY_INTRO[category.slug].goal),
     howTo: t(CATEGORY_INTRO[category.slug].howTo),
@@ -307,29 +307,35 @@ export default function GameClient() {
         </div>
       </header>
 
-      {/* Instrucción */}
-      <section className="flex items-center justify-center gap-4 px-4 py-2 sm:px-8">
-        <h1 className="max-w-xl text-center text-2xl font-extrabold leading-snug text-ink sm:text-4xl">
-          {displayedQuestion.instruction}
-        </h1>
-        <AudioButton
-          key={`${question.id}-${language}`}
-          text={displayedQuestion.instruction}
-          autoPlay
-        />
-      </section>
+      {/*
+        Instrucción y opciones van juntas y centradas en el alto libre: la
+        pregunta queda justo encima de sus respuestas, y en un iPad los ojos no
+        tienen que cruzar media pantalla vacía para ir de una a otras.
+      */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 py-2 sm:gap-6">
+        <section className="flex items-center justify-center gap-4 px-4 py-2 sm:px-8">
+          <h1 className="max-w-xl text-center text-2xl font-extrabold leading-snug text-ink sm:text-4xl">
+            {displayedQuestion.instruction}
+          </h1>
+          <AudioButton
+            key={`${question.id}-${language}`}
+            text={displayedQuestion.instruction}
+            autoPlay
+          />
+        </section>
 
-      {/* Opciones */}
-      <section
-        className="flex flex-1 items-center justify-center px-4 py-4 sm:px-8"
-        onPointerDown={() => playTapSound()}
-      >
-        <AnswerGrid
-          options={displayedQuestion.options}
-          getState={getState}
-          onSelect={handleSelect}
-        />
-      </section>
+        {/* Opciones */}
+        <section
+          className="flex w-full items-center justify-center px-4 py-4 sm:px-8"
+          onPointerDown={() => playTapSound()}
+        >
+          <AnswerGrid
+            options={displayedQuestion.options}
+            getState={getState}
+            onSelect={handleSelect}
+          />
+        </section>
+      </div>
 
       {/* Pie: progreso y salir */}
       <footer className="flex items-center justify-between px-4 py-4 sm:px-8">

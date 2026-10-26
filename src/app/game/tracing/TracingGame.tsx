@@ -36,6 +36,7 @@ import {
   type TracingLevel,
   type TracingPoint,
 } from "@/lib/tracingGame";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 type Solved = { stars: number; accuracy: number };
@@ -322,7 +323,7 @@ export default function TracingGame() {
   return (
     <GameShell
       intro={{
-        emoji: "✏️",
+        image: hexagonImage("tracing"),
         title: t("tracingTitle"),
         goal: t("tracingIntro"),
         howTo: t("tracingHowTo"),
@@ -344,11 +345,11 @@ export default function TracingGame() {
       }
     >
       {phase === "playing" && exercise && (
-        <section className="mx-auto flex w-full max-w-xl flex-col items-center gap-1.5 pt-2 text-center sm:gap-3 sm:pt-4">
+        <section className="mx-auto flex w-full max-w-xl flex-col items-center gap-1.5 pt-2 text-center sm:min-h-[calc(100svh-6rem)] sm:max-w-3xl sm:justify-center sm:gap-3 sm:pt-4">
           <h1 className="text-base font-extrabold text-ink sm:text-2xl">
             {t("tracingInstruction")}
           </h1>
-          <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-ink/45 sm:text-sm">
+          <p className="text-sm font-extrabold text-ink/70 sm:text-base">
             {t("tracingLevelLabel", { level })} ·{" "}
             {t("tracingExercise", {
               current: index + 1,
@@ -356,7 +357,12 @@ export default function TracingGame() {
             })}
           </p>
 
-          <div className="relative w-full max-w-[min(24rem,calc(100svh-13rem))]">
+          {/*
+            En un iPad el tablero llega a 40rem: con 24rem se quedaba en el
+            tercio de arriba. Todo dentro está en unidades del `viewBox`, así
+            que la tolerancia crece con él y el trazo no se vuelve más difícil.
+          */}
+          <div className="relative w-full max-w-[min(24rem,calc(100svh-13rem))] sm:max-w-[min(40rem,calc(100svh-15rem))]">
             <svg
               ref={boardRef}
               viewBox="0 0 100 100"
@@ -570,7 +576,7 @@ function SolvedCard({
         <p className="text-3xl font-extrabold text-ink sm:text-4xl">
           {exercise.start.word[language]}
         </p>
-        <p className="text-base font-semibold text-ink/50">
+        <p className="text-base font-semibold text-ink/60">
           {exercise.start.word[other]}
         </p>
       </div>

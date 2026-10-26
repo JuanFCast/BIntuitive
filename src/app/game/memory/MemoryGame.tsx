@@ -36,6 +36,7 @@ import {
   playWrongSound,
 } from "@/lib/sounds";
 import { useSpeakAfterSound } from "@/lib/speakAfterSound";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 
@@ -237,7 +238,7 @@ export default function MemoryGame() {
   return (
     <GameShell
       intro={{
-        emoji: "🧠",
+        image: hexagonImage("memory"),
         title: t("memoryTitle"),
         goal: t("memoryIntro"),
         howTo: t("memoryHowTo"),
@@ -259,11 +260,11 @@ export default function MemoryGame() {
       }
     >
       {phase === "playing" && (
-        <section className="memory-play mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:gap-3 sm:pt-4">
+        <section className="memory-play mx-auto flex w-full max-w-xl flex-col items-center gap-2 pt-2 text-center sm:min-h-[calc(100svh-6rem)] sm:max-w-3xl sm:justify-center sm:gap-4 sm:pt-4">
           <h1 className="text-base font-extrabold text-ink sm:text-2xl">
             {t("memoryInstruction")}
           </h1>
-          <p className="-mt-1 text-xs font-extrabold uppercase tracking-[0.18em] text-ink/45 sm:text-sm">
+          <p className="-mt-1 text-sm font-extrabold text-ink/70 sm:text-base">
             {t("memoryLevelLabel", { level })}
           </p>
 
@@ -329,7 +330,7 @@ export default function MemoryGame() {
             <p className="mt-2 text-xl font-semibold text-ink/65">
               {t("memoryResultsText", { total: config.pairs })}
             </p>
-            <p className="mt-1 text-sm font-extrabold uppercase tracking-[0.18em] text-ink/45">
+            <p className="mt-1 text-base font-extrabold text-ink/70">
               {t("memoryLevelLabel", { level })}
             </p>
           </div>
@@ -365,7 +366,9 @@ export default function MemoryGame() {
  * siempre— con un trozo de panal por reverso; destapada enseña su dibujo.
  *
  * El emoji dimensiona con `clamp`: su tamaño es parte de la ficha, que se mide
- * contra la ventana, así que no puede seguir la preferencia de texto.
+ * contra la ventana, así que no puede seguir la preferencia de texto. Desde
+ * 640px la ficha crece con el tablero hasta más de 200px y el dibujo crece con
+ * ella, contra el alto de la pantalla.
  */
 function MemoryCardButton({
   card,
@@ -400,7 +403,7 @@ function MemoryCardButton({
       disabled={solved || (locked && !faceUp)}
       onClick={onFlip}
       aria-label={faceUp ? card.symbol.label[language] : hiddenLabel}
-      className={`flex aspect-square w-full items-center justify-center rounded-2xl border-2 text-[clamp(1.75rem,9vw,3.25rem)] leading-none shadow-sm transition-colors disabled:cursor-default ${face}`}
+      className={`flex aspect-square w-full items-center justify-center rounded-2xl border-2 text-[clamp(1.75rem,9vw,3.25rem)] leading-none sm:text-[clamp(3.25rem,8svh,5.5rem)] shadow-sm transition-colors disabled:cursor-default ${face}`}
     >
       {faceUp ? (
         <span aria-hidden="true">{card.symbol.emoji}</span>
@@ -444,10 +447,10 @@ function Metric({
       <span className="text-base leading-none sm:text-xl" aria-hidden="true">
         {icon}
       </span>
-      <p className="mt-1 font-mono text-[0.72rem] font-extrabold tabular-nums text-ink sm:text-sm">
+      <p className="mt-1 text-base font-extrabold leading-none tabular-nums text-ink sm:text-xl">
         {value}
       </p>
-      <p className="mt-0.5 max-w-full overflow-hidden text-[0.45rem] font-extrabold uppercase leading-none tracking-[-0.04em] text-ink/50 sm:text-[0.6rem]">
+      <p className="mt-0.5 max-w-full overflow-hidden text-[0.65rem] font-bold leading-none text-ink/70 sm:text-xs">
         {label}
       </p>
     </div>

@@ -100,7 +100,7 @@ export default function GameShell({
   const homeContent = (
     <>
       <span aria-hidden="true">🏠</span>
-      <span className="hidden sm:inline">{t("backToHexagons")}</span>
+      <span className="hidden sm:inline">{t("backHome")}</span>
     </>
   );
 
@@ -116,7 +116,7 @@ export default function GameShell({
           <button
             type="button"
             onClick={openExit}
-            aria-label={t("backToHexagons")}
+            aria-label={t("backHome")}
             className={homeClassName}
           >
             {homeContent}
@@ -124,7 +124,7 @@ export default function GameShell({
         ) : (
           <Link
             href={EXPLORE}
-            aria-label={t("backToHexagons")}
+            aria-label={t("backHome")}
             className={homeClassName}
           >
             {homeContent}

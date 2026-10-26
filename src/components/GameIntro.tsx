@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 import AudioButton from "./AudioButton";
-import BrandMark from "./BrandMark";
 import { useLanguage } from "@/lib/i18n";
+import { HEXAGON_CLIP } from "@/lib/hexagon";
 
 /**
  * Lo que explica un juego: la única fuente de contenido de su introducción.
@@ -11,8 +11,11 @@ import { useLanguage } from "@/lib/i18n";
  * que las dos explicaciones no puedan divergir nunca.
  */
 export type GameIntroContent = {
-  /** Emoji del juego; decorativo, el nombre ya va en el título. */
-  emoji: string;
+  /**
+   * Dibujo del juego, el mismo de su ficha en el panal. Decorativo: el nombre
+   * ya va en el título.
+   */
+  image: string;
   title: string;
   /** Qué debe lograr el jugador, en una frase. */
   goal: string;
@@ -41,14 +44,14 @@ type GameIntroProps = GameIntroContent & {
   beforeAction?: ReactNode;
   /**
    * `screen` es la pantalla previa a jugar y ocupa el alto disponible.
-   * `dialog` es la misma explicación dentro de la ayuda, sin la marca y con la
+   * `dialog` es la misma explicación dentro de la ayuda, sin la celda grande y con la
    * altura acotada para que quepa sobre la partida.
    */
   layout?: "screen" | "dialog";
 };
 
 export default function GameIntro({
-  emoji,
+  image,
   title,
   goal,
   howTo,
@@ -69,19 +72,45 @@ export default function GameIntro({
           : "mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-xl flex-col items-center justify-center gap-4 py-4 text-center"
       }
     >
+      {/*
+        La pantalla previa enseña el juego, no la marca: quien llega aquí ya
+        sabe en qué aplicación está, y lo que necesita reconocer es a qué va a
+        jugar. Por eso el dibujo del juego va grande y dentro de una celda del
+        mismo panal amarillo del que acaba de salir.
+      */}
       {!isDialog && (
-        <BrandMark
-          size={130}
-          className="shadow-[0_14px_40px_rgba(255,196,0,0.2)]"
-        />
+        <span
+          className="block drop-shadow-[0_10px_18px_rgba(166,121,0,0.18)]"
+          aria-hidden="true"
+        >
+          <span
+            className="flex aspect-[0.8660254] w-[clamp(7.5rem,32vw,11rem)] items-center justify-center bg-sun"
+            style={{ clipPath: HEXAGON_CLIP }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image}
+              alt=""
+              draggable={false}
+              className="w-[62%] select-none"
+            />
+          </span>
+        </span>
       )}
 
       <div>
-        <p className={isDialog ? "text-4xl" : "text-5xl"} aria-hidden="true">
-          {emoji}
-        </p>
+        {isDialog && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="mx-auto h-14 w-14 select-none"
+          />
+        )}
         <h1
-          className={`mt-2 font-extrabold text-ink ${
+          className={`font-extrabold text-ink ${isDialog ? "mt-2" : ""} ${
             isDialog ? "text-3xl" : "text-4xl sm:text-5xl"
           }`}
         >
@@ -95,7 +124,7 @@ export default function GameIntro({
 
       {example && (
         <figure className="w-full max-w-sm rounded-3xl border-2 border-sun/60 bg-white px-4 py-3 shadow-sm">
-          <figcaption className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#9b7400]">
+          <figcaption className="text-sm font-extrabold text-[#7a5c00]">
             {t("introExample")}
           </figcaption>
           <div className="mt-2 flex items-center justify-center">{example}</div>

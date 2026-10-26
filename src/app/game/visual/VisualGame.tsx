@@ -17,6 +17,7 @@ import {
   VISUAL_ROUNDS,
   type VisualCard,
 } from "@/lib/visualGame";
+import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
 type Flash = { id: string; type: "correct" | "wrong" } | null;
@@ -139,7 +140,7 @@ export default function VisualGame() {
   return (
     <GameShell
       intro={{
-        emoji: "👀",
+        image: hexagonImage("visual"),
         title: t("visualTitle"),
         goal: t("visualIntro"),
         howTo: t("visualHowTo"),
@@ -152,7 +153,7 @@ export default function VisualGame() {
       onOverlayOpenChange={handleOverlayOpenChange}
     >
       {phase === "playing" && baseCard && playerCard && (
-        <section className="mx-auto w-full max-w-6xl pb-2 pt-2 text-center sm:pt-4">
+        <section className="mx-auto flex w-full max-w-6xl flex-col justify-center pb-2 pt-2 text-center sm:min-h-[calc(100svh-6rem)] sm:pt-4">
           <div className="flex min-w-0 flex-col gap-2 sm:gap-3">
             <h1 className="text-base font-extrabold text-ink sm:text-2xl">
               {t("visualInstruction")}
@@ -271,7 +272,7 @@ function VisualCardView({
   return (
     <div className="relative mx-auto w-full max-w-[42rem] pt-3">
       <p
-        className={`absolute left-1/2 top-0 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border-2 px-5 py-1 text-sm font-extrabold uppercase tracking-wider text-ink shadow-sm sm:px-7 sm:text-base ${labelClass}`}
+        className={`absolute left-1/2 top-0 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border-2 px-5 py-1 text-sm font-extrabold text-ink shadow-sm sm:px-7 sm:text-base ${labelClass}`}
       >
         {label}
       </p>
@@ -352,10 +353,10 @@ function SideMetric({
       <span className="text-base leading-none sm:text-xl" aria-hidden="true">
         {icon}
       </span>
-      <p className="mt-1 font-mono text-[0.68rem] font-extrabold tabular-nums text-ink sm:text-sm">
+      <p className="mt-1 text-sm font-extrabold leading-none tabular-nums text-ink sm:text-lg">
         {value}
       </p>
-      <p className="mt-0.5 max-w-full overflow-hidden text-[0.42rem] font-extrabold uppercase leading-none tracking-[-0.04em] text-ink/50 sm:text-[0.55rem]">
+      <p className="mt-0.5 max-w-full overflow-hidden text-[0.6rem] font-bold leading-none text-ink/70 sm:text-xs">
         {label}
       </p>
     </div>

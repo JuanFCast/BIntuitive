@@ -3,6 +3,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import { hexagonImage } from "@/data/categories";
 import { useLanguage } from "@/lib/i18n";
 import { EXPLORE, SIGN_IN, SIGN_UP } from "@/lib/routes";
 
@@ -46,18 +47,19 @@ export default function LandingClient() {
 
           <section className="w-full max-w-md">
             <div className="rounded-3xl border border-ink/10 bg-white p-5 shadow-[0_18px_48px_rgba(74,56,0,0.12)] sm:p-7">
+              {/*
+                La puerta grande es la que funciona. Iniciar sesión y crear
+                cuenta son prototipos, y antes eran el botón amarillo: el que
+                un niño —o un adulto con prisa— toca primero llevaba a una
+                pantalla que dice que aún no existe. Ahora entrar a jugar es lo
+                primero, y las cuentas quedan agrupadas aparte, para adultos.
+              */}
               <Link
-                href={SIGN_IN}
-                className="flex min-h-14 w-full items-center justify-center break-words rounded-2xl border-b-8 border-[#9b7600] bg-sun px-5 py-3 text-xl font-extrabold leading-snug text-black shadow-lg transition-transform active:scale-95 active:border-b-4"
+                href={EXPLORE}
+                className="flex min-h-16 w-full items-center justify-center gap-2 break-words rounded-2xl border-b-8 border-[#9b7600] bg-sun px-5 py-3 text-2xl font-extrabold leading-snug text-black shadow-lg transition-transform active:scale-95 active:border-b-4"
               >
-                {t("signIn")}
-              </Link>
-
-              <Link
-                href={SIGN_UP}
-                className="mt-3 flex min-h-14 w-full items-center justify-center break-words rounded-2xl border-b-8 border-ink/15 bg-white px-5 py-3 text-xl font-extrabold leading-snug text-ink shadow-md transition-transform active:scale-95 active:border-b-4"
-              >
-                {t("createAccount")}
+                <span aria-hidden="true">▶</span>
+                {t("continueAsGuest")}
               </Link>
 
               <div
@@ -69,19 +71,48 @@ export default function LandingClient() {
                 <span className="h-px flex-1 bg-ink/10" />
               </div>
 
-              <Link
-                href={EXPLORE}
-                className="flex min-h-14 w-full items-center justify-center break-words rounded-2xl border-b-8 border-mint bg-mintsoft px-5 py-3 text-xl font-extrabold leading-snug text-ink shadow-md transition-transform active:scale-95 active:border-b-4"
-              >
-                {t("continueAsGuest")}
-              </Link>
+              <p className="text-center text-base font-extrabold text-ink/70">
+                {t("landingGrownUps")}
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+                <Link
+                  href={SIGN_IN}
+                  className="flex min-h-12 w-full items-center justify-center break-words rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 py-2 text-lg font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-2"
+                >
+                  {t("signIn")}
+                </Link>
+                <Link
+                  href={SIGN_UP}
+                  className="flex min-h-12 w-full items-center justify-center break-words rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 py-2 text-lg font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-2"
+                >
+                  {t("createAccount")}
+                </Link>
+              </div>
 
-              <p className="mt-4 break-words px-1 text-center text-sm font-semibold leading-snug text-ink/55">
+              <p className="mt-4 break-words px-1 text-center text-sm font-semibold leading-snug text-ink/70">
                 {t("accountsComingSoon")}
               </p>
             </div>
           </section>
         </div>
+
+        {/*
+          Los dibujos de las fichas derivan de Twemoji, con licencia CC BY 4.0,
+          que pide la atribución allí donde se usan y no solo en el
+          repositorio. Va aquí, pequeña y al final, porque la portada es la
+          única pantalla para adultos que ve todo el que entra.
+        */}
+        <p className="mt-6 text-center text-xs font-semibold text-ink/70">
+          {t("artCredit")}{" "}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            className="underline underline-offset-2"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            CC BY 4.0
+          </a>
+        </p>
       </div>
     </main>
   );
@@ -90,7 +121,7 @@ export default function LandingClient() {
 /**
  * El panal de la portada: siete fichas con lo que se aprende dentro.
  *
- * Son los emoji de los hexágonos reales —colores, números, lugares, palabras,
+ * Son los dibujos de los hexágonos reales —colores, números, lugares, palabras,
  * trazos— colocados en la misma retícula que el panal de `/explore`: filas que
  * se solapan a tres cuartos de altura y corridas media ficha. Así la portada
  * enseña la forma de la aplicación antes de entrar en ella.
@@ -100,7 +131,9 @@ export default function LandingClient() {
  * marear a nadie.
  */
 function HoneycombArt({ label }: { label: string }) {
-  const cells = ["🎨", "🔢", "🏝️", "✏️", "🔠", "🧠", "👀"];
+  const cells = (
+    ["colores", "numeros", "lugares", "tracing", "search", "memory", "visual"] as const
+  ).map(hexagonImage);
 
   return (
     <div
@@ -108,9 +141,10 @@ function HoneycombArt({ label }: { label: string }) {
       role="img"
       aria-label={label}
     >
-      {cells.map((emoji, index) => (
-        <span key={emoji} className={`landing-hive-cell landing-hive-${index}`}>
-          <span aria-hidden="true">{emoji}</span>
+      {cells.map((image, index) => (
+        <span key={image} className={`landing-hive-cell landing-hive-${index}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="" aria-hidden="true" draggable={false} />
         </span>
       ))}
     </div>
