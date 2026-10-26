@@ -22,13 +22,24 @@ import {
   buildColoringSession,
   clampColoringLevel,
   coloringAccuracy,
+  coloringAttemptKey,
+  coloringBrushRadius,
+  coloringCoverage,
+  coloringRegionIsFull,
+  coloringSampleGrid,
   coloringSessionStars,
+  coloringStrokeCovers,
+  COLORING_BRUSHES,
   COLORING_COLORS,
+  COLORING_DEFAULT_BRUSH,
   COLORING_LEVELS,
   COLORING_MAX_LEVEL,
   COLORING_PICTURES,
   COLORING_PICTURES_PER_SESSION,
+  COLORING_SAMPLE_STEP,
   picturesForLevel,
+  type ColorId,
+  type ColoringBrushId,
   type ColoringLevel,
 } from "@/lib/coloringGame";
 import type { Difficulty, Stars } from "@/lib/difficulty";
@@ -163,6 +174,97 @@ console.log("\nLas estrellas de la sesión");
   check("justo por debajo de dos se queda en una", coloringSessionStars(65, true) === 1);
   check("sin toques la precisión es 100", coloringAccuracy(0, 0) === 100);
   check("ocho de diez toques es 80", coloringAccuracy(10, 8) === 80);
+}
+
+console.log("\nEl pincel");
+{
+  check("tres grosores", COLORING_BRUSHES.length === 3);
+  const radii = COLORING_BRUSHES.map((brush) => brush.radius);
+  check(
+    "y van de menor a mayor, que es el orden en que se enseñan",
+    radii.every((radius, index) => index === 0 || radius > radii[index - 1]),
+    radii.join(","),
+  );
+  check(
+    "el grosor de por defecto es uno de los tres",
+    COLORING_BRUSHES.some((brush) => brush.id === COLORING_DEFAULT_BRUSH),
+  );
+  check(
+    "un grosor que no existe no deja el pincel en cero",
+    coloringBrushRadius("lo-que-sea" as ColoringBrushId) > 0,
+  );
+  // Si la rejilla fuera más gruesa que el pincel más fino, una pasada podría
+  // no tapar ni un punto y la zona no se terminaría nunca.
+  check(
+    "la rejilla de medida es más fina que el pincel fino",
+    COLORING_SAMPLE_STEP < radii[0] * 2,
+    `${COLORING_SAMPLE_STEP} contra ${radii[0] * 2}`,
+  );
+}
+
+console.log("\nLa medida de lo pintado");
+{
+  const inside = (x: number, y: number) =>
+    x >= 25 && x <= 75 && y >= 25 && y <= 75;
+  const samples = coloringSampleGrid(inside);
+  check(
+    "la rejilla solo siembra dentro de la zona",
+    samples.every((point) => inside(point.x, point.y)),
+  );
+  check(
+    "y la siembra con puntos de sobra",
+    samples.length >= 500,
+    `${samples.length}`,
+  );
+
+  const dot = { x: 50, y: 50 };
+  check("un toque tapa su propio círculo", coloringStrokeCovers(dot, dot, dot, 3.5));
+  check(
+    "y no tapa lo que queda fuera del radio",
+    !coloringStrokeCovers({ x: 60, y: 50 }, dot, dot, 3.5),
+  );
+  check(
+    "una pasada tapa todo el tramo, no solo las puntas",
+    coloringStrokeCovers({ x: 70, y: 50 }, { x: 50, y: 50 }, { x: 90, y: 50 }, 2),
+  );
+  check(
+    "pero no tapa más allá de donde llegó el dedo",
+    !coloringStrokeCovers({ x: 95, y: 50 }, { x: 50, y: 50 }, { x: 90, y: 50 }, 2),
+  );
+
+  check("la parte cubierta va de 0 a 1", coloringCoverage(35, 100) === 0.35);
+  check("una zona a medias no se da por pintada", !coloringRegionIsFull(50, 100));
+  check("cubierta de sobra sí", coloringRegionIsFull(70, 100));
+  check(
+    "y una zona sin puntos de medida se cuenta cubierta, no imposible",
+    coloringRegionIsFull(0, 0),
+  );
+}
+
+console.log("\nCada decisión se cuenta una sola vez");
+{
+  const pasadas: [string, ColorId][] = [
+    ["techo", "rojo"],
+    ["techo", "rojo"],
+    ["techo", "rojo"],
+    ["pared", "azul"],
+  ];
+  const counted = new Set(
+    pasadas.map(([region, color]) => coloringAttemptKey(region, color)),
+  );
+  check(
+    "tres pasadas en la misma zona son un intento",
+    counted.size === 2,
+    `${counted.size}`,
+  );
+  check(
+    "así que repasar con el pincel fino no baja la precisión",
+    coloringAccuracy(counted.size, 2) === 100,
+  );
+  check(
+    "la misma zona con otro color sí es otra decisión",
+    coloringAttemptKey("techo", "rojo") !== coloringAttemptKey("techo", "azul"),
+  );
 }
 
 console.log("\nEl desbloqueo solo sube");

@@ -19,6 +19,7 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **Word Search:** a three-puzzle session where players trace hidden words with a finger across a generated letter grid, with words running across, down, diagonally, and backwards as the level rises.
 - **Tracing:** five levels of dotted paths — straight, diagonal, curved, zigzag and long — traced with a finger or a mouse through pointer events. A visible tolerance lane decides how well the path was followed, stars reward the accuracy, and the word of the picture is spoken and shown with its translation.
 - **Memory:** a vertical board of twelve cards where six pairs hide behind the honeycomb, tries and time are counted, and each pair is read out loud in the chosen language.
+- **Coloring:** twelve hand-drawn pictures painted with a finger or an Apple Pencil, in one of three brush sizes. The paint only takes inside the area being coloured, so going over the lines never spoils the drawing, and an area fills itself in once it is well covered. The first two levels say which area to paint and what colour; from level 3 on every area carries a number and the palette says which colour each number is.
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
@@ -97,7 +98,7 @@ src/
     localization.ts     # English category, question, option, and accessibility copy
                         # (artwork for the questions lives in public/art/)
   lib/
-    coloringGame.ts     # Coloring pictures, teaching palette, and colour dealing
+    coloringGame.ts     # Coloring pictures, teaching palette, colour dealing, and brushes
     gameEngine.ts       # Question selection and adaptive difficulty
     i18n.tsx            # Language provider and interface translations
     language.ts         # Shared language type

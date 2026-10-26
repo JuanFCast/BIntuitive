@@ -142,6 +142,32 @@ src/lib/
   cada ronda, lo que garantiza de una vez que dos zonas vecinas nunca salgan del mismo tono
   —las zonas están escritas en orden de vecindad— y que la paleta no tenga fichas que no
   pinten nada. Por eso doce láminas bastan: la misma casa sale distinta cada vez.
+- **En Colorear se pinta arrastrando, con el grosor que se elija.** Un toque que
+  rellenaba la zona entera convertía colorear en señalar, que es lo que ya hacen las
+  lecciones de preguntas: ahora la mano trabaja, como en Trazos pero sin la exigencia de
+  seguir un camino. Tres grosores (`COLORING_BRUSHES`) y no un deslizador, porque un
+  deslizador pide un gesto fino y no se puede nombrar en voz alta ni leer con un lector de
+  pantalla. **La pintura se recorta a la zona**, así que salirse no estropea el dibujo —es
+  lo que permite dárselo a un niño de tres años con el dedo— y el color que no toca
+  sencillamente no agarra: equivocarse nunca deja marca. Una zona se rellena sola al
+  llegar a `COLORING_COVERAGE_TO_FILL`, no al quedar perfecta; pedir el 100 % obligaría a
+  repasar los rincones con el pincel fino y aquí se practica el color, no el pulso. La
+  precisión cuenta **decisiones** —esta zona de este color, una sola vez por pareja
+  (`coloringAttemptKey`)—, no pasadas: cobrar cada pasada haría que pintar bien con el
+  pincel fino puntuara peor que pintar bien con el grueso. Lo pintado se mide con una
+  rejilla de puntos sembrada por lámina y geometría de punto a segmento, no leyendo los
+  píxeles del lienzo: `coloringGame.ts` no puede tocar el DOM porque `validate:content` lo
+  compila sin él, así que `coloringSampleGrid` recibe el "está dentro" en vez de
+  calcularlo.
+- **El dibujo de Colorear son dos capas sobre el mismo cuadrado.** Abajo un `<canvas>` con
+  el papel, las pasadas de pincel y los contornos, en el orden de las zonas: ese orden es
+  el que hace que la puerta se vea sobre la pared y la aleta sobre el cuerpo del pez, y por
+  eso el pincel, además de recortarse a su zona, obliga a repintar las zonas de encima y el
+  contorno propio tras cada tramo. Un SVG encima, que **no recibe toques**, pone los
+  números y una zona enfocable por cada una: sin puntero no hay arrastre, así que activar
+  una zona con el teclado la pinta entera y el juego sigue siendo jugable con lector de
+  pantalla. Las dos capas no se pueden fundir en una: un SVG con relleno blanco sobre el
+  lienzo taparía lo que se está pintando debajo.
 - **Las láminas de Colorear son geometría a propósito**: una casa son un triángulo y unos
   rectángulos, y eso es justo lo que un camino SVG escrito a mano hace bien. El `labelAt` de
   cada zona —dónde se pinta su número— va escrito y es obligatorio: el centro de la caja del
@@ -403,11 +429,14 @@ y la carpeta `~/.impeccable`.
   `break-words` y `leading-snug`, y el espaciado entre letras de las mayúsculas se reserva para
   `sm:`. En un móvil de 360px una tarjeta crece a lo alto; nunca se aprieta el texto ni se
   reduce la escala.
-- **Arrastrar es un gesto de puntero, no de scroll**: la sopa de letras y Trazos escuchan
-  `pointerdown` / `pointermove` / `pointerup`, que cubren ratón y dedo con el mismo código, y
-  llaman a `setPointerCapture` para que el trazo siga aunque el dedo se salga del tablero. Su
-  contenedor lleva `touch-action: none` (`.word-search-board`, `.tracing-board`): sin eso el
-  navegador se queda el gesto vertical como scroll y no llega ni un `pointermove`.
+- **Arrastrar es un gesto de puntero, no de scroll**: la sopa de letras, Trazos y Colorear
+  escuchan `pointerdown` / `pointermove` / `pointerup`, que cubren ratón, dedo y Apple Pencil
+  con el mismo código, y llaman a `setPointerCapture` para que el trazo siga aunque el dedo se
+  salga del tablero. Su contenedor lleva `touch-action: none` (`.word-search-board`,
+  `.tracing-board`, `.coloring-board`): sin eso el navegador se queda el gesto vertical como
+  scroll y no llega ni un `pointermove`. Colorear además pide los puntos intermedios con
+  `getCoalescedEvents`: el Pencil va más rápido que la pantalla, y sin ellos una curva sale a
+  trompicones.
 - **Un solo diálogo de confirmación**: `ConfirmDialog` (título, descripción, confirmar,
   cancelar, `destructive`), con Escape y devolución del foco. `ExitDialog` es una capa fina
   sobre él, con una tabla de textos por `variant` (`lesson` y `game`) y un único destino, el
