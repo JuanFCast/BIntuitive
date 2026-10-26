@@ -26,7 +26,7 @@ import type { Language } from "./language";
  * quien juega. La pintura solo agarra **dentro** de la zona, así que salirse
  * no estropea el dibujo: eso es lo que permite dárselo a un niño de tres años
  * con el dedo. Y una zona queda lista cuando está cubierta de sobra
- * (`COLORING_COVERAGE_TO_FILL`), no cuando está perfecta: pedir el 100 %
+ * (`coverageToFill` de cada escalón), no cuando está perfecta: pedir el 100 %
  * castigaría el pulso, que no es lo que este juego mide.
  *
  * Los colores **no se guardan en el dibujo**: se reparten al empezar cada
@@ -98,21 +98,53 @@ export const COLORING_COLORS: Record<
  * niño reconoce antes; los escalones altos añaden los que se confunden entre
  * sí —morado con azul, rosado con rojo, naranja con amarillo— y esa confusión
  * es justo la dificultad.
+ *
+ * La mano también pide más al subir, pero sin castigar nunca salirse: la
+ * pintura sigue recortada a la zona en todos los escalones. Lo que cambia es
+ * cuánto hay que cubrir antes de que la zona se rellene sola
+ * (`coverageToFill`) y, del 4 en adelante, que el pincel grueso desaparece:
+ * con él dos pasadas tapaban casi cualquier zona y el escalón alto se
+ * terminaba tan deprisa como el primero. El 1 y el 2 se quedan como estaban,
+ * porque son los del niño de tres años con el dedo.
  */
 export const COLORING_LEVELS: Record<
   ColoringLevel,
-  { mode: ColoringMode; palette: readonly ColorId[] }
+  {
+    mode: ColoringMode;
+    palette: readonly ColorId[];
+    brushes: readonly ColoringBrushId[];
+    coverageToFill: number;
+  }
 > = {
-  1: { mode: "spoken", palette: ["rojo", "azul", "amarillo"] },
-  2: { mode: "spoken", palette: ["rojo", "azul", "amarillo", "verde"] },
-  3: { mode: "key", palette: ["rojo", "azul", "amarillo", "verde"] },
+  1: {
+    mode: "spoken",
+    palette: ["rojo", "azul", "amarillo"],
+    brushes: ["fino", "medio", "grueso"],
+    coverageToFill: 0.7,
+  },
+  2: {
+    mode: "spoken",
+    palette: ["rojo", "azul", "amarillo", "verde"],
+    brushes: ["fino", "medio", "grueso"],
+    coverageToFill: 0.7,
+  },
+  3: {
+    mode: "key",
+    palette: ["rojo", "azul", "amarillo", "verde"],
+    brushes: ["fino", "medio", "grueso"],
+    coverageToFill: 0.75,
+  },
   4: {
     mode: "key",
     palette: ["rojo", "azul", "amarillo", "verde", "naranja"],
+    brushes: ["fino", "medio"],
+    coverageToFill: 0.8,
   },
   5: {
     mode: "key",
     palette: ["rojo", "azul", "verde", "naranja", "morado", "rosado"],
+    brushes: ["fino", "medio"],
+    coverageToFill: 0.85,
   },
 };
 
@@ -157,6 +189,14 @@ export function coloringBrushRadius(id: ColoringBrushId): number {
   return brush ? brush.radius : COLORING_BRUSHES[1].radius;
 }
 
+/** Los grosores que ofrece un escalón, en el mismo orden de menor a mayor. */
+export function coloringBrushesForLevel(
+  level: ColoringLevel,
+): readonly { id: ColoringBrushId; radius: number }[] {
+  const allowed = COLORING_LEVELS[level].brushes;
+  return COLORING_BRUSHES.filter((brush) => allowed.includes(brush.id));
+}
+
 /* ──────────────────── Cuánto hay pintado ─────────────────────── */
 
 export type ColoringPoint = { x: number; y: number };
@@ -168,7 +208,8 @@ export type ColoringPoint = { x: number; y: number };
  * movimiento del dedo; esto es geometría y no lee nada: se siembra la zona de
  * puntos una vez por lámina y luego cada tramo de pincel marca los que le
  * caen debajo. Con paso 2 la zona más pequeña del banco sigue teniendo
- * decenas de puntos, que es resolución de sobra para un umbral del 70 %.
+ * decenas de puntos, que es resolución de sobra para umbrales de entre el
+ * 70 % y el 85 %.
  */
 export const COLORING_SAMPLE_STEP = 2;
 
@@ -179,16 +220,6 @@ export const COLORING_SAMPLE_STEP = 2;
  * que luego hay que repintar enteros al girar el iPad.
  */
 export const COLORING_MIN_STEP = 0.4;
-
-/**
- * Cuánto hay que cubrir para que la zona se dé por pintada.
- *
- * Por debajo se vería a medio hacer; el 100 % obligaría a repasar los
- * rincones del contorno con el pincel fino, y lo que se practica aquí es el
- * color, no la precisión milimétrica. Al llegar al umbral la zona se rellena
- * entera y sola, así que el dibujo terminado siempre queda limpio.
- */
-export const COLORING_COVERAGE_TO_FILL = 0.7;
 
 /**
  * Siembra el lienzo de 100 × 100 de puntos y devuelve los que caen dentro.
@@ -257,9 +288,21 @@ export function coloringCoverage(covered: number, total: number): number {
   return covered / total;
 }
 
-/** Si la zona ya está cubierta de sobra y toca rellenarla entera. */
-export function coloringRegionIsFull(covered: number, total: number): boolean {
-  return coloringCoverage(covered, total) >= COLORING_COVERAGE_TO_FILL;
+/**
+ * Si la zona ya está cubierta de sobra para su escalón y toca rellenarla
+ * entera.
+ *
+ * El umbral (`coverageToFill`) va del 70 % al 85 %: por debajo se vería a
+ * medio hacer, y el 100 % obligaría a repasar los rincones del contorno con el
+ * pincel fino, que mide el pulso y no el color. Al llegar al umbral la zona se
+ * rellena entera y sola, así que el dibujo terminado siempre queda limpio.
+ */
+export function coloringRegionIsFull(
+  covered: number,
+  total: number,
+  level: ColoringLevel,
+): boolean {
+  return coloringCoverage(covered, total) >= COLORING_LEVELS[level].coverageToFill;
 }
 
 /**
