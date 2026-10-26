@@ -90,7 +90,7 @@ const messages = {
     signIn: "Sign in",
     createAccount: "Create an account",
     continueAsGuest: "Continue as guest",
-    landingGrownUps: "For grown-ups",
+    landingAccount: "Your account",
     artCredit:
       "Activity icons adapted from Twemoji, © Twitter and contributors.",
     accountsComingSoon:
@@ -99,16 +99,13 @@ const messages = {
       "Accounts are coming soon. For now, you can continue as a guest.",
     languageSwitchAria: "Choose a language",
     signInTitle: "Sign in",
-    signInSubtitle: "Pick up where your learner left off.",
+    signInSubtitle: "Pick up where you left off.",
     signUpTitle: "Create an account",
-    signUpSubtitle: "One grown-up account, with a profile for each child.",
-    signUpAdultNotice:
-      "A grown-up looks after this account. Children play with a nickname and an avatar, and never need an email of their own.",
+    signUpSubtitle: "Save your progress and keep learning on any device.",
     forgotTitle: "Recover your password",
     forgotSubtitle:
       "Type the email of the account and we will send the steps to reset it.",
     authEmail: "Email",
-    authAdultEmail: "Grown-up's email",
     authPassword: "Password",
     authConfirmPassword: "Confirm password",
     authShowPassword: "Show password",
@@ -415,7 +412,7 @@ const messages = {
     signIn: "Iniciar sesión",
     createAccount: "Crear una cuenta",
     continueAsGuest: "Continuar como invitado",
-    landingGrownUps: "Para adultos",
+    landingAccount: "Tu cuenta",
     artCredit:
       "Íconos de las actividades adaptados de Twemoji, © Twitter y colaboradores.",
     accountsComingSoon:
@@ -424,16 +421,13 @@ const messages = {
       "Las cuentas estarán disponibles próximamente. Por ahora puedes continuar como invitado.",
     languageSwitchAria: "Elige un idioma",
     signInTitle: "Iniciar sesión",
-    signInSubtitle: "Sigue donde lo dejó quien aprende.",
+    signInSubtitle: "Sigue donde lo dejaste.",
     signUpTitle: "Crear una cuenta",
-    signUpSubtitle: "Una cuenta de adulto, con un perfil para cada niño.",
-    signUpAdultNotice:
-      "Un adulto se encarga de esta cuenta. Los niños juegan con un apodo y un avatar, y nunca necesitan un correo propio.",
+    signUpSubtitle: "Guarda tu progreso y sigue aprendiendo en cualquier dispositivo.",
     forgotTitle: "Recuperar la contraseña",
     forgotSubtitle:
       "Escribe el correo de la cuenta y te enviaremos los pasos para cambiarla.",
     authEmail: "Correo electrónico",
-    authAdultEmail: "Correo electrónico del adulto",
     authPassword: "Contraseña",
     authConfirmPassword: "Confirmar contraseña",
     authShowPassword: "Mostrar la contraseña",

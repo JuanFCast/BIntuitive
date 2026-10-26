@@ -17,11 +17,9 @@ import { SIGN_IN } from "@/lib/routes";
 /**
  * Crear una cuenta: prototipo visual, sin crear nada.
  *
- * La pantalla dice en voz alta de quién es la cuenta antes de pedir el primer
- * dato. No es decoración: el modelo es una cuenta de adulto con perfiles
- * infantiles dentro, y un adulto que llega aquí tiene que entender que el
- * correo que escribe es el suyo y no el de su hijo. Los niños no tendrán
- * correo ni contraseña.
+ * Una cuenta por persona, para guardar el progreso y seguir en otro
+ * dispositivo: la aplicación es para cualquiera que quiera aprender, así que
+ * la pantalla no supone quién la usa.
  *
  * Nada de lo escrito sale de esta pestaña ni se guarda en ningún sitio.
  */
@@ -58,16 +56,9 @@ export default function SignUpClient() {
         </>
       }
     >
-      <p className="mb-5 flex items-start gap-3 rounded-2xl border-2 border-sky bg-skysoft px-4 py-3 text-sm font-semibold leading-snug text-ink/70">
-        <span aria-hidden="true" className="text-lg">
-          👩‍👧
-        </span>
-        {t("signUpAdultNotice")}
-      </p>
-
       <form onSubmit={submit} noValidate>
         <AuthField
-          label={t("authAdultEmail")}
+          label={t("authEmail")}
           type="email"
           value={email}
           onChange={setEmail}
