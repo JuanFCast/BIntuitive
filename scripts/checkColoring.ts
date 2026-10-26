@@ -4,9 +4,11 @@
  * Es el tercer juego con la escala de dificultad compartida, así que
  * comprueba lo mismo que Parejas —el escalón jugado, el desbloqueo que solo
  * sube, la mejor valoración que no baja y una sesión contada una vez— y
- * además lo suyo: que el reparto de colores no deje dos zonas vecinas del
- * mismo tono, que la paleta de cada escalón se use entera, y que el modo
- * cambie de hablado a numerado donde se dijo.
+ * además lo suyo: que cada zona reciba un color de los suyos, los de la
+ * realidad, sin repetir el de la zona anterior si tiene otro; que la paleta
+ * tenga las fichas de su escalón y no más de las que caben; que las zonas se
+ * saquen bien de la tinta de una imagen; y que el modo cambie de hablado a
+ * numerado donde se dijo.
  *
  * Ejecuta el `storage.ts` de verdad contra un `localStorage` fingido, igual
  * que los otros tres. Se lanza con `npm run check:coloring`.
@@ -26,6 +28,7 @@ import {
   coloringBrushesForLevel,
   coloringBrushRadius,
   coloringCoverage,
+  coloringRegionCells,
   coloringRegionIsFull,
   coloringSampleGrid,
   coloringSessionStars,
@@ -35,6 +38,7 @@ import {
   COLORING_DEFAULT_BRUSH,
   COLORING_LEVELS,
   COLORING_MAX_LEVEL,
+  COLORING_MAX_SWATCHES,
   COLORING_PICTURES,
   COLORING_PICTURES_PER_SESSION,
   COLORING_SAMPLE_STEP,
@@ -97,7 +101,7 @@ console.log("\nLa tabla de escalones es la acordada");
     modes.join(",") === "spoken,spoken,key,key,key",
     modes.join(","),
   );
-  const sizes = LEVELS.map((level) => COLORING_LEVELS[level].palette.length);
+  const sizes = LEVELS.map((level) => COLORING_LEVELS[level].paletteSize);
   check(
     "la paleta nunca encoge al subir de nivel",
     sizes.every((size, index) => index === 0 || size >= sizes[index - 1]),
@@ -105,9 +109,11 @@ console.log("\nLa tabla de escalones es la acordada");
   );
   check("cinco escalones", COLORING_MAX_LEVEL === 5);
   check(
-    "ningún escalón pide un color que no existe",
-    LEVELS.every((level) =>
-      COLORING_LEVELS[level].palette.every((id) => Boolean(COLORING_COLORS[id])),
+    "ninguna zona pide un color que no existe",
+    COLORING_PICTURES.every((picture) =>
+      picture.regions.every((region) =>
+        region.colors.every((id) => Boolean(COLORING_COLORS[id])),
+      ),
     ),
   );
 }
@@ -122,30 +128,109 @@ for (const level of LEVELS) {
 }
 
 console.log("\nEl reparto de colores");
+// El reparto es al azar, así que cada lámina se reparte muchas veces: una
+// regla que solo se cumpliera casi siempre fallaría aquí.
+const DEALS = 200;
 for (const level of LEVELS) {
-  const palette = COLORING_LEVELS[level].palette;
+  const { paletteSize } = COLORING_LEVELS[level];
   for (const picture of picturesForLevel(level)) {
-    const round = buildColoringRound(picture, level);
+    const rounds = Array.from({ length: DEALS }, () => buildColoringRound(picture, level));
 
     check(
-      `${picture.id}: ninguna zona vecina repite color`,
-      round.tasks.every(
-        (task, index) => index === 0 || task.colorId !== round.tasks[index - 1].colorId,
+      `${picture.id}: cada zona lleva uno de sus colores de verdad`,
+      rounds.every((round) =>
+        round.tasks.every((task) => task.colors.includes(task.colorId)),
       ),
     );
     check(
-      `${picture.id}: la paleta se usa entera`,
-      new Set(round.tasks.map((task) => task.colorId)).size === palette.length,
+      `${picture.id}: ninguna zona repite el color de la anterior si tiene otro`,
+      rounds.every((round) =>
+        round.tasks.every(
+          (task, index) =>
+            index === 0 ||
+            task.colors.every((colorId) => colorId === round.tasks[index - 1].colorId) ||
+            task.colorId !== round.tasks[index - 1].colorId,
+        ),
+      ),
+    );
+    check(
+      `${picture.id}: la paleta tiene sus ${paletteSize} fichas y caben en una fila`,
+      rounds.every(
+        (round) =>
+          round.palette.length >= paletteSize &&
+          round.palette.length <= COLORING_MAX_SWATCHES &&
+          new Set(round.palette).size === round.palette.length,
+      ),
     );
     check(
       `${picture.id}: cada número apunta a su color de la paleta`,
-      round.tasks.every((task) => round.palette[task.key - 1] === task.colorId),
+      rounds.every((round) =>
+        round.tasks.every((task) => round.palette[task.key - 1] === task.colorId),
+      ),
     );
     check(
       `${picture.id}: todas las zonas tienen tarea`,
-      round.tasks.length === picture.regions.length,
+      rounds.every((round) => round.tasks.length === picture.regions.length),
     );
   }
+}
+
+console.log("\nLas zonas salen de la tinta");
+{
+  // Una rejilla de 10 × 10: un marco de tinta partido en dos por una raya
+  // vertical en la columna 5. A la izquierda la zona 0, a la derecha la 1.
+  const size = 10;
+  const ink = new Uint8Array(size * size);
+  for (let i = 0; i < size; i += 1) {
+    ink[i] = 1;
+    ink[(size - 1) * size + i] = 1;
+    ink[i * size] = 1;
+    ink[i * size + size - 1] = 1;
+    ink[i * size + 5] = 1;
+  }
+  const cellAt = (x: number, y: number) => ({
+    x: ((x + 0.5) * 100) / size,
+    y: ((y + 0.5) * 100) / size,
+  });
+  const owns = (runs: { y: number; x0: number; x1: number }[], x: number, y: number) =>
+    runs.some((run) => run.y === y && run.x0 <= x && x <= run.x1);
+
+  const split = coloringRegionCells(ink, size, [
+    { labelAt: [cellAt(2, 4)] },
+    { labelAt: [cellAt(7, 4)] },
+  ]);
+  check(
+    "dos espacios cerrados son dos zonas sin problemas",
+    split.problems.length === 0,
+    split.problems.join("; "),
+  );
+  check("cada zona tiene su lado", owns(split.runs[0], 2, 4) && owns(split.runs[1], 7, 4));
+  check(
+    "ninguna zona cruza la raya",
+    !owns(split.runs[0], 7, 4) && !owns(split.runs[1], 2, 4),
+  );
+  check(
+    "cada zona se mete bajo la tinta que la rodea",
+    owns(split.runs[0], 0, 4) && owns(split.runs[1], 9, 4),
+  );
+
+  const pieces = coloringRegionCells(ink, size, [{ labelAt: [cellAt(2, 4), cellAt(7, 4)] }]);
+  check(
+    "una zona con dos puntos se queda con los dos espacios",
+    owns(pieces.runs[0], 2, 4) && owns(pieces.runs[0], 7, 4),
+  );
+
+  const onInk = coloringRegionCells(ink, size, [{ labelAt: [cellAt(5, 4)] }]);
+  check("un punto sobre la línea se avisa", onInk.problems.length > 0);
+
+  // Un hueco en la raya: las dos zonas reclaman el mismo espacio.
+  const leaky = ink.slice();
+  leaky[4 * size + 5] = 0;
+  const shared = coloringRegionCells(leaky, size, [
+    { labelAt: [cellAt(2, 4)] },
+    { labelAt: [cellAt(7, 4)] },
+  ]);
+  check("dos zonas en el mismo espacio se avisan", shared.problems.length > 0);
 }
 
 console.log("\nLa sesión");
