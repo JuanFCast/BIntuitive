@@ -278,29 +278,43 @@ export function getLevelForCategory(category: CategoryId): number {
 }
 
 /**
- * Lee el progreso del juego, aceptando el campo antiguo `wordPuzzle` de quien
- * ya jugó antes del cambio de nombre.
+ * El escalón que se escribe en el espejo de la versión 1 de los juegos de
+ * palabras: lo desbloqueado, recortado a 3. El código anterior solo conocía
+ * tres niveles y `clampLevel` lee cualquier otra cosa como un 1, así que un 4
+ * o un 5 escritos tal cual degradarían a quien revirtiera el despliegue al
+ * nivel más fácil. El 4 y el 5 viven en `byGrade`, que es lo que se lee.
  */
-export function getWordScrambleProgress(): WordScrambleProgress {
-  const progress = getProgress();
-  return normalizeWordScramble(progress.wordScramble ?? progress.wordPuzzle);
+function legacyWordLevel(unlocked: Difficulty): number {
+  return Math.min(unlocked, 3);
 }
 
 /**
- * Guarda el nivel alcanzado y conserva siempre la mejor marca anterior, venga
- * del campo nuevo o del antiguo. Escribe solo en `wordScramble`; `wordPuzzle`
- * se deja intacto para que revertir el despliegue no pierda el progreso.
+ * Guarda una partida terminada de Word Scramble.
+ *
+ * Como Trazos, escribe **una sola vez y en los dos modelos a la vez**: el
+ * nuevo, bajo `byGrade.unassigned`, y el campo de la versión 1 `wordScramble`
+ * con la misma mejor marca, para que la proyección del puente no pueda
+ * contradecirlo. Lo de antes ya está en el modelo nuevo antes de escribir,
+ * porque `getProgress` proyecta `wordScramble` —o el heredado `wordPuzzle`— en
+ * cada lectura, así que quien llegó al nivel 3 con el juego anterior sigue
+ * teniéndolo abierto y su mejor marca no baja. `wordPuzzle` no se toca.
+ *
+ * Las palabras perfectas se quedan con la mejor. Abandonar no llega aquí.
  */
-export function saveWordScrambleProgress(next: WordScrambleProgress): void {
+export function saveWordScrambleResult(
+  result: FinishedSession & { perfectWords: number },
+): void {
   const progress = getProgress();
-  const previous = progress.wordScramble ?? progress.wordPuzzle;
-  progress.wordScramble = {
-    level: clampLevel(next.level),
-    bestPerfectWords: Math.max(
-      next.bestPerfectWords,
-      previous?.bestPerfectWords ?? 0,
-    ),
-  };
+
+  const next = recordSession(progress, "scramble", result, (best) => ({
+    perfectWords: Math.max(best.perfectWords ?? 0, result.perfectWords),
+  }));
+
+  progress.wordScramble = normalizeWordScramble({
+    level: legacyWordLevel(next.unlocked),
+    bestPerfectWords: next.best.perfectWords ?? 0,
+  });
+
   saveProgress(progress);
 }
 
@@ -333,21 +347,32 @@ export function saveWordSearchRecent(ids: string[]): void {
   saveProgress(progress);
 }
 
-/** Progreso de la sopa de letras. Independiente del de Word Scramble. */
-export function getWordSearchProgress(): WordSearchProgress {
-  return normalizeWordSearch(getProgress().wordSearch);
-}
-
-/** Guarda el nivel alcanzado y conserva siempre la mejor marca anterior. */
-export function saveWordSearchProgress(next: WordSearchProgress): void {
+/**
+ * Guarda una partida terminada de la sopa de letras, en los dos modelos a la
+ * vez y con las mismas reglas que `saveWordScrambleResult`.
+ *
+ * Las palabras encontradas se quedan con la mejor; las selecciones erradas,
+ * con la menor. Esa última no existía en la versión 1, así que no tiene
+ * espejo.
+ */
+export function saveWordSearchResult(
+  result: FinishedSession & { wordsFound: number; misses: number },
+): void {
   const progress = getProgress();
-  progress.wordSearch = {
-    level: clampLevel(next.level),
-    bestWordsFound: Math.max(
-      next.bestWordsFound,
-      progress.wordSearch?.bestWordsFound ?? 0,
-    ),
-  };
+
+  const next = recordSession(progress, "search", result, (best) => ({
+    wordsFound: Math.max(best.wordsFound ?? 0, result.wordsFound),
+    fewestMisses:
+      best.fewestMisses === null
+        ? result.misses
+        : Math.min(best.fewestMisses, result.misses),
+  }));
+
+  progress.wordSearch = normalizeWordSearch({
+    level: legacyWordLevel(next.unlocked),
+    bestWordsFound: next.best.wordsFound ?? 0,
+  });
+
   saveProgress(progress);
 }
 

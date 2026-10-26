@@ -249,8 +249,8 @@ src/lib/
   que explica cada categoría vive en la tabla `CATEGORY_INTRO`, indexada por `slug` y
   comprobada por TypeScript con `satisfies`: si se añade una categoría sin sus textos, el
   build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
-- **La dificultad se elige, no se mueve sola** (hoy en Trazos, Parejas y Colorear; es el patrón
-  que copiarán los demás). El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
+- **La dificultad se elige, no se mueve sola** (hoy en Trazos, Parejas, Colorear, Word Scramble y
+  Word Search; es el patrón que copiarán los demás). El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
   juego lo coloca en su introducción por la prop `beforeStart` de `GameShell` —que **no** va
   dentro de `intro` a propósito: `intro` es lo que la ayuda vuelve a enseñar encima de una
   partida en curso, y un selector ahí invitaría a cambiar de dificultad a mitad de sesión—.
@@ -500,11 +500,15 @@ y la carpeta `~/.impeccable`.
   eso casi nunca haga falta.
 - **El progreso tiene dos modelos vivos, y es temporal.** `Progress` guarda a la vez los campos
   de la versión 1 —`levelByCategory`, `wordScramble`, `wordSearch`, `tracing`— y el modelo nuevo
-  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Siete
-  juegos siguen escribiendo **solo** en los campos de la versión 1; **Trazos ya escribe en los
-  dos a la vez**, con exactamente los mismos totales acumulados, que es lo que impide que la
-  proyección le sume una sesión dos veces o le duplique ejercicios; y **Parejas escribe solo en
-  el nuevo**, porque antes no guardaba nada. `projectLegacyProgress`
+  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Las
+  lecciones siguen escribiendo **solo** en los campos de la versión 1; **Trazos, Word Scramble y
+  Word Search ya escriben en los dos a la vez**, con exactamente los mismos totales, que es lo que
+  impide que la proyección les sume una sesión dos veces o les duplique marcas; y **Parejas y
+  Colorear escriben solo en el nuevo**, porque antes no guardaban nada. Los dos de palabras
+  tenían tres niveles y tienen cinco: sus escalones 1 a 3 son los tres de antes, idénticos, así
+  que el nivel guardado se proyecta tal cual y nadie pierde lo que tenía abierto; y su espejo de
+  la versión 1 guarda lo desbloqueado **recortado a 3** (`legacyWordLevel`), porque el código
+  anterior lee cualquier otro número como un 1. `projectLegacyProgress`
   proyecta lo antiguo sobre `byGrade` en **cada lectura**, no una vez, que es lo que impide que
   los dos modelos discrepen. La dirección es siempre 1 → 2 y un dato antiguo **nunca** rebaja uno nuevo:
   las marcas se juntan por su mejor valor, el desbloqueo y las estrellas solo suben, y lo que el
@@ -523,9 +527,17 @@ y la carpeta `~/.impeccable`.
   tiene su id, su ruta (`/game/word-scramble` y `/game/word-search`), su lib, su banco de
   palabras y su prefijo de claves i18n (`scramble*` y `search*`). Nunca reutilizar el prefijo
   genérico `word*` para ninguno de los dos, ni compartir banco o progreso entre ellos.
-- Lo único compartido entre los dos juegos de palabras es `letters.ts` (`getWordLetters`),
-  `nextLevel` de `gameEngine.ts` y `useSpeakAfterSound`. Cualquier otra cosa en común es señal
-  de acoplamiento.
+- Lo único compartido entre los dos juegos de palabras es `letters.ts` (`getWordLetters`) y
+  `useSpeakAfterSound`. Cualquier otra cosa en común es señal de acoplamiento. Ya no comparten
+  `nextLevel`: desde que el nivel se elige en `LevelPicker`, ninguno lo mueve a mitad de
+  partida.
+- **Los juegos de palabras crecen cambiando de mecánica a partir del 4.** No caben palabras
+  más largas en un móvil, así que el banco distingue el **largo** de la palabra (`tier`, 1-3) del
+  **escalón** (1-5), y cada tabla (`WORD_SCRAMBLE_LEVELS`, `WORD_SEARCH_LEVELS`) dice de qué
+  largos saca cada escalón. En Word Scramble el 4 añade dos letras que no son de la palabra y el 5
+  tres, y además esconde el dibujo: queda la pista, que el botón de escuchar lee en vez de la
+  palabra. En Word Search el 4 y el 5 enseñan en la lista el dibujo y un hueco por letra en vez de
+  la palabra escrita, ordenados por largo para no soplar la primera letra.
 - **Los bancos siguen separados**, y así deben seguir por ahora: preguntas (`questions.ts` en
   español + `localization.ts` en inglés), Word Scramble y Word Search (bilingües, cada uno el
   suyo, sin correspondencia entre idiomas), frases de Typing, símbolos de Visual, dibujos de
@@ -558,6 +570,6 @@ y la carpeta `~/.impeccable`.
   `isMuted()` al disparar y no al programar, una sola locución pendiente a la vez y el corte al
   desmontar. Su `cancel()` entra en el `clearTimers` del juego, así que empezar sesión, cambiar
   de idioma, abrir la ayuda o salir callan lo pendiente. Es la única cosa que comparten Word
-  Scramble y Word Search además de `getWordLetters` y `nextLevel`, y lo comparten porque el
-  problema es de iOS, no de la mecánica.
+  Scramble y Word Search además de `getWordLetters`, y lo comparten porque el problema es de
+  iOS, no de la mecánica.
 - Los comentarios existentes en el código están en español; mantener ese idioma en el código.

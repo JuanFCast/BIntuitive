@@ -4,8 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import AudioButton from "@/components/AudioButton";
 import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
+import LevelPicker from "@/components/LevelPicker";
 import ResultActions from "@/components/ResultActions";
 import ResultStat from "@/components/ResultStat";
+import SessionStars from "@/components/SessionStars";
+import type { Stars } from "@/lib/difficulty";
 import { useGameTimers } from "@/lib/gameTimers";
 import { useSpeakAfterSound } from "@/lib/speakAfterSound";
 import { useLanguage } from "@/lib/i18n";
@@ -16,22 +19,26 @@ import {
   playWrongSound,
 } from "@/lib/sounds";
 import {
-  getWordScrambleProgress,
+  getProgress,
+  getUnassignedGameProgress,
   getWordScrambleRecent,
-  saveWordScrambleProgress,
   saveWordScrambleRecent,
+  saveWordScrambleResult,
 } from "@/lib/storage";
 import {
+  clampScrambleLevel,
   computeWordScrambleStats,
   createLetterTiles,
   getWordLetters,
-  nextWordScrambleLevel,
   pickNextWord,
   rememberScrambleWord,
+  scrambleSessionStars,
+  WORD_SCRAMBLE_LEVELS,
   WORD_SCRAMBLE_MAX_LEVEL,
   WORD_SCRAMBLE_WORDS_PER_SESSION,
   type LetterTile,
   type ScrambleWord,
+  type WordScrambleLevel,
   type WordScrambleStats,
 } from "@/lib/wordScramble";
 import { hexagonImage } from "@/data/categories";
@@ -48,15 +55,26 @@ export default function WordScrambleGame() {
   const [tiles, setTiles] = useState<LetterTile[]>([]);
   const [placed, setPlaced] = useState<LetterTile[]>([]);
   const [wordIndex, setWordIndex] = useState(0);
-  const [level, setLevel] = useState(1);
   const [wrongTileId, setWrongTileId] = useState<string | null>(null);
   const [solved, setSolved] = useState(false);
   const [locked, setLocked] = useState(false);
   const [result, setResult] = useState<WordScrambleStats | null>(null);
   const [isRecord, setIsRecord] = useState(false);
 
-  const levelRef = useRef(1);
-  const streakRef = useRef(0);
+  // El escalón de la partida en curso, fijado al empezar: el juego ya no lo
+  // sube ni lo baja solo, como en Parejas y Trazos. Aparte, el elegido en el
+  // selector, el más alto abierto y el aviso de haber tocado uno cerrado.
+  const [level, setLevel] = useState<WordScrambleLevel>(1);
+  const [unlocked, setUnlocked] = useState<WordScrambleLevel>(1);
+  const [selectedLevel, setSelectedLevel] = useState<WordScrambleLevel>(1);
+  const [lockedHint, setLockedHint] = useState<WordScrambleLevel | null>(null);
+  const [sessionStars, setSessionStars] = useState<Stars>(0);
+  const [openedLevel, setOpenedLevel] = useState<WordScrambleLevel | null>(
+    null,
+  );
+
+  // Lo mismo que `level`, para `loadWord`, que vive en un `useCallback`.
+  const levelRef = useRef<WordScrambleLevel>(1);
   const usedIdsRef = useRef<string[]>([]);
   const recentIdsRef = useRef<string[]>([]);
   const wordMistakesRef = useRef(0);
@@ -115,7 +133,7 @@ export default function WordScrambleGame() {
   const loadWord = useCallback(() => {
     const next = pickNextWord(
       language,
-      levelRef.current,
+      WORD_SCRAMBLE_LEVELS[levelRef.current].tier,
       usedIdsRef.current,
       recentIdsRef.current,
     );
@@ -126,7 +144,13 @@ export default function WordScrambleGame() {
     wordMistakesRef.current = 0;
     solvedRef.current = false;
     setWord(next);
-    setTiles(createLetterTiles(next.word));
+    setTiles(
+      createLetterTiles(
+        next.word,
+        WORD_SCRAMBLE_LEVELS[levelRef.current].extraLetters,
+        language,
+      ),
+    );
     applyPlaced([]);
     setWrongTileId(null);
     setSolved(false);
@@ -134,22 +158,37 @@ export default function WordScrambleGame() {
     return true;
   }, [applyLocked, applyPlaced, language]);
 
+  // Lo guardado se lee al montar y no al pulsar Comenzar: el selector tiene
+  // que enseñar los candados antes de que nadie elija nada. Quien llegó a un
+  // nivel con el juego de tres niveles lo encuentra aquí abierto, porque
+  // `getProgress` proyecta lo antiguo en el modelo nuevo.
+  useEffect(() => {
+    const stored = getUnassignedGameProgress(getProgress(), "scramble");
+    const open = clampScrambleLevel(stored.unlocked);
+    setUnlocked(open);
+    // El último elegido, salvo que fuera más alto de lo que hoy está abierto.
+    setSelectedLevel(clampScrambleLevel(Math.min(stored.difficulty, open)));
+  }, []);
+
   const startGame = useCallback(() => {
     clearTimers();
-    levelRef.current = getWordScrambleProgress().level;
-    streakRef.current = 0;
+    // El escalón es el elegido en el selector y se queda fijo hasta el final.
+    levelRef.current = selectedLevel;
     usedIdsRef.current = [];
     recentIdsRef.current = getWordScrambleRecent();
     mistakesRef.current = 0;
     correctTapsRef.current = 0;
     perfectWordsRef.current = 0;
-    setLevel(levelRef.current);
+    setLevel(selectedLevel);
+    setSessionStars(0);
+    setOpenedLevel(null);
+    setLockedHint(null);
     setWordIndex(0);
     setResult(null);
     setIsRecord(false);
     loadWord();
     setPhase("playing");
-  }, [clearTimers, loadWord]);
+  }, [clearTimers, loadWord, selectedLevel]);
 
   // El banco de palabras depende del idioma: si cambia, la sesión vuelve al inicio.
   useEffect(() => {
@@ -159,23 +198,70 @@ export default function WordScrambleGame() {
     setPhase("intro");
   }, [clearTimers, language]);
 
-  const finishGame = useCallback((solvedWords: number) => {
-    const stats = computeWordScrambleStats(
-      solvedWords,
-      perfectWordsRef.current,
-      correctTapsRef.current,
-      mistakesRef.current,
-    );
-    const previousBest = getWordScrambleProgress().bestPerfectWords;
-    saveWordScrambleProgress({
-      level: levelRef.current,
-      bestPerfectWords: stats.perfectWords,
-    });
-    setResult(stats);
-    setIsRecord(stats.perfectWords > 0 && stats.perfectWords > previousBest);
-    setPhase("results");
-    playCelebrationSound();
-  }, []);
+  /**
+   * La partida llegó al final, así que hay valoración: la precisión decide
+   * cuántas estrellas vale. Abandonar a mitad no pasa por aquí y por eso no
+   * desbloquea nada ni guarda nada.
+   */
+  const finishGame = useCallback(
+    (solvedWords: number) => {
+      const stats = computeWordScrambleStats(
+        solvedWords,
+        perfectWordsRef.current,
+        correctTapsRef.current,
+        mistakesRef.current,
+      );
+      const played = levelRef.current;
+      const rating = scrambleSessionStars(stats.accuracy);
+      const nextUnlocked =
+        rating >= 2
+          ? clampScrambleLevel(Math.max(unlocked, played + 1))
+          : unlocked;
+      const previousBest =
+        getUnassignedGameProgress(getProgress(), "scramble").best
+          .perfectWords ?? 0;
+
+      saveWordScrambleResult({
+        playedLevel: played,
+        sessionStars: rating,
+        perfectWords: stats.perfectWords,
+        playedAt: new Date().toISOString(),
+      });
+
+      setResult(stats);
+      setIsRecord(stats.perfectWords > 0 && stats.perfectWords > previousBest);
+      setSessionStars(rating);
+      // Solo se anuncia lo que se acaba de abrir, no lo que ya estaba abierto.
+      setOpenedLevel(nextUnlocked > unlocked ? nextUnlocked : null);
+      setUnlocked(nextUnlocked);
+      setPhase("results");
+      playCelebrationSound();
+    },
+    [unlocked],
+  );
+
+  /**
+   * Volver a la introducción, donde está el selector, igual que en Parejas:
+   * si se acaba de abrir un nivel, lo que se quiere es probarlo, y solo se
+   * puede elegir ahí. Empezar sigue estando a un toque.
+   */
+  const backToIntro = () => {
+    clearTimers();
+    setLockedHint(null);
+    setPhase("intro");
+  };
+
+  const pickLevel = (option: WordScrambleLevel) => {
+    if (option > unlocked) {
+      // Un nivel cerrado no se elige: se explica cómo se abre.
+      setLockedHint(option);
+      playWrongSound();
+      return;
+    }
+    setLockedHint(null);
+    setSelectedLevel(option);
+    playTapSound();
+  };
 
   const completeWord = useCallback((solvedWord: string) => {
     // Blindaje: la palabra solo puede completarse una vez, aunque dos toques
@@ -183,16 +269,7 @@ export default function WordScrambleGame() {
     if (solvedRef.current) return;
     solvedRef.current = true;
 
-    const wordMistakes = wordMistakesRef.current;
-    if (wordMistakes === 0) perfectWordsRef.current += 1;
-
-    const progression = nextWordScrambleLevel(
-      levelRef.current,
-      streakRef.current,
-      wordMistakes,
-    );
-    levelRef.current = progression.level;
-    streakRef.current = progression.streak;
+    if (wordMistakesRef.current === 0) perfectWordsRef.current += 1;
 
     setSolved(true);
     applyLocked(true);
@@ -206,7 +283,6 @@ export default function WordScrambleGame() {
     later(() => {
       const nextIndex = wordIndex + 1;
       setWordIndex(nextIndex);
-      setLevel(levelRef.current);
       if (nextIndex >= WORD_SCRAMBLE_WORDS_PER_SESSION || !loadWord()) {
         finishGame(nextIndex);
       }
@@ -215,6 +291,7 @@ export default function WordScrambleGame() {
 
   // Letras reales de la palabra: `Ñ`, `Ü` y las vocales con tilde cuentan como una.
   const letters = word ? getWordLetters(word.word) : [];
+  const levelConfig = WORD_SCRAMBLE_LEVELS[level];
 
   const handleTapLetter = (tile: LetterTile) => {
     if (!word || phase !== "playing" || lockedRef.current || solvedRef.current) {
@@ -276,6 +353,15 @@ export default function WordScrambleGame() {
       onStart={startGame}
       confirmExit={phase === "playing"}
       onOverlayOpenChange={handleOverlayOpenChange}
+      beforeStart={
+        <LevelPicker
+          maxLevel={WORD_SCRAMBLE_MAX_LEVEL}
+          unlocked={unlocked}
+          selected={selectedLevel}
+          lockedHint={lockedHint}
+          onPick={(option) => pickLevel(clampScrambleLevel(option))}
+        />
+      }
     >
       {phase === "playing" && word && (
         <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 pb-4 pt-3 sm:min-h-[calc(100svh-6rem)] sm:justify-center sm:gap-8 sm:pt-6">
@@ -311,23 +397,39 @@ export default function WordScrambleGame() {
             </span>
           </div>
 
+          {/*
+            En el escalón 5 no hay dibujo: queda la pista. El botón de
+            escuchar lee entonces la pista y no la palabra —leerla sería dar
+            la respuesta— y así la pista sirve también a quien aún no lee.
+          */}
           <div className="flex w-full items-center gap-4 rounded-3xl border-2 border-mint bg-white px-4 py-4 shadow-[0_10px_28px_rgba(74,56,0,0.08)] sm:gap-5 sm:px-6 sm:py-5">
-            <span
-              className="text-[clamp(3rem,13vw,4.5rem)] leading-none"
-              aria-hidden="true"
-            >
-              {word.emoji}
-            </span>
+            {levelConfig.showPicture && (
+              <span
+                className="text-[clamp(3rem,13vw,4.5rem)] leading-none"
+                aria-hidden="true"
+              >
+                {word.emoji}
+              </span>
+            )}
             <p className="min-w-0 flex-1 text-left text-base font-bold leading-snug text-ink/70 sm:text-xl">
               {word.clue}
             </p>
-            <AudioButton text={word.word} label={t("scrambleListen")} />
+            {levelConfig.showPicture ? (
+              <AudioButton text={word.word} label={t("scrambleListen")} />
+            ) : (
+              <AudioButton text={word.clue} label={t("scrambleListenClue")} />
+            )}
           </div>
 
           <div className="w-full text-center">
             <p className="text-sm font-extrabold text-[#7a5c00] sm:text-base">
               {t("scrambleInstruction")}
             </p>
+            {levelConfig.extraLetters > 0 && (
+              <p className="mt-1 text-sm font-bold text-ink/60 sm:text-base">
+                {t("scrambleExtraLetters")}
+              </p>
+            )}
 
             <div
               className="mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3"
@@ -433,12 +535,17 @@ export default function WordScrambleGame() {
             <p className="mt-2 text-lg font-semibold text-ink/60">
               {t("scrambleResultsText", { total: result.solvedWords })}
             </p>
+            <p className="mt-1 text-base font-extrabold text-ink/70">
+              {t("scrambleLevelLabel", { level })}
+            </p>
             {isRecord && (
               <p className="mt-3 inline-block rounded-full border-2 border-sun bg-sunsoft px-5 py-1.5 text-base font-extrabold text-ink">
                 {t("scrambleRecord")}
               </p>
             )}
           </div>
+          {/* Aparte de las palabras y la precisión, que van en sus tarjetas. */}
+          <SessionStars stars={sessionStars} openedLevel={openedLevel} />
           <div className="grid w-full grid-cols-3 gap-3">
             <ResultStat
               label={t("scramblePerfectWords")}
@@ -452,7 +559,7 @@ export default function WordScrambleGame() {
           </div>
           <ResultActions
             playAgainLabel={t("scramblePlayAgain")}
-            onPlayAgain={startGame}
+            onPlayAgain={backToIntro}
           />
         </section>
       )}

@@ -18,7 +18,8 @@ import {
   getUnassignedGameProgress,
   hasGameProgress,
   saveSession,
-  saveWordScrambleProgress,
+  saveWordScrambleResult,
+  saveWordSearchResult,
 } from "@/lib/storage";
 import { UNASSIGNED_GRADE } from "@/lib/grade";
 
@@ -140,10 +141,16 @@ console.log("\n4. No sobrescribe ni borra las claves anteriores");
   getProgress();
   check("una lectura no toca lo guardado", store.get(PROGRESS_KEY) === JSON.stringify(V1));
 
-  // Un juego que todavía escribe a la manera antigua, que es lo que hacen los
-  // nueve mientras el puente siga en pie.
+  // Una lección, que todavía escribe a la manera antigua, y Word Scramble,
+  // que escribe en los dos modelos: ninguna de las dos puede llevarse lo que
+  // ya había en las claves que no son suyas.
   saveSession({ date: "2026-09-20T09:00:00.000Z", category: "numeros", stars: 5, total: 5 }, 2);
-  saveWordScrambleProgress({ level: 3, bestPerfectWords: 4 });
+  saveWordScrambleResult({
+    playedLevel: 1,
+    sessionStars: 1,
+    playedAt: "2026-09-20T09:05:00.000Z",
+    perfectWords: 4,
+  });
   const stored = raw();
 
   check("sobrevive wordPuzzle", JSON.stringify(stored.wordPuzzle) === JSON.stringify(V1.wordPuzzle));
@@ -192,6 +199,57 @@ console.log("\n4b. Un dato de la versión 1 nunca rebaja uno de la versión 2");
   check("las estrellas nunca bajan", search.stars === 3);
   check("las sesiones nunca bajan", search.sessions === 9);
   check("el escalón elegido lo manda el modelo nuevo", search.difficulty === 2, `${search.difficulty}`);
+}
+
+console.log("\n4c. Los juegos de palabras pasan de tres niveles a cinco sin perder nada");
+{
+  // Quien llegó al 3 de los dos con el juego anterior, y vuelve a jugar el 1
+  // sin hacerlo bien: no puede perder el 3 abierto ni sus mejores marcas.
+  store.set(PROGRESS_KEY, JSON.stringify(V1));
+  check(
+    "el nivel 3 de antes llega abierto al selector de cinco",
+    getUnassignedGameProgress(getProgress(), "search").unlocked === 3,
+  );
+  saveWordSearchResult({
+    playedLevel: 1,
+    sessionStars: 1,
+    playedAt: "2026-09-21T09:00:00.000Z",
+    wordsFound: 5,
+    misses: 4,
+  });
+  const afterEasy = getUnassignedGameProgress(getProgress(), "search");
+  check("repetir el 1 no cierra el 3", afterEasy.unlocked === 3);
+  check("ni baja la mejor marca de palabras", afterEasy.best.wordsFound === 9);
+  check(
+    "y el espejo de la versión 1 sigue diciendo 3",
+    (raw().wordSearch as { level: number }).level === 3,
+  );
+
+  // Abrir el 5 jugando bien el 4.
+  saveWordSearchResult({
+    playedLevel: 4,
+    sessionStars: 3,
+    playedAt: "2026-09-22T09:00:00.000Z",
+    wordsFound: 24,
+    misses: 1,
+  });
+  const afterHard = getUnassignedGameProgress(getProgress(), "search");
+  check("dos estrellas en el 4 abren el 5", afterHard.unlocked === 5);
+  check("y el mejor número de errores es el menor", afterHard.best.fewestMisses === 1);
+  // El código anterior lee cualquier nivel fuera de 1-3 como un 1: escribir
+  // un 5 ahí degradaría al nivel más fácil a quien revirtiera el despliegue.
+  check(
+    "el espejo de la versión 1 se queda en 3, el máximo que entiende",
+    (raw().wordSearch as { level: number }).level === 3,
+  );
+  check(
+    "y releerlo no rebaja el 5 del modelo nuevo",
+    getUnassignedGameProgress(getProgress(), "search").unlocked === 5,
+  );
+  check(
+    "Word Scramble, del que no se jugó nada nuevo, conserva lo suyo",
+    getUnassignedGameProgress(getProgress(), "scramble").best.perfectWords === 7,
+  );
 }
 
 console.log("\n5. Un dispositivo sin progreso anterior empieza bien");
