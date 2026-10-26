@@ -18,6 +18,17 @@ import type { Language } from "./language";
  * hacer bien. Las ilustraciones de Colores tuvieron que venir de fuera porque
  * un flamenco no es geometría; una página de colorear sí.
  *
+ * **Se pinta pasando el dedo o el Apple Pencil, con el grosor que se elija.**
+ * No es adorno: un toque que rellenaba la zona entera convertía colorear en
+ * señalar, que es lo que ya hacen las lecciones de preguntas. Arrastrando, la
+ * mano trabaja —el mismo gesto que Trazos, sin la exigencia de seguir un
+ * camino— y elegir el grosor es la primera decisión de herramienta que toma
+ * quien juega. La pintura solo agarra **dentro** de la zona, así que salirse
+ * no estropea el dibujo: eso es lo que permite dárselo a un niño de tres años
+ * con el dedo. Y una zona queda lista cuando está cubierta de sobra
+ * (`COLORING_COVERAGE_TO_FILL`), no cuando está perfecta: pedir el 100 %
+ * castigaría el pulso, que no es lo que este juego mide.
+ *
  * Los colores **no se guardan en el dibujo**: se reparten al empezar cada
  * sesión desde la paleta del escalón. Así la misma casa sale distinta cada vez
  * y repetir un nivel no es repetir la misma lámina, que es lo que permite que
@@ -110,6 +121,159 @@ export function clampColoringLevel(level: number): ColoringLevel {
   if (rounded <= 1) return 1;
   if (rounded >= COLORING_MAX_LEVEL) return COLORING_MAX_LEVEL;
   return rounded as ColoringLevel;
+}
+
+/* ───────────────────────── El pincel ─────────────────────────── */
+
+export type ColoringBrushId = "fino" | "medio" | "grueso";
+
+/**
+ * Los tres grosores, con su radio en el lienzo de 100 × 100 del dibujo.
+ *
+ * Tres y no un deslizador continuo: un deslizador es un gesto fino —justo el
+ * que un niño de tres años todavía no tiene— y además no se puede nombrar en
+ * voz alta ni leer con un lector de pantalla. Tres botones sí.
+ *
+ * Los radios están elegidos contra las zonas de verdad, no al azar: la franja
+ * más estrecha del arcoíris mide 10 de lado a lado, así que el grueso (19 de
+ * diámetro) la cubre de una pasada, el medio pide dos y el fino sirve para la
+ * ventana y las ruedas. Ninguno estropea nada por grande, porque la pintura se
+ * recorta a la zona.
+ */
+export const COLORING_BRUSHES: readonly {
+  id: ColoringBrushId;
+  radius: number;
+}[] = [
+  { id: "fino", radius: 3.5 },
+  { id: "medio", radius: 6 },
+  { id: "grueso", radius: 9.5 },
+];
+
+/** El de en medio: cubre rápido sin pasarse de las zonas pequeñas. */
+export const COLORING_DEFAULT_BRUSH: ColoringBrushId = "medio";
+
+export function coloringBrushRadius(id: ColoringBrushId): number {
+  const brush = COLORING_BRUSHES.find((option) => option.id === id);
+  return brush ? brush.radius : COLORING_BRUSHES[1].radius;
+}
+
+/* ──────────────────── Cuánto hay pintado ─────────────────────── */
+
+export type ColoringPoint = { x: number; y: number };
+
+/**
+ * El paso de la rejilla con la que se mide una zona, en el lienzo de 100.
+ *
+ * Medir leyendo los píxeles del lienzo costaría una copia de memoria por cada
+ * movimiento del dedo; esto es geometría y no lee nada: se siembra la zona de
+ * puntos una vez por lámina y luego cada tramo de pincel marca los que le
+ * caen debajo. Con paso 2 la zona más pequeña del banco sigue teniendo
+ * decenas de puntos, que es resolución de sobra para un umbral del 70 %.
+ */
+export const COLORING_SAMPLE_STEP = 2;
+
+/**
+ * Lo que tiene que moverse el dedo para que cuente como tramo nuevo, en el
+ * lienzo de 100. Un Apple Pencil manda cientos de puntos por segundo y casi
+ * pegados: sin este mínimo, un trazo de dos segundos guarda miles de puntos
+ * que luego hay que repintar enteros al girar el iPad.
+ */
+export const COLORING_MIN_STEP = 0.4;
+
+/**
+ * Cuánto hay que cubrir para que la zona se dé por pintada.
+ *
+ * Por debajo se vería a medio hacer; el 100 % obligaría a repasar los
+ * rincones del contorno con el pincel fino, y lo que se practica aquí es el
+ * color, no la precisión milimétrica. Al llegar al umbral la zona se rellena
+ * entera y sola, así que el dibujo terminado siempre queda limpio.
+ */
+export const COLORING_COVERAGE_TO_FILL = 0.7;
+
+/**
+ * Siembra el lienzo de 100 × 100 de puntos y devuelve los que caen dentro.
+ *
+ * Recibe el "está dentro" en vez de calcularlo porque quien sabe si un punto
+ * cae dentro de un camino SVG es el navegador (`isPointInPath`), y este
+ * archivo no puede depender de él: `validate:content` lo compila sin las
+ * librerías del DOM justo para que el contenido no acabe importando código de
+ * navegador.
+ *
+ * Los puntos van en el centro de cada celda y no en sus esquinas: en el borde
+ * exacto de un camino, "dentro" depende del redondeo.
+ */
+export function coloringSampleGrid(
+  isInside: (x: number, y: number) => boolean,
+  step: number = COLORING_SAMPLE_STEP,
+): ColoringPoint[] {
+  const samples: ColoringPoint[] = [];
+  for (let y = step / 2; y < 100; y += step) {
+    for (let x = step / 2; x < 100; x += step) {
+      if (isInside(x, y)) samples.push({ x, y });
+    }
+  }
+  return samples;
+}
+
+/**
+ * Si un tramo de pincel —de `from` a `to`, con ese radio— tapa el punto.
+ *
+ * Es la distancia del punto al segmento, que es exactamente la forma que deja
+ * un pincel redondo arrastrado en línea recta. El dedo manda muchos puntos
+ * seguidos, así que la unión de los tramos es el trazo entero.
+ */
+export function coloringStrokeCovers(
+  sample: ColoringPoint,
+  from: ColoringPoint,
+  to: ColoringPoint,
+  radius: number,
+): boolean {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const lengthSquared = dx * dx + dy * dy;
+
+  // Un toque sin arrastre es un segmento de longitud cero: un círculo.
+  let along = 0;
+  if (lengthSquared > 0) {
+    along =
+      ((sample.x - from.x) * dx + (sample.y - from.y) * dy) / lengthSquared;
+    along = Math.max(0, Math.min(1, along));
+  }
+
+  const nearestX = from.x + along * dx;
+  const nearestY = from.y + along * dy;
+  return Math.hypot(sample.x - nearestX, sample.y - nearestY) <= radius;
+}
+
+/**
+ * La parte cubierta de una zona, de 0 a 1.
+ *
+ * Una zona sin un solo punto de muestra —no hay ninguna hoy, pero una lámina
+ * nueva podría traerla— se cuenta como cubierta en cuanto se la toca: mejor
+ * eso que una zona imposible de terminar.
+ */
+export function coloringCoverage(covered: number, total: number): number {
+  if (total === 0) return 1;
+  return covered / total;
+}
+
+/** Si la zona ya está cubierta de sobra y toca rellenarla entera. */
+export function coloringRegionIsFull(covered: number, total: number): boolean {
+  return coloringCoverage(covered, total) >= COLORING_COVERAGE_TO_FILL;
+}
+
+/**
+ * La decisión que se está tomando: pintar **esta** zona de **este** color.
+ *
+ * Es lo que cuenta la precisión, y cuenta una sola vez: cubrir una zona pide
+ * varias pasadas del dedo, y cobrar cada pasada como un intento habría hecho
+ * que pintar bien con el pincel fino puntuara peor que pintar bien con el
+ * grueso. Equivocarse también se cuenta una vez por pareja, así que seguir
+ * frotando con el color que no era no hunde la sesión: lo que se mide es
+ * haber elegido mal, no cuánto tardó en notarse.
+ */
+export function coloringAttemptKey(regionId: string, colorId: ColorId): string {
+  return `${regionId}:${colorId}`;
 }
 
 /**
@@ -683,12 +847,13 @@ export function buildColoringSession(level: ColoringLevel): ColoringRound[] {
 }
 
 /**
- * Cuántos de los toques dieron en la zona correcta. Sin toques aún es 100: la
+ * Cuántas de las decisiones —zona y color, contadas una vez cada una por
+ * `coloringAttemptKey`— dieron en la zona correcta. Sin ninguna aún es 100: la
  * sesión empieza perfecta y se estropea sola, igual que en Parejas.
  */
-export function coloringAccuracy(taps: number, filled: number): number {
-  if (taps === 0) return 100;
-  return Math.round((filled / taps) * 100);
+export function coloringAccuracy(attempts: number, painted: number): number {
+  if (attempts === 0) return 100;
+  return Math.round((painted / attempts) * 100);
 }
 
 /**

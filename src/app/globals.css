@@ -903,21 +903,35 @@ button {
  */
 /*
  * El lienzo de Colorear. Cuadrado, y limitado por el alto que queda libre:
- * encima lleva la consigna y debajo la paleta, que son alto fijo, y el texto
- * de ambos crece con la preferencia de tamanio.
+ * encima lleva la consigna y debajo la paleta y los grosores de pincel, que
+ * son alto fijo, y el texto de ambos crece con la preferencia de tamanio. La
+ * fila de pinceles son 3.5rem de los que se reservan aqui: 3 del boton y 0.5
+ * del hueco.
+ *
+ * `position: relative` porque dentro van dos capas superpuestas: el lienzo
+ * donde se pinta y el SVG con los numeros y las zonas enfocables. Y
+ * `touch-action: none` es imprescindible, igual que en Trazos y en la sopa de
+ * letras: sin eso el navegador se queda el arrastre como scroll y no llega ni
+ * un `pointermove`, asi que no se podria pintar con el dedo.
  */
 .coloring-board {
+  position: relative;
+  aspect-ratio: 1;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   max-width: min(
     20rem,
     calc(
-      100vh - 16rem - 3.75rem * var(--text-scale) -
+      100vh - 19.5rem - 3.75rem * var(--text-scale) -
         env(safe-area-inset-bottom, 0px)
     )
   );
   max-width: min(
     20rem,
     calc(
-      100svh - 16rem - 3.75rem * var(--text-scale) -
+      100svh - 19.5rem - 3.75rem * var(--text-scale) -
         env(safe-area-inset-bottom, 0px)
     )
   );
@@ -925,15 +939,16 @@ button {
 
 /*
  * Igual que Parejas: en una tableta lo que limita es el alto, no un tope fijo.
- * La reserva es 1.5rem mayor que en móvil porque desde 768px la paleta crece a
- * fichas de 80px.
+ * La reserva es 5rem mayor que en móvil: 1.5rem porque desde 768px la paleta
+ * crece a fichas de 80px, y 3.5rem porque la fila de pinceles crece con ella y
+ * el hueco entre filas pasa de 0.5rem a 1rem.
  */
 @media (min-width: 640px) {
   .coloring-board {
     max-width: min(
       40rem,
       calc(
-        100svh - 19.5rem - 3.75rem * var(--text-scale) -
+        100svh - 24.5rem - 3.75rem * var(--text-scale) -
           env(safe-area-inset-bottom, 0px)
       )
     );
