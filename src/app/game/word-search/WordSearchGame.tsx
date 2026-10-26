@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
+import LevelPicker from "@/components/LevelPicker";
 import ResultActions from "@/components/ResultActions";
 import ResultStat from "@/components/ResultStat";
+import SessionStars from "@/components/SessionStars";
 import { useClockPause } from "@/lib/clockPause";
+import type { Stars } from "@/lib/difficulty";
 import { useGameTimers } from "@/lib/gameTimers";
 import { useSpeakAfterSound } from "@/lib/speakAfterSound";
 import { useLanguage } from "@/lib/i18n";
@@ -17,10 +20,11 @@ import {
   playWrongSound,
 } from "@/lib/sounds";
 import {
-  getWordSearchProgress,
+  getProgress,
+  getUnassignedGameProgress,
   getWordSearchRecent,
-  saveWordSearchProgress,
   saveWordSearchRecent,
+  saveWordSearchResult,
 } from "@/lib/storage";
 import {
   buildLine,
@@ -31,13 +35,15 @@ import {
   formatSearchTime,
   generateBoard,
   isSameCell,
-  nextWordSearchLevel,
   rememberSearchWords,
+  searchSessionStars,
   snapSelection,
   WORD_SEARCH_BOARDS_PER_SESSION,
+  WORD_SEARCH_LEVELS,
   WORD_SEARCH_MAX_LEVEL,
   type Board,
   type Cell,
+  type WordSearchLevel,
   type WordSearchStats,
 } from "@/lib/wordSearch";
 import { hexagonImage } from "@/data/categories";
@@ -58,15 +64,25 @@ export default function WordSearchGame() {
   const [missCells, setMissCells] = useState<Cell[]>([]);
   const [lastFound, setLastFound] = useState("");
   const [boardDone, setBoardDone] = useState(false);
-  const [level, setLevel] = useState(1);
   const [now, setNow] = useState(0);
   const [finalTime, setFinalTime] = useState(0);
   const [result, setResult] = useState<WordSearchStats | null>(null);
   const [isRecord, setIsRecord] = useState(false);
 
+  // El escalón de la partida en curso, fijado al empezar: el juego ya no lo
+  // sube ni lo baja solo entre tableros, como en Parejas y Trazos. Aparte, el
+  // elegido en el selector, el más alto abierto y el aviso de haber tocado
+  // uno cerrado.
+  const [level, setLevel] = useState<WordSearchLevel>(1);
+  const [unlocked, setUnlocked] = useState<WordSearchLevel>(1);
+  const [selectedLevel, setSelectedLevel] = useState<WordSearchLevel>(1);
+  const [lockedHint, setLockedHint] = useState<WordSearchLevel | null>(null);
+  const [sessionStars, setSessionStars] = useState<Stars>(0);
+  const [openedLevel, setOpenedLevel] = useState<WordSearchLevel | null>(null);
+
   const boardRef = useRef<HTMLDivElement>(null);
-  const levelRef = useRef(1);
-  const streakRef = useRef(0);
+  // Lo mismo que `level`, para lo que vive en `useCallback`.
+  const levelRef = useRef<WordSearchLevel>(1);
   const boardIndexRef = useRef(0);
   const usedIdsRef = useRef<string[]>([]);
   const recentIdsRef = useRef<string[]>([]);
@@ -74,7 +90,6 @@ export default function WordSearchGame() {
   const wordsFoundRef = useRef(0);
   const totalWordsRef = useRef(0);
   const missesRef = useRef(0);
-  const boardMissesRef = useRef(0);
   const startedAtRef = useRef(0);
   const timers = useGameTimers();
   const sessionLanguageRef = useRef(language);
@@ -167,7 +182,7 @@ export default function WordSearchGame() {
   const loadBoard = useCallback(() => {
     const next = generateBoard(
       language,
-      clampSearchLevel(levelRef.current),
+      levelRef.current,
       Math.random,
       usedIdsRef.current,
       recentIdsRef.current,
@@ -177,7 +192,6 @@ export default function WordSearchGame() {
     recentIdsRef.current = rememberSearchWords(recentIdsRef.current, placedIds);
     saveWordSearchRecent(recentIdsRef.current);
     totalWordsRef.current += next.placements.length;
-    boardMissesRef.current = 0;
     foundIdsRef.current = [];
     boardDataRef.current = next;
     setBoard(next);
@@ -188,10 +202,22 @@ export default function WordSearchGame() {
     clearSelection();
   }, [clearSelection, language]);
 
+  // Lo guardado se lee al montar y no al pulsar Comenzar: el selector tiene
+  // que enseñar los candados antes de que nadie elija nada. Quien llegó a un
+  // nivel con el juego de tres niveles lo encuentra aquí abierto, porque
+  // `getProgress` proyecta lo antiguo en el modelo nuevo.
+  useEffect(() => {
+    const stored = getUnassignedGameProgress(getProgress(), "search");
+    const open = clampSearchLevel(stored.unlocked);
+    setUnlocked(open);
+    // El último elegido, salvo que fuera más alto de lo que hoy está abierto.
+    setSelectedLevel(clampSearchLevel(Math.min(stored.difficulty, open)));
+  }, []);
+
   const startGame = useCallback(() => {
     clearTimers();
-    levelRef.current = getWordSearchProgress().level;
-    streakRef.current = 0;
+    // El escalón es el elegido en el selector y se queda fijo hasta el final.
+    levelRef.current = selectedLevel;
     boardIndexRef.current = 0;
     usedIdsRef.current = [];
     recentIdsRef.current = getWordSearchRecent();
@@ -200,7 +226,10 @@ export default function WordSearchGame() {
     missesRef.current = 0;
     startedAtRef.current = Date.now();
     lockedRef.current = false;
-    setLevel(levelRef.current);
+    setLevel(selectedLevel);
+    setSessionStars(0);
+    setOpenedLevel(null);
+    setLockedHint(null);
     setBoardIndex(0);
     setNow(Date.now());
     setFinalTime(0);
@@ -208,7 +237,7 @@ export default function WordSearchGame() {
     setIsRecord(false);
     loadBoard();
     setPhase("playing");
-  }, [clearTimers, loadBoard]);
+  }, [clearTimers, loadBoard, selectedLevel]);
 
   // El banco de palabras depende del idioma: si cambia, la sesión vuelve al inicio.
   useEffect(() => {
@@ -222,40 +251,76 @@ export default function WordSearchGame() {
     setPhase("intro");
   }, [clearSelection, clearTimers, language]);
 
+  /**
+   * La partida llegó al final, así que hay valoración: la precisión decide
+   * cuántas estrellas vale. Abandonar a mitad no pasa por aquí y por eso no
+   * desbloquea nada ni guarda nada.
+   */
   const finishGame = useCallback(() => {
     const timeMs = Date.now() - startedAtRef.current;
+    const played = levelRef.current;
     const stats = computeWordSearchStats(
       WORD_SEARCH_BOARDS_PER_SESSION,
       wordsFoundRef.current,
       totalWordsRef.current,
       missesRef.current,
       timeMs,
-      levelRef.current,
+      played,
     );
-    const previousBest = getWordSearchProgress().bestWordsFound;
-    saveWordSearchProgress({
-      level: levelRef.current,
-      bestWordsFound: stats.wordsFound,
+    const rating = searchSessionStars(stats.accuracy);
+    const nextUnlocked =
+      rating >= 2 ? clampSearchLevel(Math.max(unlocked, played + 1)) : unlocked;
+    const previousBest =
+      getUnassignedGameProgress(getProgress(), "search").best.wordsFound ?? 0;
+
+    saveWordSearchResult({
+      playedLevel: played,
+      sessionStars: rating,
+      wordsFound: stats.wordsFound,
+      misses: stats.misses,
+      playedAt: new Date().toISOString(),
     });
+
     setFinalTime(timeMs);
     setResult(stats);
     setIsRecord(stats.wordsFound > 0 && stats.wordsFound > previousBest);
+    setSessionStars(rating);
+    // Solo se anuncia lo que se acaba de abrir, no lo que ya estaba abierto.
+    setOpenedLevel(nextUnlocked > unlocked ? nextUnlocked : null);
+    setUnlocked(nextUnlocked);
     setPhase("results");
     playCelebrationSound();
-  }, []);
+  }, [unlocked]);
+
+  /**
+   * Volver a la introducción, donde está el selector, igual que en Parejas:
+   * si se acaba de abrir un nivel, lo que se quiere es probarlo, y solo se
+   * puede elegir ahí. Empezar sigue estando a un toque.
+   */
+  const backToIntro = () => {
+    clearTimers();
+    lockedRef.current = false;
+    clearSelection();
+    setLockedHint(null);
+    setPhase("intro");
+  };
+
+  const pickLevel = (option: WordSearchLevel) => {
+    if (option > unlocked) {
+      // Un nivel cerrado no se elige: se explica cómo se abre.
+      setLockedHint(option);
+      playWrongSound();
+      return;
+    }
+    setLockedHint(null);
+    setSelectedLevel(option);
+    playTapSound();
+  };
 
   const completeBoard = useCallback(() => {
     lockedRef.current = true;
     setBoardDone(true);
     playCelebrationSound();
-
-    const progression = nextWordSearchLevel(
-      levelRef.current,
-      streakRef.current,
-      boardMissesRef.current,
-    );
-    levelRef.current = progression.level;
-    streakRef.current = progression.streak;
 
     later(() => {
       const nextIndex = boardIndexRef.current + 1;
@@ -265,7 +330,6 @@ export default function WordSearchGame() {
       }
       boardIndexRef.current = nextIndex;
       setBoardIndex(nextIndex);
-      setLevel(levelRef.current);
       loadBoard();
       lockedRef.current = false;
     }, BOARD_PAUSE_MS);
@@ -284,7 +348,6 @@ export default function WordSearchGame() {
 
       if (!match) {
         missesRef.current += 1;
-        boardMissesRef.current += 1;
         setMissCells(line);
         setLastFound("");
         playWrongSound();
@@ -489,9 +552,15 @@ export default function WordSearchGame() {
         ? "text-[clamp(0.9rem,4.1vw,1.6rem)]"
         : "text-[clamp(0.8rem,3.6vw,1.4rem)]";
 
+  const hideWords = WORD_SEARCH_LEVELS[level].hideWords;
+
+  // Con las palabras escondidas, el orden alfabético soplaría la primera
+  // letra de cada una; por largo no sopla nada que los huecos no digan ya.
   const wordList = board
     ? [...board.placements].sort((a, b) =>
-        a.word.localeCompare(b.word, language),
+        hideWords
+          ? getWordLetters(a.word).length - getWordLetters(b.word).length
+          : a.word.localeCompare(b.word, language),
       )
     : [];
 
@@ -512,6 +581,15 @@ export default function WordSearchGame() {
       onStart={startGame}
       confirmExit={phase === "playing"}
       onOverlayOpenChange={handleOverlayOpenChange}
+      beforeStart={
+        <LevelPicker
+          maxLevel={WORD_SEARCH_MAX_LEVEL}
+          unlocked={unlocked}
+          selected={selectedLevel}
+          lockedHint={lockedHint}
+          onPick={(option) => pickLevel(clampSearchLevel(option))}
+        />
+      }
     >
       {phase === "playing" && board && (
         <section className="mx-auto flex w-full max-w-5xl flex-col items-center gap-3 pb-6 pt-3 sm:gap-4 sm:pt-5">
@@ -556,11 +634,33 @@ export default function WordSearchGame() {
           <div className="flex w-full flex-col items-center gap-4 lg:flex-row lg:items-start lg:justify-center lg:gap-8">
             <div className="w-full lg:order-2 lg:w-64">
               <p className="text-center text-sm font-extrabold text-[#7a5c00] lg:text-left">
-                {t("searchWordsHeading")}
+                {t(hideWords ? "searchFindPictures" : "searchWordsHeading")}
               </p>
               <ul className="mt-2 flex flex-wrap justify-center gap-2 lg:flex-col lg:justify-start">
                 {wordList.map((placement) => {
                   const found = foundIds.includes(placement.id);
+                  // En el 4 y el 5 la palabra no se escribe hasta encontrarla:
+                  // se ve el dibujo y un hueco por letra, que es lo que se busca.
+                  if (hideWords && !found) {
+                    const length = getWordLetters(placement.word).length;
+                    return (
+                      <li
+                        key={placement.id}
+                        className="flex items-center gap-2 rounded-full border-2 border-ink/10 bg-white px-3 py-1.5 text-base font-extrabold text-ink shadow-sm sm:text-lg"
+                      >
+                        <span className="sr-only">
+                          {t("searchHiddenWordAria", { count: length })}
+                        </span>
+                        <span aria-hidden="true">{placement.emoji}</span>
+                        <span
+                          aria-hidden="true"
+                          className="tracking-[0.2em] text-ink/40"
+                        >
+                          {"_".repeat(length)}
+                        </span>
+                      </li>
+                    );
+                  }
                   return (
                     <li
                       key={placement.id}
@@ -707,6 +807,8 @@ export default function WordSearchGame() {
               </p>
             )}
           </div>
+          {/* Aparte de las palabras y la precisión, que van en sus tarjetas. */}
+          <SessionStars stars={sessionStars} openedLevel={openedLevel} />
           <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3">
             <ResultStat
               label={t("searchWordsFound")}
@@ -722,13 +824,13 @@ export default function WordSearchGame() {
             />
             <ResultStat label={t("searchMisses")} value={result.misses} />
             <ResultStat
-              label={t("searchLevelReached")}
+              label={t("searchLevel")}
               value={`${result.level}/${WORD_SEARCH_MAX_LEVEL}`}
             />
           </div>
           <ResultActions
             playAgainLabel={t("searchPlayAgain")}
-            onPlayAgain={startGame}
+            onPlayAgain={backToIntro}
           />
         </section>
       )}

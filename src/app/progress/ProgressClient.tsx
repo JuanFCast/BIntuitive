@@ -232,8 +232,10 @@ function readActivity(
   if (hexagon.id === "scramble") {
     const stored = getUnassignedGameProgress(progress, "scramble");
     return {
+      // Se elige nivel, como en Trazos: cuenta hasta dónde llegó, no qué
+      // estaba repitiendo la última vez.
       level: t("progressLevel", {
-        level: stored.difficulty,
+        level: stored.unlocked,
         total: WORD_SCRAMBLE_MAX_LEVEL,
       }),
       best: t("progressBestScramble", {
@@ -245,8 +247,9 @@ function readActivity(
   if (hexagon.id === "search") {
     const stored = getUnassignedGameProgress(progress, "search");
     return {
+      // Lo mismo que Word Scramble: lo desbloqueado, no lo último jugado.
       level: t("progressLevel", {
-        level: stored.difficulty,
+        level: stored.unlocked,
         total: WORD_SEARCH_MAX_LEVEL,
       }),
       best: t("progressBestSearch", { count: stored.best.wordsFound ?? 0 }),

@@ -44,10 +44,12 @@ import {
 import { getTypingPhrases } from "../src/lib/typingGame";
 import { VISUAL_SYMBOLS, VISUAL_SYMBOLS_PER_CARD } from "../src/lib/visualGame";
 import {
+  WORD_SCRAMBLE_LEVELS,
   WORD_SCRAMBLE_MAX_LEVEL,
   WORD_SCRAMBLE_RECENT_LIMIT,
   WORD_SCRAMBLE_WORDS_PER_SESSION,
   getWordBank,
+  type WordScrambleLevel,
 } from "../src/lib/wordScramble";
 import {
   WORD_SEARCH_BOARDS_PER_SESSION,
@@ -60,12 +62,24 @@ import {
 const LANGUAGES: Language[] = ["en", "es"];
 const CATEGORIES: CategoryId[] = ["lugares", "numeros", "colores"];
 
-/** Longitud de palabra que admite cada nivel de Word Scramble, según su banco. */
-const SCRAMBLE_LENGTH_BY_LEVEL: Record<number, [number, number]> = {
+/** Longitud que admite cada largo (`tier`) del banco de Word Scramble. */
+const SCRAMBLE_LENGTH_BY_TIER: Record<number, [number, number]> = {
   1: [3, 4],
   2: [5, 6],
   3: [7, 8],
 };
+
+/** Longitud que admite cada largo (`tier`) del banco de Word Search. */
+const SEARCH_LENGTH_BY_TIER: Record<number, [number, number]> = {
+  1: [3, 5],
+  2: [5, 7],
+  3: [6, 8],
+};
+
+const SEARCH_LEVELS = Array.from(
+  { length: WORD_SEARCH_MAX_LEVEL },
+  (_, index) => (index + 1) as WordSearchLevel,
+);
 
 /** Rango de opciones que `AnswerGrid` sabe repartir en pantalla. */
 const MIN_OPTIONS = 2;
@@ -469,16 +483,12 @@ function validateWordScramble(): void {
         );
       }
 
-      if (entry.level < 1 || entry.level > WORD_SCRAMBLE_MAX_LEVEL) {
-        fail(
-          bank,
-          at,
-          "nivel fuera de 1-" + WORD_SCRAMBLE_MAX_LEVEL + ": " + entry.level,
-        );
+      const range = SCRAMBLE_LENGTH_BY_TIER[entry.tier];
+      if (!range) {
+        fail(bank, at, "largo (`tier`) fuera de 1-3: " + entry.tier);
       } else {
         // Las tildes, la Ñ y la Ü cuentan como una sola letra.
         const length = getWordLetters(entry.word).length;
-        const range = SCRAMBLE_LENGTH_BY_LEVEL[entry.level];
         if (length < range[0] || length > range[1]) {
           fail(
             bank,
@@ -486,8 +496,8 @@ function validateWordScramble(): void {
             entry.word +
               " mide " +
               length +
-              " letras; el nivel " +
-              entry.level +
+              " letras; el largo " +
+              entry.tier +
               " admite " +
               range[0] +
               "-" +
@@ -508,20 +518,41 @@ function validateWordScramble(): void {
           " para una sesión sin repetir",
       );
     }
-    // Quien se queda en un nivel tiene que poder jugar una partida entera sin
-    // ver ninguna de las que recuerda el juego de las partidas anteriores.
+    // Quien se queda en un escalón tiene que poder jugar una partida entera
+    // sin ver ninguna de las que recuerda el juego de las partidas anteriores.
+    // Los escalones 3, 4 y 5 comparten el largo 3, así que esto se mide por
+    // el largo de cada escalón.
     const perLevel = WORD_SCRAMBLE_WORDS_PER_SESSION + WORD_SCRAMBLE_RECENT_LIMIT;
     for (let level = 1; level <= WORD_SCRAMBLE_MAX_LEVEL; level += 1) {
-      const count = words.filter((word) => word.level === level).length;
+      const { tier, extraLetters } =
+        WORD_SCRAMBLE_LEVELS[level as WordScrambleLevel];
+      const count = words.filter((word) => word.tier === tier).length;
       if (count < perLevel) {
         fail(
           bank,
           language + "/nivel " + level,
           "solo " +
             count +
-            " palabras; hacen falta " +
+            " palabras de largo " +
+            tier +
+            "; hacen falta " +
             perLevel +
             " para no repetir las de las últimas partidas",
+        );
+      }
+      // Las letras que sobran nunca repiten una de la palabra, así que el
+      // alfabeto tiene que dejar siempre las suficientes fuera de ella.
+      const alphabet = language === "es" ? 23 : 26;
+      const worst = Math.max(
+        ...words
+          .filter((word) => word.tier === tier)
+          .map((word) => new Set(getWordLetters(word.word)).size),
+      );
+      if (alphabet - worst < extraLetters) {
+        fail(
+          bank,
+          language + "/nivel " + level,
+          "no quedan " + extraLetters + " letras que no sean de la palabra",
         );
       }
     }
@@ -575,37 +606,50 @@ function validateWordSearch(): void {
         );
       }
 
-      if (entry.level < 1 || entry.level > WORD_SEARCH_MAX_LEVEL) {
-        fail(
-          bank,
-          at,
-          "nivel fuera de 1-" + WORD_SEARCH_MAX_LEVEL + ": " + entry.level,
-        );
+      const range = SEARCH_LENGTH_BY_TIER[entry.tier];
+      if (!range) {
+        fail(bank, at, "largo (`tier`) fuera de 1-3: " + entry.tier);
         continue;
       }
-
-      // La palabra tiene que caber en el tablero de su propio nivel; si no,
-      // pickSearchWords la descarta siempre y nunca saldría a jugar.
-      const size = WORD_SEARCH_LEVELS[entry.level].size;
       const length = getWordLetters(entry.word).length;
-      if (length > size) {
+      if (length < range[0] || length > range[1]) {
         fail(
           bank,
           at,
           entry.word +
             " mide " +
             length +
-            " letras y el tablero del nivel " +
-            entry.level +
-            " es de " +
-            size,
+            " letras; el largo " +
+            entry.tier +
+            " admite " +
+            range[0] +
+            "-" +
+            range[1],
         );
+      }
+
+      // La palabra tiene que caber en el tablero de todo escalón que saque de
+      // su largo; si no, pickSearchWords la descarta siempre allí.
+      for (const level of SEARCH_LEVELS) {
+        const config = WORD_SEARCH_LEVELS[level];
+        if (config.tiers.includes(entry.tier) && length > config.size) {
+          fail(
+            bank,
+            at,
+            entry.word +
+              " mide " +
+              length +
+              " letras y el tablero del nivel " +
+              level +
+              " es de " +
+              config.size,
+          );
+        }
       }
     }
 
     // Un tablero de nivel N se llena con las palabras que quepan en su tamaño.
-    const levels: WordSearchLevel[] = [1, 2, 3];
-    for (const level of levels) {
+    for (const level of SEARCH_LEVELS) {
       const config = WORD_SEARCH_LEVELS[level];
       const fitting = words.filter(
         (word) => getWordLetters(word.word).length <= config.size,
@@ -623,9 +667,9 @@ function validateWordSearch(): void {
         );
       }
 
-      // Dos partidas enteras del nivel sin tirar de los niveles vecinos: es
-      // lo que deja jugar una sin repetir nada de la anterior.
-      const own = words.filter((word) => word.level === level).length;
+      // Dos partidas enteras del nivel sin tirar de otros largos: es lo que
+      // deja jugar una sin repetir nada de la anterior.
+      const own = words.filter((word) => config.tiers.includes(word.tier)).length;
       const perSession = WORD_SEARCH_BOARDS_PER_SESSION * config.words;
       if (own < perSession * 2) {
         fail(
