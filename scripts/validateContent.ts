@@ -45,10 +45,12 @@ import { getTypingPhrases } from "../src/lib/typingGame";
 import { VISUAL_SYMBOLS, VISUAL_SYMBOLS_PER_CARD } from "../src/lib/visualGame";
 import {
   WORD_SCRAMBLE_MAX_LEVEL,
+  WORD_SCRAMBLE_RECENT_LIMIT,
   WORD_SCRAMBLE_WORDS_PER_SESSION,
   getWordBank,
 } from "../src/lib/wordScramble";
 import {
+  WORD_SEARCH_BOARDS_PER_SESSION,
   WORD_SEARCH_LEVELS,
   WORD_SEARCH_MAX_LEVEL,
   getSearchBank,
@@ -506,12 +508,20 @@ function validateWordScramble(): void {
           " para una sesión sin repetir",
       );
     }
+    // Quien se queda en un nivel tiene que poder jugar una partida entera sin
+    // ver ninguna de las que recuerda el juego de las partidas anteriores.
+    const perLevel = WORD_SCRAMBLE_WORDS_PER_SESSION + WORD_SCRAMBLE_RECENT_LIMIT;
     for (let level = 1; level <= WORD_SCRAMBLE_MAX_LEVEL; level += 1) {
-      if (!words.some((word) => word.level === level)) {
+      const count = words.filter((word) => word.level === level).length;
+      if (count < perLevel) {
         fail(
           bank,
           language + "/nivel " + level,
-          "ninguna palabra en este nivel",
+          "solo " +
+            count +
+            " palabras; hacen falta " +
+            perLevel +
+            " para no repetir las de las últimas partidas",
         );
       }
     }
@@ -610,6 +620,24 @@ function validateWordSearch(): void {
             config.size +
             "; hacen falta " +
             config.words,
+        );
+      }
+
+      // Dos partidas enteras del nivel sin tirar de los niveles vecinos: es
+      // lo que deja jugar una sin repetir nada de la anterior.
+      const own = words.filter((word) => word.level === level).length;
+      const perSession = WORD_SEARCH_BOARDS_PER_SESSION * config.words;
+      if (own < perSession * 2) {
+        fail(
+          bank,
+          language + "/nivel " + level,
+          "solo " +
+            own +
+            " palabras propias; una partida usa " +
+            perSession +
+            " y hacen falta " +
+            perSession * 2 +
+            " para no repetir las de la anterior",
         );
       }
     }

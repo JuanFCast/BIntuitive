@@ -19,6 +19,14 @@ export const WORD_SEARCH_MAX_LEVEL = 3;
 /** A partir de esta cantidad de selecciones erradas en un tablero, el nivel baja. */
 export const WORD_SEARCH_DROP_MISSES = 5;
 
+/**
+ * Cuántas palabras recuerda el juego entre partidas para no repetirlas: dos
+ * partidas de nivel 3, que esconden 21 cada una (tres tableros de siete). Con
+ * menos, las palabras de la partida en curso echarían de la lista a las de la
+ * anterior antes del último tablero, y ese tablero podría repetirlas.
+ */
+export const WORD_SEARCH_RECENT_LIMIT = 42;
+
 export type WordSearchLevel = 1 | 2 | 3;
 
 export type Cell = { row: number; col: number };
@@ -164,6 +172,8 @@ function pickOne<T>(items: T[], rng: Rng): T {
  * - Ortografía real: el español se escribe con `Á É Í Ó Ú Ñ Ü` cuando toca y
  *   nunca se simplifica una palabra para evitar un carácter. Todo en NFC.
  * - El emoji solo acompaña a la palabra en la lista; no es una adivinanza.
+ * - Cada nivel tiene al menos dos partidas enteras de palabras propias por
+ *   idioma (24, 36 y 42), para que una partida no repita nada de la anterior.
  */
 const WORD_SEARCH_BANK: Record<Language, SearchWord[]> = {
   en: [
@@ -179,6 +189,24 @@ const WORD_SEARCH_BANK: Record<Language, SearchWord[]> = {
     { id: "en-boat", word: "BOAT", emoji: "⛵", level: 1 },
     { id: "en-horse", word: "HORSE", emoji: "🐴", level: 1 },
     { id: "en-apple", word: "APPLE", emoji: "🍎", level: 1 },
+    { id: "en-cow", word: "COW", emoji: "🐄", level: 1 },
+    { id: "en-pig", word: "PIG", emoji: "🐷", level: 1 },
+    { id: "en-hat", word: "HAT", emoji: "🎩", level: 1 },
+    { id: "en-bus", word: "BUS", emoji: "🚌", level: 1 },
+    { id: "en-car", word: "CAR", emoji: "🚗", level: 1 },
+    { id: "en-egg", word: "EGG", emoji: "🥚", level: 1 },
+    { id: "en-key", word: "KEY", emoji: "🔑", level: 1 },
+    { id: "en-bed", word: "BED", emoji: "🛏️", level: 1 },
+    { id: "en-owl", word: "OWL", emoji: "🦉", level: 1 },
+    { id: "en-ant", word: "ANT", emoji: "🐜", level: 1 },
+    { id: "en-cake", word: "CAKE", emoji: "🎂", level: 1 },
+    { id: "en-milk", word: "MILK", emoji: "🥛", level: 1 },
+    { id: "en-duck", word: "DUCK", emoji: "🦆", level: 1 },
+    { id: "en-bear", word: "BEAR", emoji: "🐻", level: 1 },
+    { id: "en-lion", word: "LION", emoji: "🦁", level: 1 },
+    { id: "en-sock", word: "SOCK", emoji: "🧦", level: 1 },
+    { id: "en-kite", word: "KITE", emoji: "🪁", level: 1 },
+    { id: "en-corn", word: "CORN", emoji: "🌽", level: 1 },
     { id: "en-house", word: "HOUSE", emoji: "🏠", level: 2 },
     { id: "en-tiger", word: "TIGER", emoji: "🐯", level: 2 },
     { id: "en-train", word: "TRAIN", emoji: "🚂", level: 2 },
@@ -191,6 +219,30 @@ const WORD_SEARCH_BANK: Record<Language, SearchWord[]> = {
     { id: "en-carrot", word: "CARROT", emoji: "🥕", level: 2 },
     { id: "en-rainbow", word: "RAINBOW", emoji: "🌈", level: 2 },
     { id: "en-dolphin", word: "DOLPHIN", emoji: "🐬", level: 2 },
+    { id: "en-zebra", word: "ZEBRA", emoji: "🦓", level: 2 },
+    { id: "en-snake", word: "SNAKE", emoji: "🐍", level: 2 },
+    { id: "en-mouse", word: "MOUSE", emoji: "🐭", level: 2 },
+    { id: "en-sheep", word: "SHEEP", emoji: "🐑", level: 2 },
+    { id: "en-clock", word: "CLOCK", emoji: "🕐", level: 2 },
+    { id: "en-pizza", word: "PIZZA", emoji: "🍕", level: 2 },
+    { id: "en-bread", word: "BREAD", emoji: "🍞", level: 2 },
+    { id: "en-grapes", word: "GRAPES", emoji: "🍇", level: 2 },
+    { id: "en-lemon", word: "LEMON", emoji: "🍋", level: 2 },
+    { id: "en-cherry", word: "CHERRY", emoji: "🍒", level: 2 },
+    { id: "en-turtle", word: "TURTLE", emoji: "🐢", level: 2 },
+    { id: "en-rabbit", word: "RABBIT", emoji: "🐰", level: 2 },
+    { id: "en-monkey", word: "MONKEY", emoji: "🐵", level: 2 },
+    { id: "en-spider", word: "SPIDER", emoji: "🕷️", level: 2 },
+    { id: "en-robot", word: "ROBOT", emoji: "🤖", level: 2 },
+    { id: "en-planet", word: "PLANET", emoji: "🪐", level: 2 },
+    { id: "en-unicorn", word: "UNICORN", emoji: "🦄", level: 2 },
+    { id: "en-ladybug", word: "LADYBUG", emoji: "🐞", level: 2 },
+    { id: "en-candle", word: "CANDLE", emoji: "🕯️", level: 2 },
+    { id: "en-camera", word: "CAMERA", emoji: "📷", level: 2 },
+    { id: "en-whale", word: "WHALE", emoji: "🐋", level: 2 },
+    { id: "en-shark", word: "SHARK", emoji: "🦈", level: 2 },
+    { id: "en-panda", word: "PANDA", emoji: "🐼", level: 2 },
+    { id: "en-snail", word: "SNAIL", emoji: "🐌", level: 2 },
     { id: "en-castle", word: "CASTLE", emoji: "🏰", level: 3 },
     { id: "en-giraffe", word: "GIRAFFE", emoji: "🦒", level: 3 },
     { id: "en-balloon", word: "BALLOON", emoji: "🎈", level: 3 },
@@ -203,6 +255,36 @@ const WORD_SEARCH_BANK: Record<Language, SearchWord[]> = {
     { id: "en-umbrella", word: "UMBRELLA", emoji: "☂️", level: 3 },
     { id: "en-airplane", word: "AIRPLANE", emoji: "✈️", level: 3 },
     { id: "en-dinosaur", word: "DINOSAUR", emoji: "🦕", level: 3 },
+    { id: "en-kangaroo", word: "KANGAROO", emoji: "🦘", level: 3 },
+    { id: "en-chicken", word: "CHICKEN", emoji: "🐔", level: 3 },
+    { id: "en-snowman", word: "SNOWMAN", emoji: "☃️", level: 3 },
+    { id: "en-tractor", word: "TRACTOR", emoji: "🚜", level: 3 },
+    { id: "en-bicycle", word: "BICYCLE", emoji: "🚲", level: 3 },
+    { id: "en-cupcake", word: "CUPCAKE", emoji: "🧁", level: 3 },
+    { id: "en-popcorn", word: "POPCORN", emoji: "🍿", level: 3 },
+    { id: "en-broccoli", word: "BROCCOLI", emoji: "🥦", level: 3 },
+    { id: "en-scissors", word: "SCISSORS", emoji: "✂️", level: 3 },
+    { id: "en-hedgehog", word: "HEDGEHOG", emoji: "🦔", level: 3 },
+    { id: "en-flamingo", word: "FLAMINGO", emoji: "🦩", level: 3 },
+    { id: "en-peacock", word: "PEACOCK", emoji: "🦚", level: 3 },
+    { id: "en-squirrel", word: "SQUIRREL", emoji: "🐿️", level: 3 },
+    { id: "en-gorilla", word: "GORILLA", emoji: "🦍", level: 3 },
+    { id: "en-sandwich", word: "SANDWICH", emoji: "🥪", level: 3 },
+    { id: "en-backpack", word: "BACKPACK", emoji: "🎒", level: 3 },
+    { id: "en-tomato", word: "TOMATO", emoji: "🍅", level: 3 },
+    { id: "en-parrot", word: "PARROT", emoji: "🦜", level: 3 },
+    { id: "en-turkey", word: "TURKEY", emoji: "🦃", level: 3 },
+    { id: "en-dragon", word: "DRAGON", emoji: "🐉", level: 3 },
+    { id: "en-glasses", word: "GLASSES", emoji: "👓", level: 3 },
+    { id: "en-trumpet", word: "TRUMPET", emoji: "🎺", level: 3 },
+    { id: "en-violin", word: "VIOLIN", emoji: "🎻", level: 3 },
+    { id: "en-raccoon", word: "RACCOON", emoji: "🦝", level: 3 },
+    { id: "en-lobster", word: "LOBSTER", emoji: "🦞", level: 3 },
+    { id: "en-mushroom", word: "MUSHROOM", emoji: "🍄", level: 3 },
+    { id: "en-pretzel", word: "PRETZEL", emoji: "🥨", level: 3 },
+    { id: "en-coconut", word: "COCONUT", emoji: "🥥", level: 3 },
+    { id: "en-peanut", word: "PEANUT", emoji: "🥜", level: 3 },
+    { id: "en-hamster", word: "HAMSTER", emoji: "🐹", level: 3 },
   ],
   es: [
     { id: "es-sol", word: "SOL", emoji: "☀️", level: 1 },
@@ -217,6 +299,24 @@ const WORD_SEARCH_BANK: Record<Language, SearchWord[]> = {
     { id: "es-fresa", word: "FRESA", emoji: "🍓", level: 1 },
     { id: "es-globo", word: "GLOBO", emoji: "🎈", level: 1 },
     { id: "es-nube", word: "NUBE", emoji: "☁️", level: 1 },
+    { id: "es-pez", word: "PEZ", emoji: "🐟", level: 1 },
+    { id: "es-uva", word: "UVA", emoji: "🍇", level: 1 },
+    { id: "es-ojo", word: "OJO", emoji: "👁️", level: 1 },
+    { id: "es-pie", word: "PIE", emoji: "🦶", level: 1 },
+    { id: "es-vaca", word: "VACA", emoji: "🐄", level: 1 },
+    { id: "es-rana", word: "RANA", emoji: "🐸", level: 1 },
+    { id: "es-cama", word: "CAMA", emoji: "🛏️", level: 1 },
+    { id: "es-loro", word: "LORO", emoji: "🦜", level: 1 },
+    { id: "es-bota", word: "BOTA", emoji: "👢", level: 1 },
+    { id: "es-dado", word: "DADO", emoji: "🎲", level: 1 },
+    { id: "es-rosa", word: "ROSA", emoji: "🌹", level: 1 },
+    { id: "es-mono", word: "MONO", emoji: "🐵", level: 1 },
+    { id: "es-coco", word: "COCO", emoji: "🥥", level: 1 },
+    { id: "es-tren", word: "TREN", emoji: "🚂", level: 1 },
+    { id: "es-miel", word: "MIEL", emoji: "🍯", level: 1 },
+    { id: "es-buho", word: "BÚHO", emoji: "🦉", level: 1 },
+    { id: "es-sopa", word: "SOPA", emoji: "🍲", level: 1 },
+    { id: "es-cerdo", word: "CERDO", emoji: "🐷", level: 1 },
     { id: "es-perro", word: "PERRO", emoji: "🐶", level: 2 },
     { id: "es-libro", word: "LIBRO", emoji: "📚", level: 2 },
     { id: "es-queso", word: "QUESO", emoji: "🧀", level: 2 },
@@ -229,6 +329,30 @@ const WORD_SEARCH_BANK: Record<Language, SearchWord[]> = {
     { id: "es-caballo", word: "CABALLO", emoji: "🐴", level: 2 },
     { id: "es-tortuga", word: "TORTUGA", emoji: "🐢", level: 2 },
     { id: "es-montana", word: "MONTAÑA", emoji: "🏔️", level: 2 },
+    { id: "es-oveja", word: "OVEJA", emoji: "🐑", level: 2 },
+    { id: "es-tigre", word: "TIGRE", emoji: "🐯", level: 2 },
+    { id: "es-cebra", word: "CEBRA", emoji: "🦓", level: 2 },
+    { id: "es-raton", word: "RATÓN", emoji: "🐭", level: 2 },
+    { id: "es-camion", word: "CAMIÓN", emoji: "🚚", level: 2 },
+    { id: "es-barco", word: "BARCO", emoji: "🚢", level: 2 },
+    { id: "es-avion", word: "AVIÓN", emoji: "✈️", level: 2 },
+    { id: "es-llave", word: "LLAVE", emoji: "🔑", level: 2 },
+    { id: "es-pelota", word: "PELOTA", emoji: "⚽", level: 2 },
+    { id: "es-limon", word: "LIMÓN", emoji: "🍋", level: 2 },
+    { id: "es-cereza", word: "CEREZA", emoji: "🍒", level: 2 },
+    { id: "es-huevo", word: "HUEVO", emoji: "🥚", level: 2 },
+    { id: "es-cohete", word: "COHETE", emoji: "🚀", level: 2 },
+    { id: "es-robot", word: "ROBOT", emoji: "🤖", level: 2 },
+    { id: "es-nieve", word: "NIEVE", emoji: "❄️", level: 2 },
+    { id: "es-dragon", word: "DRAGÓN", emoji: "🐉", level: 2 },
+    { id: "es-regalo", word: "REGALO", emoji: "🎁", level: 2 },
+    { id: "es-delfin", word: "DELFÍN", emoji: "🐬", level: 2 },
+    { id: "es-gorila", word: "GORILA", emoji: "🦍", level: 2 },
+    { id: "es-helado", word: "HELADO", emoji: "🍦", level: 2 },
+    { id: "es-pulpo", word: "PULPO", emoji: "🐙", level: 2 },
+    { id: "es-volcan", word: "VOLCÁN", emoji: "🌋", level: 2 },
+    { id: "es-panda", word: "PANDA", emoji: "🐼", level: 2 },
+    { id: "es-piano", word: "PIANO", emoji: "🎹", level: 2 },
     { id: "es-tambor", word: "TAMBOR", emoji: "🥁", level: 3 },
     { id: "es-corazon", word: "CORAZÓN", emoji: "❤️", level: 3 },
     { id: "es-autobus", word: "AUTOBÚS", emoji: "🚌", level: 3 },
@@ -241,6 +365,36 @@ const WORD_SEARCH_BANK: Record<Language, SearchWord[]> = {
     { id: "es-pinguino", word: "PINGÜINO", emoji: "🐧", level: 3 },
     { id: "es-cangrejo", word: "CANGREJO", emoji: "🦀", level: 3 },
     { id: "es-guitarra", word: "GUITARRA", emoji: "🎸", level: 3 },
+    { id: "es-gallina", word: "GALLINA", emoji: "🐔", level: 3 },
+    { id: "es-platano", word: "PLÁTANO", emoji: "🍌", level: 3 },
+    { id: "es-castillo", word: "CASTILLO", emoji: "🏰", level: 3 },
+    { id: "es-calabaza", word: "CALABAZA", emoji: "🎃", level: 3 },
+    { id: "es-canguro", word: "CANGURO", emoji: "🦘", level: 3 },
+    { id: "es-tractor", word: "TRACTOR", emoji: "🚜", level: 3 },
+    { id: "es-paraguas", word: "PARAGUAS", emoji: "☂️", level: 3 },
+    { id: "es-arcoiris", word: "ARCOÍRIS", emoji: "🌈", level: 3 },
+    { id: "es-camello", word: "CAMELLO", emoji: "🐫", level: 3 },
+    { id: "es-tiburon", word: "TIBURÓN", emoji: "🦈", level: 3 },
+    { id: "es-ballena", word: "BALLENA", emoji: "🐋", level: 3 },
+    { id: "es-hormiga", word: "HORMIGA", emoji: "🐜", level: 3 },
+    { id: "es-caracol", word: "CARACOL", emoji: "🐌", level: 3 },
+    { id: "es-telefono", word: "TELÉFONO", emoji: "📱", level: 3 },
+    { id: "es-campana", word: "CAMPANA", emoji: "🔔", level: 3 },
+    { id: "es-cebolla", word: "CEBOLLA", emoji: "🧅", level: 3 },
+    { id: "es-ardilla", word: "ARDILLA", emoji: "🐿️", level: 3 },
+    { id: "es-lagarto", word: "LAGARTO", emoji: "🦎", level: 3 },
+    { id: "es-langosta", word: "LANGOSTA", emoji: "🦞", level: 3 },
+    { id: "es-mapache", word: "MAPACHE", emoji: "🦝", level: 3 },
+    { id: "es-hamster", word: "HÁMSTER", emoji: "🐹", level: 3 },
+    { id: "es-trompeta", word: "TROMPETA", emoji: "🎺", level: 3 },
+    { id: "es-violin", word: "VIOLÍN", emoji: "🎻", level: 3 },
+    { id: "es-corona", word: "CORONA", emoji: "👑", level: 3 },
+    { id: "es-mochila", word: "MOCHILA", emoji: "🎒", level: 3 },
+    { id: "es-tomate", word: "TOMATE", emoji: "🍅", level: 3 },
+    { id: "es-flamenco", word: "FLAMENCO", emoji: "🦩", level: 3 },
+    { id: "es-brocoli", word: "BRÓCOLI", emoji: "🥦", level: 3 },
+    { id: "es-palmera", word: "PALMERA", emoji: "🌴", level: 3 },
+    { id: "es-cactus", word: "CACTUS", emoji: "🌵", level: 3 },
   ],
 };
 
@@ -269,6 +423,11 @@ function overlapsAsText(candidate: string, chosen: SearchWord[]): boolean {
  * todavía no salieron en la sesión (`excludeIds`), pero nunca devuelve menos de
  * las pedidas: si el nivel se queda corto, baja a los niveles vecinos y, en
  * último caso, repite palabras de tableros anteriores.
+ *
+ * `recentIds` son las de partidas anteriores, de la más antigua a la más
+ * reciente, y pesan menos que el nivel: una reciente del nivel pedido va
+ * antes que una nueva de otro nivel, y entre las recientes sale primero la
+ * que lleva más tiempo sin salir.
  */
 export function pickSearchWords(
   language: Language,
@@ -276,6 +435,7 @@ export function pickSearchWords(
   count: number,
   excludeIds: string[],
   rng: Rng = Math.random,
+  recentIds: string[] = [],
 ): SearchWord[] {
   const maxLength = WORD_SEARCH_LEVELS[level].size;
   const pool = shuffleWith(
@@ -285,9 +445,17 @@ export function pickSearchWords(
     rng,
   );
 
-  // Orden estable: primero las no usadas, y dentro de eso las del nivel pedido.
+  // Orden estable: primero las no usadas, dentro de eso las del nivel pedido y
+  // dentro del nivel las que no salieron hace poco. El peso de una reciente
+  // queda entre 5 y 6, por debajo del salto de nivel (10).
+  const recentRank = (word: SearchWord) => {
+    const index = recentIds.indexOf(word.id);
+    return index < 0 ? 0 : 5 + index / recentIds.length;
+  };
   const rank = (word: SearchWord) =>
-    (excludeIds.includes(word.id) ? 100 : 0) + Math.abs(word.level - level) * 10;
+    (excludeIds.includes(word.id) ? 100 : 0) +
+    Math.abs(word.level - level) * 10 +
+    recentRank(word);
   const ordered = [...pool].sort((a, b) => rank(a) - rank(b));
 
   const chosen: SearchWord[] = [];
@@ -297,6 +465,19 @@ export function pickSearchWords(
     chosen.push(candidate);
   }
   return chosen;
+}
+
+/**
+ * Apunta las palabras de un tablero recién generado al final de las recientes
+ * y olvida las más antiguas por encima de `WORD_SEARCH_RECENT_LIMIT`.
+ */
+export function rememberSearchWords(
+  recentIds: string[],
+  ids: string[],
+): string[] {
+  return [...recentIds.filter((recent) => !ids.includes(recent)), ...ids].slice(
+    -WORD_SEARCH_RECENT_LIMIT,
+  );
 }
 
 /* --------------------------------------------------------------------------
@@ -542,6 +723,7 @@ export function generateBoard(
   level: WordSearchLevel,
   rng: Rng = Math.random,
   excludeIds: string[] = [],
+  recentIds: string[] = [],
 ): Board {
   const config = WORD_SEARCH_LEVELS[level];
   const words = pickSearchWords(
@@ -550,6 +732,7 @@ export function generateBoard(
     config.words,
     excludeIds,
     rng,
+    recentIds,
   );
 
   let layout: { grid: (string | null)[][]; placements: Placement[] } | null =
