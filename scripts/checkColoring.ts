@@ -23,6 +23,7 @@ import {
   clampColoringLevel,
   coloringAccuracy,
   coloringAttemptKey,
+  coloringBrushesForLevel,
   coloringBrushRadius,
   coloringCoverage,
   coloringRegionIsFull,
@@ -233,11 +234,73 @@ console.log("\nLa medida de lo pintado");
   );
 
   check("la parte cubierta va de 0 a 1", coloringCoverage(35, 100) === 0.35);
-  check("una zona a medias no se da por pintada", !coloringRegionIsFull(50, 100));
-  check("cubierta de sobra sí", coloringRegionIsFull(70, 100));
+  check("una zona a medias no se da por pintada", !coloringRegionIsFull(50, 100, 1));
+  check("cubierta de sobra sí", coloringRegionIsFull(70, 100, 1));
+  check(
+    "lo que basta en el escalón 1 no basta en el 5",
+    coloringRegionIsFull(70, 100, 1) && !coloringRegionIsFull(70, 100, 5),
+  );
   check(
     "y una zona sin puntos de medida se cuenta cubierta, no imposible",
-    coloringRegionIsFull(0, 0),
+    LEVELS.every((level) => coloringRegionIsFull(0, 0, level)),
+  );
+}
+
+console.log("\nLos escalones altos piden más a la mano");
+{
+  const thresholds = LEVELS.map((level) => COLORING_LEVELS[level].coverageToFill);
+  check(
+    "lo que hay que cubrir nunca baja al subir de nivel",
+    thresholds.every((value, index) => index === 0 || value >= thresholds[index - 1]),
+    thresholds.join(","),
+  );
+  // El 100 % mediría el pulso, que no es lo que este juego mide.
+  check(
+    "y nunca pide la zona perfecta",
+    thresholds.every((value) => value >= 0.7 && value <= 0.85),
+    thresholds.join(","),
+  );
+  check(
+    "el 1 y el 2 se quedan como estaban: tres grosores y el 70 %",
+    [1, 2].every(
+      (level) =>
+        coloringBrushesForLevel(level as ColoringLevel).length === 3 &&
+        COLORING_LEVELS[level as ColoringLevel].coverageToFill === 0.7,
+    ),
+  );
+  check(
+    "del 4 en adelante no hay pincel grueso",
+    [4, 5].every(
+      (level) =>
+        !coloringBrushesForLevel(level as ColoringLevel).some(
+          (brush) => brush.id === "grueso",
+        ),
+    ),
+  );
+  check(
+    "los grosores nunca vuelven al subir de nivel",
+    LEVELS.every(
+      (level, index) =>
+        index === 0 ||
+        COLORING_LEVELS[level].brushes.every((id) =>
+          COLORING_LEVELS[LEVELS[index - 1]].brushes.includes(id),
+        ),
+    ),
+  );
+  // La sesión empieza siempre con el grosor de por defecto: si un escalón no
+  // lo ofreciera, se pintaría con un pincel que no tiene botón.
+  check(
+    "todos los escalones ofrecen el grosor de por defecto",
+    LEVELS.every((level) =>
+      COLORING_LEVELS[level].brushes.includes(COLORING_DEFAULT_BRUSH),
+    ),
+  );
+  check(
+    "y conservan el orden de menor a mayor",
+    LEVELS.every((level) => {
+      const radii = coloringBrushesForLevel(level).map((brush) => brush.radius);
+      return radii.every((radius, index) => index === 0 || radius > radii[index - 1]);
+    }),
   );
 }
 

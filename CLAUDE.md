@@ -163,8 +163,13 @@ src/lib/
   pantalla. **La pintura se recorta a la zona**, así que salirse no estropea el dibujo —es
   lo que permite dárselo a un niño de tres años con el dedo— y el color que no toca
   sencillamente no agarra: equivocarse nunca deja marca. Una zona se rellena sola al
-  llegar a `COLORING_COVERAGE_TO_FILL`, no al quedar perfecta; pedir el 100 % obligaría a
-  repasar los rincones con el pincel fino y aquí se practica el color, no el pulso. La
+  llegar al `coverageToFill` de su escalón, no al quedar perfecta; pedir el 100 % obligaría a
+  repasar los rincones con el pincel fino y aquí se practica el color, no el pulso. **Los
+  escalones altos piden más a la mano sin castigar salirse**: el umbral sube del 70 % (1 y 2,
+  los del niño de tres años, intactos) al 75 %, 80 % y 85 %, y del 4 en adelante no hay pincel
+  grueso, que con dos pasadas tapaba casi cualquier zona. Ambos viven en `COLORING_LEVELS`
+  junto a la paleta, y `npm run check:coloring` impide que el umbral baje al subir, que llegue
+  a pedir la zona perfecta o que un escalón deje fuera el grosor de por defecto. La
   precisión cuenta **decisiones** —esta zona de este color, una sola vez por pareja
   (`coloringAttemptKey`)—, no pasadas: cobrar cada pasada haría que pintar bien con el
   pincel fino puntuara peor que pintar bien con el grueso. Lo pintado se mide con una

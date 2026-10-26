@@ -16,6 +16,7 @@ import {
   clampColoringLevel,
   coloringAccuracy,
   coloringAttemptKey,
+  coloringBrushesForLevel,
   coloringBrushRadius,
   coloringRegionIsFull,
   coloringSampleGrid,
@@ -421,7 +422,7 @@ export default function ColoringGame() {
         covered.add(sample);
       }
     }
-    return coloringRegionIsFull(covered.size, samples.length);
+    return coloringRegionIsFull(covered.size, samples.length, level);
   };
 
   /**
@@ -906,14 +907,15 @@ export default function ColoringGame() {
             El grosor del pincel. Tres botones y no un deslizador: un
             deslizador pide un gesto fino y no se puede nombrar en voz alta.
             La mancha de cada botón lleva el color elegido, así que el pincel
-            que se va a usar se ve antes de usarlo.
+            que se va a usar se ve antes de usarlo. Del escalón 4 en adelante
+            el grueso no está: son solo los grosores que ofrece el escalón.
           */}
           <div
             className="flex w-full items-center justify-center gap-2 sm:gap-3"
             role="group"
             aria-label={t("coloringBrushAria")}
           >
-            {COLORING_BRUSHES.map(({ id, radius }) => {
+            {coloringBrushesForLevel(level).map(({ id, radius }) => {
               const chosen = brush === id;
               return (
                 <button
