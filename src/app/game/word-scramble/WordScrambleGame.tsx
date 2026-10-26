@@ -15,13 +15,19 @@ import {
   playTapSound,
   playWrongSound,
 } from "@/lib/sounds";
-import { getWordScrambleProgress, saveWordScrambleProgress } from "@/lib/storage";
+import {
+  getWordScrambleProgress,
+  getWordScrambleRecent,
+  saveWordScrambleProgress,
+  saveWordScrambleRecent,
+} from "@/lib/storage";
 import {
   computeWordScrambleStats,
   createLetterTiles,
   getWordLetters,
   nextWordScrambleLevel,
   pickNextWord,
+  rememberScrambleWord,
   WORD_SCRAMBLE_MAX_LEVEL,
   WORD_SCRAMBLE_WORDS_PER_SESSION,
   type LetterTile,
@@ -52,6 +58,7 @@ export default function WordScrambleGame() {
   const levelRef = useRef(1);
   const streakRef = useRef(0);
   const usedIdsRef = useRef<string[]>([]);
+  const recentIdsRef = useRef<string[]>([]);
   const wordMistakesRef = useRef(0);
   const mistakesRef = useRef(0);
   const correctTapsRef = useRef(0);
@@ -106,9 +113,16 @@ export default function WordScrambleGame() {
   useEffect(() => clearTimers, [clearTimers]);
 
   const loadWord = useCallback(() => {
-    const next = pickNextWord(language, levelRef.current, usedIdsRef.current);
+    const next = pickNextWord(
+      language,
+      levelRef.current,
+      usedIdsRef.current,
+      recentIdsRef.current,
+    );
     if (!next) return false;
     usedIdsRef.current.push(next.id);
+    recentIdsRef.current = rememberScrambleWord(recentIdsRef.current, next.id);
+    saveWordScrambleRecent(recentIdsRef.current);
     wordMistakesRef.current = 0;
     solvedRef.current = false;
     setWord(next);
@@ -125,6 +139,7 @@ export default function WordScrambleGame() {
     levelRef.current = getWordScrambleProgress().level;
     streakRef.current = 0;
     usedIdsRef.current = [];
+    recentIdsRef.current = getWordScrambleRecent();
     mistakesRef.current = 0;
     correctTapsRef.current = 0;
     perfectWordsRef.current = 0;

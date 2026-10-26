@@ -484,6 +484,15 @@ y la carpeta `~/.impeccable`.
   juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hacen
   `normalizeWordScramble` y `normalizeWordSearch`: `getProgress` debe tolerar el campo
   ausente en datos ya guardados.
+- **Los juegos de palabras recuerdan lo que ya salió** para no repetirlo entre partidas:
+  `wordScrambleRecent` y `wordSearchRecent`, dos listas de ids separadas (de la más antigua a
+  la más reciente) que no son progreso y por eso no pasan por `byGrade`. Cuántas se recuerdan
+  lo sabe cada lib (`WORD_SCRAMBLE_RECENT_LIMIT`, `WORD_SEARCH_RECENT_LIMIT`) y `storage.ts`
+  las guarda tal cual. Se escriben al sacar cada palabra o tablero, no al terminar: lo visto
+  ya se vio aunque se abandone. Al elegir, **el nivel pesa más que la novedad**: una palabra
+  reciente del nivel pedido va antes que una nueva de otro nivel, y entre recientes vuelve
+  primero la más antigua. `validate:content` exige palabras suficientes por nivel para que
+  eso casi nunca haga falta.
 - **El progreso tiene dos modelos vivos, y es temporal.** `Progress` guarda a la vez los campos
   de la versión 1 —`levelByCategory`, `wordScramble`, `wordSearch`, `tracing`— y el modelo nuevo
   `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Siete

@@ -119,6 +119,14 @@ export type Progress = {
   wordScramble?: WordScrambleProgress;
   /** Sopa de letras. Campo propio: no comparte nada con `wordScramble`. */
   wordSearch?: WordSearchProgress;
+  /**
+   * Ids de las palabras que salieron hace poco en Word Scramble, de la más
+   * antigua a la más reciente, para no repetirlas en la partida siguiente.
+   * Cuántas se guardan lo decide el juego; aquí se guardan tal cual.
+   */
+  wordScrambleRecent?: string[];
+  /** Lo mismo para la sopa de letras. Lista propia: no comparte ids con Scramble. */
+  wordSearchRecent?: string[];
   /** Trazos. Campo propio, opcional: los datos ya guardados no lo traen. */
   tracing?: TracingProgress;
   /**
@@ -177,6 +185,12 @@ function normalizeWordSearch(
   };
 }
 
+function normalizeRecentIds(stored: unknown): string[] {
+  return Array.isArray(stored)
+    ? stored.filter((id): id is string => typeof id === "string")
+    : [];
+}
+
 function normalizeTracing(
   stored: Partial<TracingProgress> | undefined,
 ): TracingProgress {
@@ -215,6 +229,12 @@ export function getProgress(): Progress {
         : {}),
       ...(parsed.wordSearch
         ? { wordSearch: normalizeWordSearch(parsed.wordSearch) }
+        : {}),
+      ...(parsed.wordScrambleRecent
+        ? { wordScrambleRecent: normalizeRecentIds(parsed.wordScrambleRecent) }
+        : {}),
+      ...(parsed.wordSearchRecent
+        ? { wordSearchRecent: normalizeRecentIds(parsed.wordSearchRecent) }
         : {}),
       ...(parsed.tracing ? { tracing: normalizeTracing(parsed.tracing) } : {}),
     };
@@ -281,6 +301,35 @@ export function saveWordScrambleProgress(next: WordScrambleProgress): void {
       previous?.bestPerfectWords ?? 0,
     ),
   };
+  saveProgress(progress);
+}
+
+/** Palabras recientes de Word Scramble, de la más antigua a la más reciente. */
+export function getWordScrambleRecent(): string[] {
+  return getProgress().wordScrambleRecent ?? [];
+}
+
+/**
+ * Guarda las palabras recientes de Word Scramble. Se escribe al sacar cada
+ * palabra, no al terminar: no es progreso sino lo que ya se vio, y quien
+ * abandona a la tercera palabra tampoco debería volver a verla en la
+ * siguiente partida.
+ */
+export function saveWordScrambleRecent(ids: string[]): void {
+  const progress = getProgress();
+  progress.wordScrambleRecent = ids;
+  saveProgress(progress);
+}
+
+/** Palabras recientes de la sopa de letras, de la más antigua a la más reciente. */
+export function getWordSearchRecent(): string[] {
+  return getProgress().wordSearchRecent ?? [];
+}
+
+/** Guarda las palabras recientes de la sopa de letras, al generar cada tablero. */
+export function saveWordSearchRecent(ids: string[]): void {
+  const progress = getProgress();
+  progress.wordSearchRecent = ids;
   saveProgress(progress);
 }
 

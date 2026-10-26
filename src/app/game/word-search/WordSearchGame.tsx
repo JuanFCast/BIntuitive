@@ -18,7 +18,9 @@ import {
 } from "@/lib/sounds";
 import {
   getWordSearchProgress,
+  getWordSearchRecent,
   saveWordSearchProgress,
+  saveWordSearchRecent,
 } from "@/lib/storage";
 import {
   buildLine,
@@ -30,6 +32,7 @@ import {
   generateBoard,
   isSameCell,
   nextWordSearchLevel,
+  rememberSearchWords,
   snapSelection,
   WORD_SEARCH_BOARDS_PER_SESSION,
   WORD_SEARCH_MAX_LEVEL,
@@ -66,6 +69,7 @@ export default function WordSearchGame() {
   const streakRef = useRef(0);
   const boardIndexRef = useRef(0);
   const usedIdsRef = useRef<string[]>([]);
+  const recentIdsRef = useRef<string[]>([]);
   const foundIdsRef = useRef<string[]>([]);
   const wordsFoundRef = useRef(0);
   const totalWordsRef = useRef(0);
@@ -166,11 +170,12 @@ export default function WordSearchGame() {
       clampSearchLevel(levelRef.current),
       Math.random,
       usedIdsRef.current,
+      recentIdsRef.current,
     );
-    usedIdsRef.current = [
-      ...usedIdsRef.current,
-      ...next.placements.map((placement) => placement.id),
-    ];
+    const placedIds = next.placements.map((placement) => placement.id);
+    usedIdsRef.current = [...usedIdsRef.current, ...placedIds];
+    recentIdsRef.current = rememberSearchWords(recentIdsRef.current, placedIds);
+    saveWordSearchRecent(recentIdsRef.current);
     totalWordsRef.current += next.placements.length;
     boardMissesRef.current = 0;
     foundIdsRef.current = [];
@@ -189,6 +194,7 @@ export default function WordSearchGame() {
     streakRef.current = 0;
     boardIndexRef.current = 0;
     usedIdsRef.current = [];
+    recentIdsRef.current = getWordSearchRecent();
     wordsFoundRef.current = 0;
     totalWordsRef.current = 0;
     missesRef.current = 0;
