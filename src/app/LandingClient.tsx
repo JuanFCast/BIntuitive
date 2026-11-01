@@ -4,6 +4,7 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import { hexagonImage } from "@/data/categories";
+import { IS_STORE_BUILD } from "@/lib/buildTarget";
 import { useLanguage } from "@/lib/i18n";
 import { EXPLORE, SIGN_IN, SIGN_UP } from "@/lib/routes";
 
@@ -18,7 +19,8 @@ import { EXPLORE, SIGN_IN, SIGN_UP } from "@/lib/routes";
  * De las tres puertas solo una está abierta, y la pantalla no lo esconde: el
  * aviso de que las cuentas llegarán después está junto a los botones, no
  * escondido detrás de ellos, y "continuar como invitado" es la que lleva a la
- * aplicación de verdad, con el progreso de este dispositivo intacto.
+ * aplicación de verdad, con el progreso de este dispositivo intacto. En el
+ * build de tienda las dos de cuenta no aparecen (ver `buildTarget.ts`).
  *
  * El panal de la izquierda es decorativo y se anuncia como una imagen sola:
  * repetir hexágono por hexágono no le diría nada a quien escucha la pantalla.
@@ -50,9 +52,9 @@ export default function LandingClient() {
               {/*
                 La puerta grande es la que funciona. Iniciar sesión y crear
                 cuenta son prototipos, y antes eran el botón amarillo: el que
-                un niño —o un adulto con prisa— toca primero llevaba a una
-                pantalla que dice que aún no existe. Ahora entrar a jugar es lo
-                primero, y las cuentas quedan agrupadas aparte, para adultos.
+                se toca primero llevaba a una pantalla que dice que aún no
+                existe. Ahora entrar a jugar es lo primero, y las cuentas
+                quedan agrupadas aparte.
               */}
               <Link
                 href={EXPLORE}
@@ -62,36 +64,40 @@ export default function LandingClient() {
                 {t("continueAsGuest")}
               </Link>
 
-              <div
-                className="my-5 flex items-center gap-3"
-                aria-hidden="true"
-              >
-                <span className="h-px flex-1 bg-ink/10" />
-                <span className="text-lg">🐝</span>
-                <span className="h-px flex-1 bg-ink/10" />
-              </div>
+              {!IS_STORE_BUILD && (
+                <>
+                  <div
+                    className="my-5 flex items-center gap-3"
+                    aria-hidden="true"
+                  >
+                    <span className="h-px flex-1 bg-ink/10" />
+                    <span className="text-lg">🐝</span>
+                    <span className="h-px flex-1 bg-ink/10" />
+                  </div>
 
-              <p className="text-center text-base font-extrabold text-ink/70">
-                {t("landingGrownUps")}
-              </p>
-              <div className="mt-3 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
-                <Link
-                  href={SIGN_IN}
-                  className="flex min-h-12 w-full items-center justify-center break-words rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 py-2 text-lg font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-2"
-                >
-                  {t("signIn")}
-                </Link>
-                <Link
-                  href={SIGN_UP}
-                  className="flex min-h-12 w-full items-center justify-center break-words rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 py-2 text-lg font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-2"
-                >
-                  {t("createAccount")}
-                </Link>
-              </div>
+                  <p className="text-center text-base font-extrabold text-ink/70">
+                    {t("landingAccount")}
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+                    <Link
+                      href={SIGN_IN}
+                      className="flex min-h-12 w-full items-center justify-center break-words rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 py-2 text-lg font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-2"
+                    >
+                      {t("signIn")}
+                    </Link>
+                    <Link
+                      href={SIGN_UP}
+                      className="flex min-h-12 w-full items-center justify-center break-words rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 py-2 text-lg font-extrabold leading-snug text-ink transition-transform active:scale-95 active:border-b-2"
+                    >
+                      {t("createAccount")}
+                    </Link>
+                  </div>
 
-              <p className="mt-4 break-words px-1 text-center text-sm font-semibold leading-snug text-ink/70">
-                {t("accountsComingSoon")}
-              </p>
+                  <p className="mt-4 break-words px-1 text-center text-sm font-semibold leading-snug text-ink/70">
+                    {t("accountsComingSoon")}
+                  </p>
+                </>
+              )}
             </div>
           </section>
         </div>
@@ -100,7 +106,7 @@ export default function LandingClient() {
           Los dibujos de las fichas derivan de Twemoji, con licencia CC BY 4.0,
           que pide la atribución allí donde se usan y no solo en el
           repositorio. Va aquí, pequeña y al final, porque la portada es la
-          única pantalla para adultos que ve todo el que entra.
+          única pantalla que ve todo el que entra.
         */}
         <p className="mt-6 text-center text-xs font-semibold text-ink/70">
           {t("artCredit")}{" "}

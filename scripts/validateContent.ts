@@ -20,6 +20,7 @@ import { hexagons } from "../src/data/categories";
 import {
   COLORING_COLORS,
   COLORING_LEVELS,
+  COLORING_MAX_SWATCHES,
   COLORING_PICTURES,
   COLORING_PICTURES_PER_SESSION,
   picturesForLevel,
@@ -50,11 +51,16 @@ import {
 import { VISUAL_SYMBOLS, VISUAL_SYMBOLS_PER_CARD } from "../src/lib/visualGame";
 import {
   WORD_SCRAMBLE_LEVELS,
+  WORD_SCRAMBLE_MAX_LEVEL,
+  WORD_SCRAMBLE_RECENT_LIMIT,
   WORD_SCRAMBLE_WORDS_PER_SESSION,
   getWordBank,
+  type WordScrambleLevel,
 } from "../src/lib/wordScramble";
 import {
+  WORD_SEARCH_BOARDS_PER_SESSION,
   WORD_SEARCH_LEVELS,
+  WORD_SEARCH_MAX_LEVEL,
   getSearchBank,
   type WordSearchLevel,
 } from "../src/lib/wordSearch";
@@ -62,74 +68,24 @@ import {
 const LANGUAGES: Language[] = ["en", "es"];
 const CATEGORIES: CategoryId[] = ["lugares", "numeros", "colores"];
 
-/**
- * Longitud de palabra que admite cada **tramo** del banco de Word Scramble.
- *
- * Tramo no es escalón: el juego tiene cinco y el banco tres. Del tercero en
- * adelante los escalones comparten las palabras largas y lo que los separa son
- * las ayudas que se quitan, así que lo que hay que comprobar es que cada tramo
- * que la tabla de escalones usa tenga palabras, no que haya un tramo por
- * escalón.
- */
+/** Longitud que admite cada largo (`tier`) del banco de Word Scramble. */
 const SCRAMBLE_LENGTH_BY_TIER: Record<number, [number, number]> = {
   1: [3, 4],
   2: [5, 6],
   3: [7, 8],
 };
 
-/**
- * Lo mínimo que puede tener un banco de Type Rush para que una ronda no dé
- * vueltas sobre las mismas tres entradas.
- *
- * Ocho es el tamaño del banco de frases largas, que es el que lleva publicado
- * desde que existe el juego: sirve de suelo medido, no de número elegido. Lo
- * que de verdad protege una ronda larga es la regla de caracteres de abajo.
- */
-const TYPING_MIN_ENTRIES = 8;
+/** Longitud que admite cada largo (`tier`) del banco de Word Search. */
+const SEARCH_LENGTH_BY_TIER: Record<number, [number, number]> = {
+  1: [3, 5],
+  2: [5, 7],
+  3: [6, 8],
+};
 
-/** Todos los escalones de Type Rush, leídos de su tabla. */
-const TYPING_LEVELS_IN_USE = Object.keys(TYPING_LEVELS)
-  .map(Number)
-  .sort((a, b) => a - b) as TypingLevel[];
-
-/**
- * Un escalón por cada banco distinto, para recorrer los bancos sin revisar dos
- * veces el que comparten el cuarto y el quinto.
- */
-const TYPING_SOURCE_LEVELS = [
-  ...new Map(
-    TYPING_LEVELS_IN_USE.map((level) => [TYPING_LEVELS[level].source, level]),
-  ).values(),
-];
-
-/** Los tramos que los escalones piden de verdad, sin repetir. */
-const SCRAMBLE_TIERS_IN_USE = [
-  ...new Set(Object.values(WORD_SCRAMBLE_LEVELS).map((level) => level.tier)),
-];
-
-/** Los escalones de la sopa, leídos de su tabla y no escritos a mano. */
-const SEARCH_LEVELS_IN_USE = Object.keys(WORD_SEARCH_LEVELS)
-  .map(Number)
-  .sort((a, b) => a - b) as WordSearchLevel[];
-
-const SEARCH_MAX_TIER = Math.max(
-  ...Object.values(WORD_SEARCH_LEVELS).map((level) => level.tier),
+const SEARCH_LEVELS = Array.from(
+  { length: WORD_SEARCH_MAX_LEVEL },
+  (_, index) => (index + 1) as WordSearchLevel,
 );
-
-/**
- * El tablero más pequeño en el que puede acabar una palabra de cada tramo.
- *
- * Un tramo lo usan varios escalones y no todos tienen el mismo tamaño, así que
- * lo que limita la longitud es el más estrecho de ellos.
- */
-const SEARCH_SMALLEST_BOARD_BY_TIER: Record<number, number> = Object.values(
-  WORD_SEARCH_LEVELS,
-).reduce<Record<number, number>>((sizes, level) => {
-  sizes[level.tier] = Math.min(sizes[level.tier] ?? Infinity, level.size);
-  return sizes;
-}, {});
-
-const SCRAMBLE_MAX_TIER = Math.max(...Object.keys(SCRAMBLE_LENGTH_BY_TIER).map(Number));
 
 /** Rango de opciones que `AnswerGrid` sabe repartir en pantalla. */
 const MIN_OPTIONS = 2;
@@ -383,8 +339,25 @@ function validateColoring(): void {
       }
     }
 
+    // La imagen es la lámina entera: sin ella no hay zonas que pintar, y la
+    // ruta se escribe a mano como la de cualquier otro dibujo.
+    if (!picture.image.startsWith(ART_PREFIX)) {
+      fail(bank, at, "el dibujo vive fuera de " + ART_PREFIX);
+    } else if (!existsSync(join(PUBLIC_DIR, picture.image))) {
+      fail(bank, at, "no existe el dibujo " + picture.image);
+    }
+
     if (picture.regions.length < 2) {
       fail(bank, at, "una lámina necesita al menos dos zonas que pintar");
+    }
+    // Cada zona pone a lo sumo un color en la paleta: con más zonas que
+    // fichas caben en una fila, la paleta podría no caber.
+    if (picture.regions.length > COLORING_MAX_SWATCHES) {
+      fail(
+        bank,
+        at,
+        picture.regions.length + " zonas, y la paleta no pasa de " + COLORING_MAX_SWATCHES,
+      );
     }
     for (const repeated of duplicates(picture.regions.map((r) => r.id))) {
       fail(bank, at, "id de zona repetido: " + repeated);
@@ -392,24 +365,38 @@ function validateColoring(): void {
 
     for (const region of picture.regions) {
       const where = at + "/" + region.id;
-      if (isBlank(region.path)) fail(bank, where, "zona sin camino");
       for (const language of LANGUAGES) {
         if (isBlank(region.label[language])) {
           fail(bank, where, "zona sin nombre en " + language);
         }
       }
-      // El número se pinta en ese punto: fuera del lienzo no se vería, y es
-      // el tipo de errata que no da error en ningún sitio.
-      const { x, y } = region.labelAt;
-      if (x < 0 || x > 100 || y < 0 || y > 100) {
-        fail(bank, where, "el punto del número cae fuera del lienzo");
+      // Los puntos dicen qué espacio de la imagen es la zona y dónde va su
+      // número: sin ninguno la zona no existe, y fuera del lienzo no se vería.
+      // Si caen en el espacio correcto lo dice el juego al cargar la imagen,
+      // porque leerla necesita un lienzo.
+      if (region.labelAt.length === 0) {
+        fail(bank, where, "zona sin ningún punto");
+      }
+      for (const { x, y } of region.labelAt) {
+        if (x < 0 || x > 100 || y < 0 || y > 100) {
+          fail(bank, where, "un punto cae fuera del lienzo");
+        }
+      }
+      if (region.colors.length === 0) {
+        fail(bank, where, "zona sin colores posibles");
+      }
+      for (const repeated of duplicates([...region.colors])) {
+        fail(bank, where, "color repetido: " + repeated);
+      }
+      for (const colorId of region.colors) {
+        if (!COLORING_COLORS[colorId]) fail(bank, where, "color desconocido: " + colorId);
       }
     }
   }
 
   for (const key of Object.keys(COLORING_LEVELS)) {
     const level = Number(key) as ColoringLevel;
-    const { palette } = COLORING_LEVELS[level];
+    const { paletteSize } = COLORING_LEVELS[level];
     const pictures = picturesForLevel(level);
 
     if (pictures.length < COLORING_PICTURES_PER_SESSION) {
@@ -422,34 +409,14 @@ function validateColoring(): void {
       );
     }
 
-    // Con un solo color, dos zonas vecinas saldrían del mismo tono y la
-    // lámina parecería a medio pintar: el reparto en rueda necesita dos.
-    if (palette.length < 2) {
-      fail(bank, "nivel " + level, "la paleta necesita al menos dos colores");
-    }
-    for (const repeated of duplicates([...palette])) {
-      fail(bank, "nivel " + level, "color repetido en la paleta: " + repeated);
-    }
-    for (const colorId of palette) {
-      if (!COLORING_COLORS[colorId]) {
-        fail(bank, "nivel " + level, "color desconocido: " + colorId);
-      }
-    }
-
-    // Los colores se reparten en rueda, así que una paleta con más colores
-    // que zonas deja fichas que no pintan nada en ninguna lámina.
-    for (const picture of pictures) {
-      if (palette.length > picture.regions.length) {
-        fail(
-          bank,
-          "nivel " + level + "/" + picture.id,
-          "la paleta tiene " +
-            palette.length +
-            " colores y la lámina solo " +
-            picture.regions.length +
-            " zonas: sobrarían fichas",
-        );
-      }
+    // Con menos de dos fichas no hay nada que elegir, y con más de las que
+    // caben en una fila la paleta saltaría a dos.
+    if (paletteSize < 2 || paletteSize > COLORING_MAX_SWATCHES) {
+      fail(
+        bank,
+        "nivel " + level,
+        "la paleta debe tener entre 2 y " + COLORING_MAX_SWATCHES + " fichas",
+      );
     }
   }
 }
@@ -533,16 +500,12 @@ function validateWordScramble(): void {
         );
       }
 
-      if (entry.level < 1 || entry.level > SCRAMBLE_MAX_TIER) {
-        fail(
-          bank,
-          at,
-          "tramo fuera de 1-" + SCRAMBLE_MAX_TIER + ": " + entry.level,
-        );
+      const range = SCRAMBLE_LENGTH_BY_TIER[entry.tier];
+      if (!range) {
+        fail(bank, at, "largo (`tier`) fuera de 1-3: " + entry.tier);
       } else {
         // Las tildes, la Ñ y la Ü cuentan como una sola letra.
         const length = getWordLetters(entry.word).length;
-        const range = SCRAMBLE_LENGTH_BY_TIER[entry.level];
         if (length < range[0] || length > range[1]) {
           fail(
             bank,
@@ -550,8 +513,8 @@ function validateWordScramble(): void {
             entry.word +
               " mide " +
               length +
-              " letras; el tramo " +
-              entry.level +
+              " letras; el largo " +
+              entry.tier +
               " admite " +
               range[0] +
               "-" +
@@ -572,12 +535,41 @@ function validateWordScramble(): void {
           " para una sesión sin repetir",
       );
     }
-    for (const tier of SCRAMBLE_TIERS_IN_USE) {
-      if (!words.some((word) => word.level === tier)) {
+    // Quien se queda en un escalón tiene que poder jugar una partida entera
+    // sin ver ninguna de las que recuerda el juego de las partidas anteriores.
+    // Los escalones 3, 4 y 5 comparten el largo 3, así que esto se mide por
+    // el largo de cada escalón.
+    const perLevel = WORD_SCRAMBLE_WORDS_PER_SESSION + WORD_SCRAMBLE_RECENT_LIMIT;
+    for (let level = 1; level <= WORD_SCRAMBLE_MAX_LEVEL; level += 1) {
+      const { tier, extraLetters } =
+        WORD_SCRAMBLE_LEVELS[level as WordScrambleLevel];
+      const count = words.filter((word) => word.tier === tier).length;
+      if (count < perLevel) {
         fail(
           bank,
-          language + "/tramo " + tier,
-          "ningún escalón podría jugarse: no hay palabras de esta longitud",
+          language + "/nivel " + level,
+          "solo " +
+            count +
+            " palabras de largo " +
+            tier +
+            "; hacen falta " +
+            perLevel +
+            " para no repetir las de las últimas partidas",
+        );
+      }
+      // Las letras que sobran nunca repiten una de la palabra, así que el
+      // alfabeto tiene que dejar siempre las suficientes fuera de ella.
+      const alphabet = language === "es" ? 23 : 26;
+      const worst = Math.max(
+        ...words
+          .filter((word) => word.tier === tier)
+          .map((word) => new Set(getWordLetters(word.word)).size),
+      );
+      if (alphabet - worst < extraLetters) {
+        fail(
+          bank,
+          language + "/nivel " + level,
+          "no quedan " + extraLetters + " letras que no sean de la palabra",
         );
       }
     }
@@ -631,38 +623,50 @@ function validateWordSearch(): void {
         );
       }
 
-      if (entry.level < 1 || entry.level > SEARCH_MAX_TIER) {
-        fail(
-          bank,
-          at,
-          "tramo fuera de 1-" + SEARCH_MAX_TIER + ": " + entry.level,
-        );
+      const range = SEARCH_LENGTH_BY_TIER[entry.tier];
+      if (!range) {
+        fail(bank, at, "largo (`tier`) fuera de 1-3: " + entry.tier);
         continue;
       }
-
-      // La palabra tiene que caber en el tablero **más pequeño** de los
-      // escalones que usan su tramo; si no, `pickSearchWords` la descarta
-      // siempre en ese escalón y nunca saldría a jugar.
-      const size = SEARCH_SMALLEST_BOARD_BY_TIER[entry.level];
       const length = getWordLetters(entry.word).length;
-      if (length > size) {
+      if (length < range[0] || length > range[1]) {
         fail(
           bank,
           at,
           entry.word +
             " mide " +
             length +
-            " letras y el tablero más pequeño que usa el tramo " +
-            entry.level +
-            " es de " +
-            size,
+            " letras; el largo " +
+            entry.tier +
+            " admite " +
+            range[0] +
+            "-" +
+            range[1],
         );
+      }
+
+      // La palabra tiene que caber en el tablero de todo escalón que saque de
+      // su largo; si no, pickSearchWords la descarta siempre allí.
+      for (const level of SEARCH_LEVELS) {
+        const config = WORD_SEARCH_LEVELS[level];
+        if (config.tiers.includes(entry.tier) && length > config.size) {
+          fail(
+            bank,
+            at,
+            entry.word +
+              " mide " +
+              length +
+              " letras y el tablero del nivel " +
+              level +
+              " es de " +
+              config.size,
+          );
+        }
       }
     }
 
     // Un tablero de nivel N se llena con las palabras que quepan en su tamaño.
-    const levels = SEARCH_LEVELS_IN_USE;
-    for (const level of levels) {
+    for (const level of SEARCH_LEVELS) {
       const config = WORD_SEARCH_LEVELS[level];
       const fitting = words.filter(
         (word) => getWordLetters(word.word).length <= config.size,
@@ -677,6 +681,24 @@ function validateWordSearch(): void {
             config.size +
             "; hacen falta " +
             config.words,
+        );
+      }
+
+      // Dos partidas enteras del nivel sin tirar de otros largos: es lo que
+      // deja jugar una sin repetir nada de la anterior.
+      const own = words.filter((word) => config.tiers.includes(word.tier)).length;
+      const perSession = WORD_SEARCH_BOARDS_PER_SESSION * config.words;
+      if (own < perSession * 2) {
+        fail(
+          bank,
+          language + "/nivel " + level,
+          "solo " +
+            own +
+            " palabras propias; una partida usa " +
+            perSession +
+            " y hacen falta " +
+            perSession * 2 +
+            " para no repetir las de la anterior",
         );
       }
     }
@@ -696,10 +718,33 @@ function validateWordSearch(): void {
 
 const TYPING_ALLOWED = /^[\p{L}\p{N} .,;:'"¿?¡!()\-]+$/u;
 
+/**
+ * Lo mínimo que puede tener un banco de Type Rush para que una ronda no dé
+ * vueltas sobre las mismas tres entradas.
+ *
+ * Ocho es el tamaño del banco de frases largas, que es el que lleva publicado
+ * desde que existe el juego: sirve de suelo medido, no de número elegido. Lo
+ * que de verdad protege una ronda larga es la regla de caracteres de abajo.
+ */
+const TYPING_MIN_ENTRIES = 8;
+
+/** Todos los escalones de Type Rush, leídos de su tabla. */
+const TYPING_LEVELS_IN_USE = Object.keys(TYPING_LEVELS)
+  .map(Number)
+  .sort((a, b) => a - b) as TypingLevel[];
+
+/**
+ * Un escalón por cada banco distinto, para recorrer los bancos sin revisar dos
+ * veces el que comparten el cuarto y el quinto.
+ */
+const TYPING_SOURCE_LEVELS = [
+  ...new Map(
+    TYPING_LEVELS_IN_USE.map((level) => [TYPING_LEVELS[level].source, level]),
+  ).values(),
+];
+
 function validateTyping(): void {
   const bank = "typing";
-
-  const levels = TYPING_LEVELS_IN_USE;
 
   for (const language of LANGUAGES) {
     // Cada banco se revisa una vez, aunque lo compartan dos escalones.
@@ -787,7 +832,7 @@ function validateTyping(): void {
       });
     }
 
-    for (const level of levels) {
+    for (const level of TYPING_LEVELS_IN_USE) {
       const source = TYPING_LEVELS[level].source;
       const entries = getTypingBank(language, level);
 

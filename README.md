@@ -8,19 +8,19 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
-- **A public welcome page:** the site root introduces BIntuitive and offers three doors — sign in, create an account, or continue as a guest. The first two are honest visual prototypes: there is no identity provider, no database and no session yet, and the screens say so instead of pretending otherwise. Nothing is stored, and no fake account is ever written to the browser.
+- **A public welcome page:** the site root introduces BIntuitive and offers three doors — sign in, create an account, or continue as a guest. The first two are honest visual prototypes: there is no identity provider, no database and no session yet, and the screens say so instead of pretending otherwise. Nothing is stored, and no fake account is ever written to the browser. Store builds (`NEXT_PUBLIC_BUILD_TARGET=store`) hide both account doors, and their routes return 404.
 - **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which lives at `/explore` and is where every house button, exit and "back to the start" inside the app leads. There is no separate games section.
 - **10 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, Tracing, and Coloring.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty in the question lessons:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options. The seven standalone games work the other way round — see below.
-- **Difficulty is chosen, not assigned:** every standalone game opens on a five-step level picker, the chosen step stays fixed for the whole session, and two stars out of three unlock the next one. What a step changes is the mechanic, never just the size: Visual Agility goes from 4 to 12 symbols and then rotates and rescales them, Word Scramble drops the written clue and adds letters that are not in the word, Word Search fills the same grid with more words and finally shows one word at a time, and Type Rush starts with single lowercase words before adding capitals and punctuation.
+- **Difficulty is chosen, not assigned:** every standalone game opens on a five-step level picker, the chosen step stays fixed for the whole session, and two stars out of three unlock the next one. What a step changes is the mechanic, never just the size: Visual Agility goes from 4 to 12 symbols and then rotates and rescales them, Word Scramble adds letters that do not belong to the word and finally hides the picture, Word Search fills the same grid with more words and stops naming them in the list, and Type Rush starts with single lowercase words before adding capitals and punctuation.
 - **Visual Agility:** a local, touch-first matching challenge where two cards share exactly one symbol and mistakes add a one-second penalty. Cards carry 4 to 12 symbols depending on the level, laid out straight on the first step and rotated and rescaled from the fourth.
 - **Type Rush:** a typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish. The first steps are single lowercase words for players still hunting for the keys; capitals and punctuation only arrive at level 4.
-- **Word Scramble:** a 10-word spelling challenge where players tap large letter tiles in order to build a word, with a picture clue, spoken word, and undo and clear controls. The clue disappears at level 4 and decoy letters join the tray at level 5.
-- **Word Search:** a three-puzzle session where players trace hidden words with a finger across a generated letter grid, with words running across, down, diagonally, and backwards as the level rises. The grid never grows past ten columns: the last two steps add more words and then show one word at a time instead.
+- **Word Scramble:** a 10-word spelling challenge where players tap large letter tiles in order to build a word, with a picture clue, spoken word, and undo and clear controls. Two decoy letters join the tray at level 4 and three at level 5, where the picture is hidden and only the clue is left.
+- **Word Search:** a three-puzzle session where players trace hidden words with a finger across a generated letter grid, with words running across, down, diagonally, and backwards as the level rises. The grid never grows past ten columns: the last two steps add more words and stop naming them in the list, which only says what each one is and how many letters it has.
 - **Tracing:** five levels of dotted paths — straight, diagonal, curved, zigzag and long — traced with a finger or a mouse through pointer events. A visible tolerance lane decides how well the path was followed, stars reward the accuracy, and the word of the picture is spoken and shown with its translation.
 - **Memory:** a vertical board of twelve cards where six pairs hide behind the honeycomb, tries and time are counted, and each pair is read out loud in the chosen language.
-- **Coloring:** twelve hand-drawn pictures painted with a finger or an Apple Pencil, in one of three brush sizes. The paint only takes inside the area being coloured, so going over the lines never spoils the drawing, and an area fills itself in once it is well covered. The first two levels say which area to paint and what colour; from level 3 on every area carries a number and the palette says which colour each number is.
+- **Coloring:** twelve colouring-book pages painted with a finger or an Apple Pencil, in one of three brush sizes. Each area asks for a colour it really has — green leaves, a brown trunk, a blue sea, a rainbow in its order — and the areas come from the picture itself. The paint only takes inside the area being coloured, so going over the lines never spoils the drawing, and an area fills itself in once it is well covered. The first two levels say which area to paint and what colour; from level 3 on every area carries a number and the palette says which colour each number is.
 - **Bilingual speech:** the Web Speech API automatically selects an English or Spanish voice when available, with a button to repeat each instruction.
 - **Positive feedback:** encouraging messages, animations, confetti, and no punitive language.
 - **BIntuitive identity:** a black-and-yellow B mark with a graduation cap is used throughout the product, app icon, and navigation.
@@ -115,7 +115,7 @@ src/
     localization.ts     # English category, question, option, and accessibility copy
                         # (artwork for the questions lives in public/art/)
   lib/
-    coloringGame.ts     # Coloring pictures, teaching palette, colour dealing, and brushes
+    coloringGame.ts     # Coloring pictures, areas found in the image, real-world colours, and brushes
     exploreView.ts      # Whether Explore is shown as the honeycomb or as a list
     favorites.ts        # Which hexagons are starred on this device
     gameEngine.ts       # Question selection and adaptive difficulty
@@ -163,10 +163,10 @@ When adding a question:
 The Word Scramble bank is not a translation: each language has its own words in
 `WORD_BANK` inside `src/lib/wordScramble.ts`. A new entry needs an `id`, the
 `word` in uppercase, an `emoji`, a short `clue` written in that language, and a
-`level`: 1 for 3-4 letters, 2 for 5-6 letters, 3 for 7-8 letters. That field is
-a **tier of the bank, not a game level**: the game has five steps and the bank
-three, because the top three steps share the long words and differ in the help
-they take away.
+`tier`: 1 for 3-4 letters, 2 for 5-6 letters, 3 for 7-8 letters. It is called a
+tier and not a level on purpose: **the game has five steps and the bank three**,
+because the top three steps share the long words and differ in the help they
+take away.
 
 Spanish words are spelled correctly, accents included: the allowed alphabet is
 `A-Z` plus `Á É Í Ó Ú Ñ Ü`, and a word is never simplified to avoid a character
@@ -181,9 +181,9 @@ diacritics.
 The Word Search bank is its own list in `WORD_SEARCH_BANK` inside
 `src/lib/wordSearch.ts`: it is neither the Word Scramble bank nor a
 translation of it. A new entry needs an `id`, the `word` in uppercase, an
-`emoji` for the word list, and a `level`: 1 for 3-5 letters, 2 for 5-7, 3 for
-6-8. As in Word Scramble that field is a **tier of the bank, not a game level**,
-and a word never exceeds the smallest grid of the steps that use its tier.
+`emoji` for the word list, and a `tier`: 1 for 3-5 letters, 2 for 5-7, 3 for
+6-8. As in Word Scramble it is **a tier of the bank, not a game level**, and a
+word never exceeds the smallest grid of the steps that draw from its tier.
 
 Spanish spelling rules are the same as in Word Scramble: `A-Z` plus
 `Á É Í Ó Ú Ñ Ü`, written in NFC, never simplified to dodge a character. Both

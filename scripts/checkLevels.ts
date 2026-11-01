@@ -31,13 +31,12 @@ import {
   type TypingLevel,
 } from "@/lib/typingGame";
 import {
-  clampWordSearchLevel,
+  clampSearchLevel,
   createRng,
   generateBoard,
   getSearchLetters,
   pickSearchWords,
-  wordSearchSessionStars,
-  WORD_SEARCH_LEGACY_MAX_LEVEL,
+  searchSessionStars,
   WORD_SEARCH_LEVELS,
   WORD_SEARCH_MAX_LEVEL,
   type WordSearchLevel,
@@ -56,12 +55,11 @@ import {
   type VisualLevel,
 } from "@/lib/visualGame";
 import {
-  clampWordScrambleLevel,
+  clampScrambleLevel,
   createLetterTiles,
   getWordBank,
   getWordLetters,
-  wordScrambleSessionStars,
-  WORD_SCRAMBLE_LEGACY_MAX_LEVEL,
+  scrambleSessionStars,
   WORD_SCRAMBLE_LEVELS,
   WORD_SCRAMBLE_MAX_LEVEL,
   type WordScrambleLevel,
@@ -256,6 +254,9 @@ console.log("\nAgilidad visual · desbloqueo y fallos");
 
 /* ==========================================================================
  * Word Scramble
+ *
+ * Los escalones son los que ya están publicados y este script no los discute:
+ * los comprueba. Si alguien los cambia, aquí se entera.
  * ======================================================================= */
 
 function scramble() {
@@ -265,85 +266,86 @@ function scramble() {
 console.log("\nWord Scramble · la tabla de escalones");
 {
   const tiers = LEVELS.map((level) => WORD_SCRAMBLE_LEVELS[level].tier);
-  const clues = LEVELS.map((level) => WORD_SCRAMBLE_LEVELS[level].clue);
-  const decoys = LEVELS.map((level) => WORD_SCRAMBLE_LEVELS[level].decoys);
+  const extra = LEVELS.map((level) => WORD_SCRAMBLE_LEVELS[level].extraLetters);
+  const picture = LEVELS.map((level) => WORD_SCRAMBLE_LEVELS[level].showPicture);
 
   check("cinco escalones", WORD_SCRAMBLE_MAX_LEVEL === 5);
   check("tramos 1, 2, 3, 3, 3", tiers.join(",") === "1,2,3,3,3", tiers.join(","));
+  check(
+    "los tres primeros son los tres de antes, intactos: por eso el nivel guardado se proyecta tal cual",
+    tiers[0] === 1 && tiers[1] === 2 && tiers[2] === 3 && extra[2] === 0 && picture[2],
+  );
   check(
     "la palabra nunca se acorta al subir",
     tiers.every((tier, index) => index === 0 || tier >= tiers[index - 1]),
   );
   check(
-    "la pista escrita se retira en el cuarto y no vuelve",
-    clues.join(",") === "true,true,true,false,false",
-    clues.join(","),
+    "letras de más 0, 0, 0, 2, 3",
+    extra.join(",") === "0,0,0,2,3",
+    extra.join(","),
   );
   check(
-    "las letras que sobran solo aparecen en el quinto",
-    decoys.join(",") === "0,0,0,0,2",
-    decoys.join(","),
+    "las letras de más nunca disminuyen al subir",
+    extra.every((count, index) => index === 0 || count >= extra[index - 1]),
   );
   check(
-    "ninguna ayuda vuelve a aparecer después de quitarse",
-    clues.every((clue, index) => index === 0 || Number(clue) <= Number(clues[index - 1])),
+    "el dibujo solo se esconde en el quinto",
+    picture.join(",") === "true,true,true,true,false",
+    picture.join(","),
   );
   check(
-    "los tres escalones altos comparten tramo: lo que los separa son las ayudas",
-    tiers[2] === tiers[3] && tiers[3] === tiers[4],
+    "el quinto no sube de tramo: lo que cambia es la ayuda que quita",
+    tiers[4] === tiers[3] && extra[4] > extra[3] && !picture[4] && picture[3],
   );
-  check("el escalón se recorta al rango del juego", clampWordScrambleLevel(9) === 5);
+  check("el escalón se recorta al rango del juego", clampScrambleLevel(9) === 5);
+  check("y nunca por debajo de uno", clampScrambleLevel(-3) === 1);
 }
 
 console.log("\nWord Scramble · las fichas que se reparten");
 {
   for (const language of ["en", "es"] as const) {
-    const word = getWordBank(language).find(
-      (candidate) => candidate.level === 3,
-    )!;
+    const word = getWordBank(language).find((candidate) => candidate.tier === 3)!;
     const letters = getWordLetters(word.word);
 
     const plain = createLetterTiles(word.word, 0, language);
     check(
-      `${language}: sin señuelos hay una ficha por letra`,
+      `${language}: sin letras de más hay una ficha por letra`,
       plain.length === letters.length,
       `${plain.length} fichas para ${letters.length} letras`,
     );
 
-    const withDecoys = createLetterTiles(word.word, 2, language);
-    const extra = withDecoys.filter((tile) => tile.id.startsWith("decoy-"));
-    check(
-      `${language}: con señuelos sobran dos fichas`,
-      withDecoys.length === letters.length + 2 && extra.length === 2,
-      `${withDecoys.length} fichas`,
-    );
-    check(
-      `${language}: ningún señuelo es una letra de la palabra`,
-      extra.every((tile) => !letters.includes(tile.letter)),
-      extra.map((tile) => tile.letter).join(","),
-    );
-    check(
-      `${language}: cada ficha tiene su propio id, aunque la letra se repita`,
-      new Set(withDecoys.map((tile) => tile.id)).size === withDecoys.length,
-    );
-    check(
-      `${language}: las letras de la palabra siguen estando todas`,
-      letters.every(
-        (letter) =>
-          withDecoys.filter((tile) => tile.letter === letter).length >=
-          letters.filter((other) => other === letter).length,
-      ),
-    );
+    for (const level of [4, 5] as const) {
+      const wanted = WORD_SCRAMBLE_LEVELS[level].extraLetters;
+      const tiles = createLetterTiles(word.word, wanted, language);
+      check(
+        `${language} nivel ${level}: sobran ${wanted} fichas`,
+        tiles.length === letters.length + wanted,
+        `${tiles.length} fichas`,
+      );
+      check(
+        `${language} nivel ${level}: cada ficha tiene su propio id`,
+        new Set(tiles.map((tile) => tile.id)).size === tiles.length,
+      );
+      check(
+        `${language} nivel ${level}: las letras de la palabra siguen estando todas`,
+        letters.every(
+          (letter) =>
+            tiles.filter((tile) => tile.letter === letter).length >=
+            letters.filter((other) => other === letter).length,
+        ),
+      );
+    }
   }
 }
 
 console.log("\nWord Scramble · estrellas de la sesión");
 {
-  check("sin terminar → 0", wordScrambleSessionStars(100, false) === 0);
-  check("74 % → 1", wordScrambleSessionStars(74, true) === 1);
-  check("75 % justo → 2", wordScrambleSessionStars(75, true) === 2);
-  check("89 % → 2", wordScrambleSessionStars(89, true) === 2);
-  check("90 % justo → 3", wordScrambleSessionStars(90, true) === 3);
+  // Toma la precisión de 0 a 1, no de 0 a 100: es como la calcula el juego.
+  check("74 % → 1", scrambleSessionStars(0.74) === 1);
+  check("75 % justo → 2", scrambleSessionStars(0.75) === 2);
+  check("89 % → 2", scrambleSessionStars(0.89) === 2);
+  check("90 % justo → 3", scrambleSessionStars(0.9) === 3);
+  check("100 % → 3", scrambleSessionStars(1) === 3);
 }
 
 function playScramble(
@@ -394,7 +396,6 @@ console.log("\nWord Scramble · los dos modelos dicen lo mismo");
 console.log("\nWord Scramble · el espejo no degrada a nadie al revertir");
 {
   store.clear();
-  // Subir hasta el quinto, que el código de la versión 1 no sabe expresar.
   playScramble(1, 3);
   playScramble(2, 3);
   playScramble(3, 3);
@@ -403,14 +404,13 @@ console.log("\nWord Scramble · el espejo no degrada a nadie al revertir");
 
   const stored = JSON.parse(store.get(PROGRESS_KEY)!);
   check(
-    "pero el campo de la versión 1 se recorta a su propio tope",
-    stored.wordScramble.level === WORD_SCRAMBLE_LEGACY_MAX_LEVEL,
+    "pero el campo de la versión 1 se recorta a su propio tope, que es 3",
+    stored.wordScramble.level === 3,
     `${stored.wordScramble.level}`,
   );
   check(
-    "nunca escribe ahí un número que el código antiguo daría por inválido",
-    stored.wordScramble.level >= 1 &&
-      stored.wordScramble.level <= WORD_SCRAMBLE_LEGACY_MAX_LEVEL,
+    "nunca escribe ahí un número que el código antiguo leería como un 1",
+    stored.wordScramble.level >= 1 && stored.wordScramble.level <= 3,
   );
 }
 
@@ -447,9 +447,8 @@ console.log("\nWord Search · la tabla de escalones");
 {
   const sizes = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].size);
   const words = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].words);
-  const tiers = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].tier);
   const dirs = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].directions.length);
-  const solo = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].oneAtATime);
+  const hidden = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].hideWords);
 
   check("cinco escalones", WORD_SEARCH_MAX_LEVEL === 5);
   check("tableros 7, 9, 10, 10, 10", sizes.join(",") === "7,9,10,10,10", sizes.join(","));
@@ -462,10 +461,10 @@ console.log("\nWord Search · la tabla de escalones");
     "el tablero nunca encoge al subir",
     sizes.every((size, index) => index === 0 || size >= sizes[index - 1]),
   );
-  check("palabras 4, 6, 7, 9, 9", words.join(",") === "4,6,7,9,9", words.join(","));
+  check("palabras 4, 6, 7, 8, 9", words.join(",") === "4,6,7,8,9", words.join(","));
   check(
-    "el cuarto llena más el mismo tablero del tercero",
-    sizes[3] === sizes[2] && words[3] > words[2],
+    "nunca hay menos palabras que buscar al subir",
+    words.every((count, index) => index === 0 || count >= words[index - 1]),
   );
   check(
     "las direcciones nunca se reducen al subir",
@@ -473,16 +472,22 @@ console.log("\nWord Search · la tabla de escalones");
     dirs.join(","),
   );
   check(
-    "de una en una solo en el quinto",
-    solo.join(",") === "false,false,false,false,true",
-    solo.join(","),
+    "la lista deja de nombrar las palabras en el cuarto y el quinto",
+    hidden.join(",") === "false,false,false,true,true",
+    hidden.join(","),
   );
   check(
-    "el quinto no cambia el tablero del cuarto: lo que cambia es cómo se pide",
-    sizes[4] === sizes[3] && words[4] === words[3] && solo[4] && !solo[3],
+    "y una vez oculta no vuelve a aparecer en un escalón más alto",
+    hidden.every(
+      (value, index) => index === 0 || Number(value) >= Number(hidden[index - 1]),
+    ),
   );
-  check("tramos 1, 2, 3, 3, 3", tiers.join(",") === "1,2,3,3,3", tiers.join(","));
-  check("el escalón se recorta al rango del juego", clampWordSearchLevel(9) === 5);
+  check(
+    "el cuarto crece sobre el tablero del tercero sin agrandarlo",
+    sizes[3] === sizes[2] && words[3] > words[2] && hidden[3] && !hidden[2],
+  );
+  check("el escalón se recorta al rango del juego", clampSearchLevel(9) === 5);
+  check("y nunca por debajo de uno", clampSearchLevel(-3) === 1);
 }
 
 console.log("\nWord Search · los tableros se generan de verdad");
@@ -534,16 +539,21 @@ console.log("\nWord Search · las palabras caben en su tablero");
         chosen.length === config.words,
         `${chosen.length}`,
       );
+      check(
+        `${language} nivel ${level}: solo salen palabras de los tramos que el escalón usa`,
+        chosen.every((word) => config.tiers.includes(word.tier)),
+        config.tiers.join(","),
+      );
     }
   }
 }
 
 console.log("\nWord Search · estrellas de la sesión");
 {
-  check("sin terminar → 0", wordSearchSessionStars(100, false) === 0);
-  check("74 % → 1", wordSearchSessionStars(74, true) === 1);
-  check("75 % justo → 2", wordSearchSessionStars(75, true) === 2);
-  check("90 % justo → 3", wordSearchSessionStars(90, true) === 3);
+  check("64 % → 1", searchSessionStars(0.64) === 1);
+  check("65 % justo → 2", searchSessionStars(0.65) === 2);
+  check("84 % → 2", searchSessionStars(0.84) === 2);
+  check("85 % justo → 3", searchSessionStars(0.85) === 3);
 }
 
 function playSearch(
@@ -590,12 +600,11 @@ console.log("\nWord Search · el espejo no degrada a nadie al revertir");
 
   const stored = JSON.parse(store.get(PROGRESS_KEY)!);
   check(
-    "el campo de la versión 1 se recorta a su propio tope",
-    stored.wordSearch.level === WORD_SEARCH_LEGACY_MAX_LEVEL,
+    "el campo de la versión 1 se recorta a su propio tope, que es 3",
+    stored.wordSearch.level === 3,
     `${stored.wordSearch.level}`,
   );
 }
-
 /* ==========================================================================
  * Type Rush
  * ======================================================================= */

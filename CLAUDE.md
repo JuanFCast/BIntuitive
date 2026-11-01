@@ -34,7 +34,9 @@ sesión, crear una cuenta y continuar como invitado. Las dos primeras son **prot
 visuales**: no hay proveedor de identidad, ni base de datos, ni sesión, y las pantallas lo
 dicen en vez de fingirlo. No guardan correos, ni contraseñas, ni cuentas falsas en
 `localStorage`. La tercera es la que lleva a la aplicación de verdad, y por eso es la grande y
-va primero; las dos de cuenta van debajo, agrupadas "para adultos".
+va primero; las dos de cuenta van debajo, agrupadas bajo "Tu cuenta". El build de tienda
+(`NEXT_PUBLIC_BUILD_TARGET=store`, en `src/lib/buildTarget.ts`) no las enseña y sus rutas dan
+404: en una tienda, una función que no funciona es motivo de rechazo.
 
 **El panal (`/explore`) es la única superficie de descubrimiento.** Es la pantalla de entrada
 de la aplicación —la pestaña se llama Home (Inicio en español), aunque la ruta sea `/explore`— y todo lo que dentro significa "volver al
@@ -85,7 +87,7 @@ src/lib/
   visualGame.ts         Lógica pura de Agilidad visual
   memoryGame.ts         Banco, tablero y estadísticas de Parejas
   tracingGame.ts        Caminos, tolerancia, estrellas y banco de Trazos
-  coloringGame.ts       Láminas, paleta de enseñanza y reparto de color de Colorear
+  coloringGame.ts       Láminas, zonas sacadas de la imagen y colores de verdad de Colorear
   typingGame.ts         Lógica pura de Type Rush
   wordScramble.ts       Banco bilingüe, fichas y dificultad de Word Scramble
   wordSearch.ts         Banco bilingüe, generador de tablero y selección de Word Search
@@ -100,6 +102,7 @@ src/lib/
   profile.ts            Nombre, avatar y fecha de inicio de quien juega en este dispositivo
   routes.ts             Las direcciones de la aplicación, escritas una sola vez
   authForm.ts           Validación visual de los formularios de cuenta (sin backend)
+  buildTarget.ts        IS_STORE_BUILD: qué cambia entre la web y el build de tienda
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
 
@@ -177,11 +180,22 @@ src/lib/
   alta qué zona pintar y de qué color, y van zona por zona, así que sirven a quien todavía no
   reconoce cifras; del 3 al 5 cada zona lleva un número, la paleta dice qué color es cada
   número y se pinta en el orden que se quiera. Es un solo juego con dos formas de pedir lo
-  mismo, y es lo que hace que los cinco escalones sean cinco cosas distintas. Los colores
-  **no** se guardan en la lámina: se reparten en rueda sobre la paleta revuelta al empezar
-  cada ronda, lo que garantiza de una vez que dos zonas vecinas nunca salgan del mismo tono
-  —las zonas están escritas en orden de vecindad— y que la paleta no tenga fichas que no
-  pinten nada. Por eso doce láminas bastan: la misma casa sale distinta cada vez.
+  mismo, y es lo que hace que los cinco escalones sean cinco cosas distintas.
+- **En Colorear se piden los colores de la realidad.** Cada zona declara en `colors` los
+  que puede llevar —las hojas, verdes; el tronco, café; el mar, azul; el arcoíris, en su
+  orden— y al empezar cada ronda se elige entre ellos, prefiriendo uno que no lleve
+  todavía ninguna otra zona y, si no queda, evitando el de la zona anterior salvo que la
+  realidad lo pida (el tallo y la hoja). "Pinta las hojas de amarillo" no enseña nada: el
+  color se aprende junto con lo que lleva ese color. Lo que puede ser de cualquier color
+  —una pared, una vela, un pez— sigue variando, y por eso doce láminas bastan. Lo que en
+  la realidad va igual es **una sola zona con varios pedazos** (las alas de arriba de la
+  mariposa, las ventanas de la casa, las ruedas, las torres del castillo): pedirlas de dos
+  colores no es ninguna mariposa. Las nubes del arcoíris no son zona y se quedan blancas,
+  que es lo que son; la paleta no tiene blanco ni negro a propósito. Al escribir una zona
+  hay que mirar la de al lado: la pared que rodea unas ventanas azules no lleva azul. El
+  escalón no elige colores sino cuántas fichas hay (`paletteSize`): si la lámina usa menos,
+  se completan con colores que no pinta nadie, y nunca pasan de seis
+  (`COLORING_MAX_SWATCHES`), que son las que caben en una fila de 375 px.
 - **En Colorear se pinta arrastrando, con el grosor que se elija.** Un toque que
   rellenaba la zona entera convertía colorear en señalar, que es lo que ya hacen las
   lecciones de preguntas: ahora la mano trabaja, como en Trazos pero sin la exigencia de
@@ -190,8 +204,13 @@ src/lib/
   pantalla. **La pintura se recorta a la zona**, así que salirse no estropea el dibujo —es
   lo que permite dárselo a un niño de tres años con el dedo— y el color que no toca
   sencillamente no agarra: equivocarse nunca deja marca. Una zona se rellena sola al
-  llegar a `COLORING_COVERAGE_TO_FILL`, no al quedar perfecta; pedir el 100 % obligaría a
-  repasar los rincones con el pincel fino y aquí se practica el color, no el pulso. La
+  llegar al `coverageToFill` de su escalón, no al quedar perfecta; pedir el 100 % obligaría a
+  repasar los rincones con el pincel fino y aquí se practica el color, no el pulso. **Los
+  escalones altos piden más a la mano sin castigar salirse**: el umbral sube del 70 % (1 y 2,
+  los del niño de tres años, intactos) al 75 %, 80 % y 85 %, y del 4 en adelante no hay pincel
+  grueso, que con dos pasadas tapaba casi cualquier zona. Ambos viven en `COLORING_LEVELS`
+  junto a la paleta, y `npm run check:coloring` impide que el umbral baje al subir, que llegue
+  a pedir la zona perfecta o que un escalón deje fuera el grosor de por defecto. La
   precisión cuenta **decisiones** —esta zona de este color, una sola vez por pareja
   (`coloringAttemptKey`)—, no pasadas: cobrar cada pasada haría que pintar bien con el
   pincel fino puntuara peor que pintar bien con el grueso. Lo pintado se mide con una
@@ -199,21 +218,30 @@ src/lib/
   píxeles del lienzo: `coloringGame.ts` no puede tocar el DOM porque `validate:content` lo
   compila sin él, así que `coloringSampleGrid` recibe el "está dentro" en vez de
   calcularlo.
-- **El dibujo de Colorear son dos capas sobre el mismo cuadrado.** Abajo un `<canvas>` con
-  el papel, las pasadas de pincel y los contornos, en el orden de las zonas: ese orden es
-  el que hace que la puerta se vea sobre la pared y la aleta sobre el cuerpo del pez, y por
-  eso el pincel, además de recortarse a su zona, obliga a repintar las zonas de encima y el
-  contorno propio tras cada tramo. Un SVG encima, que **no recibe toques**, pone los
-  números y una zona enfocable por cada una: sin puntero no hay arrastre, así que activar
-  una zona con el teclado la pinta entera y el juego sigue siendo jugable con lector de
-  pantalla. Las dos capas no se pueden fundir en una: un SVG con relleno blanco sobre el
-  lienzo taparía lo que se está pintando debajo.
-- **Las láminas de Colorear son geometría a propósito**: una casa son un triángulo y unos
-  rectángulos, y eso es justo lo que un camino SVG escrito a mano hace bien. El `labelAt` de
-  cada zona —dónde se pinta su número— va escrito y es obligatorio: el centro de la caja del
-  camino no sirve, porque en una banda del arcoíris cae en el hueco del arco, en los pétalos
-  cae sobre el centro de la flor, que es otra zona, y en las dos ruedas del tren cae entre
-  ellas, en el aire.
+- **El dibujo de Colorear son tres capas sobre el mismo cuadrado.** Abajo un `<canvas>` con
+  el papel y las pasadas de pincel, recortadas a su zona. Encima la imagen de la lámina,
+  que es solo tinta: tapa el borde de la pintura, así que el color llega justo a la línea y
+  el pincel no tiene que repintar nada alrededor. Arriba un SVG que **no recibe toques**,
+  con los números y una zona enfocable por cada una: sin puntero no hay arrastre, así que
+  activar una zona con el teclado la pinta entera y el juego sigue siendo jugable con lector
+  de pantalla. La zona enfocable se marca con un velo de relleno y no con contorno: es una
+  pila de franjas de la rejilla, y su contorno dibujaría cada franja.
+- **Las láminas de Colorear son páginas de colorear, y las zonas salen de la imagen.** Son
+  PNG en `public/art/coloring/` con el `id` de la lámina por nombre: tinta negra sobre
+  transparente, cuadrados, a 1024 px y recortados con un 4 % de margen. Antes eran caminos
+  SVG escritos a mano y un árbol era un óvalo sobre un rectángulo. Al cargar cada lámina el
+  cliente lee la tinta en una rejilla de 256 (`COLORING_GRID`) y `coloringRegionCells` hace
+  el resto, sin DOM: cada zona es el espacio cerrado que contiene alguno de sus puntos
+  `labelAt`, crece dos celdas bajo la línea para que no quede un hilo blanco, y lo que no
+  contiene ningún punto es fondo. Los mismos puntos son donde se pinta el número, uno por
+  pedazo, y van en el punto más hondo de cada uno, no en el centro de su caja: en una banda
+  del arcoíris el centro cae en el hueco del arco. Si un punto cae en la línea o dos zonas
+  comparten espacio —una línea con un hueco—, el juego lo avisa en la consola. **Al
+  encargar una lámina** hay que pedir contornos cerrados, una línea donde se tocan dos
+  partes ("la prueba del bote de pintura") y nada de detalles interiores, porque cada
+  espacio cerrado es una zona; y revisarla con sus puntos antes de subirla. `validate:content`
+  comprueba que la imagen exista, que haya puntos y que estén dentro del lienzo, pero no
+  puede leer la imagen.
 - **Los colores que se enseñan no son los de la marca**: la paleta de la interfaz es pastel
   (`sky` es un celeste, `coral` un salmón) y sirve para la interfaz. Los dibujos de la
   categoría Colores usan colores plenos y canónicos, que viven en los propios SVG. Enseñar
@@ -295,13 +323,20 @@ src/lib/
   excepción. **Todos tienen cinco escalones**, y no menos: el modelo guarda hasta 5 y
   `unlockedAfterSession` cuenta hasta 5, así que un juego de tres dejaría el desbloqueo topado a
   mitad del modelo. Los juegos que no daban para cinco por contenido **crecen cambiando de
-  mecánica**, como ya hacía Colorear: Agilidad visual sube de 4 a 12 símbolos y luego gira y
-  reescala —reconocer una forma no es reconocer un dibujo—; Word Scramble usa los tres tramos de
-  longitud del banco y después retira la pista escrita y añade letras que no son de la palabra; la
-  sopa llena más el mismo tablero —diez columnas sigue siendo el máximo— y al final enseña una
-  palabra cada vez; Type Rush empieza por palabras sueltas en minúscula y va añadiendo teclas
-  —mayúsculas y signos— antes que longitud. Subir el tamaño cuando ya no da más es lo que **no**
-  hay que hacer.
+  mecánica**, como ya hacía Colorear, y cada uno tiene su tabla:
+  - **Agilidad visual**: de 4 a 12 símbolos por carta, y desde el cuarto girados y reescalados
+    —reconocer una forma no es reconocer un dibujo—. El cuarto repite las nueve del tercero y
+    solo cambia la presentación, para que ese salto no pase inadvertido.
+  - **Word Scramble**: los tres tramos de longitud del banco, y luego **letras que no son de la
+    palabra** —dos en el cuarto, tres en el quinto—; el quinto además esconde el dibujo y deja la
+    pista, que el botón de escuchar lee.
+  - **Sopa de letras**: el tablero crece hasta 10 columnas y ahí se para, porque más no se ve en
+    un móvil; del cuarto en adelante entran más palabras y **la lista deja de decir cuáles son**
+    (`hideWords`), diciendo solo qué es cada una y cuántas letras tiene.
+  - **Type Rush**: empieza por palabras sueltas en minúscula y va añadiendo **teclas**
+    —mayúsculas y signos— antes que longitud.
+
+  Subir el tamaño cuando ya no da más es lo que **no** hay que hacer.
   **La duración solo cuenta como dificultad en Type Rush**, y es la única excepción: lo que ahí se
   mide son pulsaciones por minuto y sostener la precisión es parte de la destreza. En un juego de
   mirar o de buscar, una sesión más larga solo cansa.
@@ -561,14 +596,27 @@ y la carpeta `~/.impeccable`.
   juego, extender `Progress` con un campo opcional y normalizarlo al leer, como hacen
   `normalizeWordScramble` y `normalizeWordSearch`: `getProgress` debe tolerar el campo
   ausente en datos ya guardados.
+- **Los juegos de palabras recuerdan lo que ya salió** para no repetirlo entre partidas:
+  `wordScrambleRecent` y `wordSearchRecent`, dos listas de ids separadas (de la más antigua a
+  la más reciente) que no son progreso y por eso no pasan por `byGrade`. Cuántas se recuerdan
+  lo sabe cada lib (`WORD_SCRAMBLE_RECENT_LIMIT`, `WORD_SEARCH_RECENT_LIMIT`) y `storage.ts`
+  las guarda tal cual. Se escriben al sacar cada palabra o tablero, no al terminar: lo visto
+  ya se vio aunque se abandone. Al elegir, **el nivel pesa más que la novedad**: una palabra
+  reciente del nivel pedido va antes que una nueva de otro nivel, y entre recientes vuelve
+  primero la más antigua. `validate:content` exige palabras suficientes por nivel para que
+  eso casi nunca haga falta.
 - **El progreso tiene dos modelos vivos, y es temporal.** `Progress` guarda a la vez los campos
   de la versión 1 —`levelByCategory`, `wordScramble`, `wordSearch`, `tracing`— y el modelo nuevo
-  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Quién
-  escribe dónde, hoy: **las categorías de preguntas**, solo en los campos de la versión 1;
-  **Trazos, Word Scramble y la sopa**, en los dos a la vez y con exactamente la misma marca, que
-  es lo que impide que la proyección le sume una sesión dos veces o discrepe consigo misma; y
-  **Parejas, Colorear, Agilidad visual y Type Rush**, solo en el nuevo, porque nacieron después y
-  no tienen campos antiguos que mantener. `projectLegacyProgress`
+  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Las
+  lecciones siguen escribiendo **solo** en los campos de la versión 1; **Trazos, Word Scramble y
+  Word Search ya escriben en los dos a la vez**, con exactamente los mismos totales, que es lo que
+  impide que la proyección les sume una sesión dos veces o les duplique marcas; y **Parejas,
+  Colorear, Agilidad visual y Type Rush escriben solo en el nuevo**, porque nacieron después y no
+  tienen campos antiguos que mantener. Los dos de palabras
+  tenían tres niveles y tienen cinco: sus escalones 1 a 3 son los tres de antes, idénticos, así
+  que el nivel guardado se proyecta tal cual y nadie pierde lo que tenía abierto; y su espejo de
+  la versión 1 guarda lo desbloqueado **recortado a 3** (`legacyWordLevel`), porque el código
+  anterior lee cualquier otro número como un 1. `projectLegacyProgress`
   proyecta lo antiguo sobre `byGrade` en **cada lectura**, no una vez, que es lo que impide que
   los dos modelos discrepen. La dirección es siempre 1 → 2 y un dato antiguo **nunca** rebaja uno nuevo:
   las marcas se juntan por su mejor valor, el desbloqueo y las estrellas solo suben, y lo que el
@@ -587,9 +635,17 @@ y la carpeta `~/.impeccable`.
   tiene su id, su ruta (`/game/word-scramble` y `/game/word-search`), su lib, su banco de
   palabras y su prefijo de claves i18n (`scramble*` y `search*`). Nunca reutilizar el prefijo
   genérico `word*` para ninguno de los dos, ni compartir banco o progreso entre ellos.
-- Lo único compartido entre los dos juegos de palabras es `letters.ts` (`getWordLetters`),
-  `nextLevel` de `gameEngine.ts` y `useSpeakAfterSound`. Cualquier otra cosa en común es señal
-  de acoplamiento.
+- Lo único compartido entre los dos juegos de palabras es `letters.ts` (`getWordLetters`) y
+  `useSpeakAfterSound`. Cualquier otra cosa en común es señal de acoplamiento. Ya no comparten
+  `nextLevel`: desde que el nivel se elige en `LevelPicker`, ninguno lo mueve a mitad de
+  partida.
+- **Los juegos de palabras crecen cambiando de mecánica a partir del 4.** No caben palabras
+  más largas en un móvil, así que el banco distingue el **largo** de la palabra (`tier`, 1-3) del
+  **escalón** (1-5), y cada tabla (`WORD_SCRAMBLE_LEVELS`, `WORD_SEARCH_LEVELS`) dice de qué
+  largos saca cada escalón. En Word Scramble el 4 añade dos letras que no son de la palabra y el 5
+  tres, y además esconde el dibujo: queda la pista, que el botón de escuchar lee en vez de la
+  palabra. En Word Search el 4 y el 5 enseñan en la lista el dibujo y un hueco por letra en vez de
+  la palabra escrita, ordenados por largo para no soplar la primera letra.
 - **Los bancos siguen separados**, y así deben seguir por ahora: preguntas (`questions.ts` en
   español + `localization.ts` en inglés), Word Scramble y Word Search (bilingües, cada uno el
   suyo, sin correspondencia entre idiomas), frases de Typing, símbolos de Visual, dibujos de
@@ -622,6 +678,6 @@ y la carpeta `~/.impeccable`.
   `isMuted()` al disparar y no al programar, una sola locución pendiente a la vez y el corte al
   desmontar. Su `cancel()` entra en el `clearTimers` del juego, así que empezar sesión, cambiar
   de idioma, abrir la ayuda o salir callan lo pendiente. Es la única cosa que comparten Word
-  Scramble y Word Search además de `getWordLetters` y `nextLevel`, y lo comparten porque el
-  problema es de iOS, no de la mecánica.
+  Scramble y Word Search además de `getWordLetters`, y lo comparten porque el problema es de
+  iOS, no de la mecánica.
 - Los comentarios existentes en el código están en español; mantener ese idioma en el código.

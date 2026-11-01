@@ -10,7 +10,7 @@ import { EXPLORE } from "@/lib/routes";
  * Dice la verdad y no la disfraza: no hay cuentas todavía, no se ha creado
  * nada, no se ha guardado ningún correo y no hay ninguna sesión iniciada.
  * Fingir un "te hemos enviado un correo" que nunca llega se paga con la
- * confianza de una familia, y este producto es para niños.
+ * confianza de quien lo usa.
  *
  * Por eso el aviso no se queda solo: trae la puerta que sí funciona. Quien
  * quería entrar puede entrar, como invitado, con todo su progreso local.

@@ -220,13 +220,20 @@ export function buildTypingPassage(
 ): string {
   const entries = shuffle(getTypingBank(language, level));
   const selected: string[] = [];
+  /*
+   * El largo se lleva como lo que de verdad va a medir el texto unido, y no
+   * sumando `entry.length + 1` por entrada: ese `+1` cuenta un separador que
+   * el `join` no pone detrás de la última, así que el texto salía un carácter
+   * corto del mínimo pedido. Con una tanda de palabras de tres letras y veinte
+   * segundos, un carácter es la diferencia entre llegar y no llegar.
+   */
   let length = 0;
   let index = 0;
 
   while (length < minLength) {
     const entry = entries[index % entries.length];
+    length += selected.length === 0 ? entry.length : entry.length + 1;
     selected.push(entry);
-    length += entry.length + 1;
     index += 1;
   }
 
