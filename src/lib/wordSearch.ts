@@ -1,12 +1,11 @@
-import { nextLevel } from "./gameEngine";
+import { clampDifficulty, type Stars } from "./difficulty";
 import type { Language } from "./language";
 import { getWordLetters } from "./letters";
 
 /**
  * Sopa de letras (Word Search). Juego independiente de Word Scramble: allí se
  * ordenan las letras de una palabra, aquí se buscan palabras escondidas en una
- * cuadrícula. Solo comparten `getWordLetters` (manejo de Unicode) y `nextLevel`
- * (la regla de dificultad de la casa).
+ * cuadrícula. Lo único que comparten es `getWordLetters` (manejo de Unicode).
  *
  * Todo lo de este archivo es lógica pura y determinista: el generador recibe un
  * `Rng`, así que un mismo semilla produce siempre el mismo tablero y las
@@ -14,12 +13,20 @@ import { getWordLetters } from "./letters";
  */
 
 export const WORD_SEARCH_BOARDS_PER_SESSION = 3;
-export const WORD_SEARCH_MAX_LEVEL = 3;
+export const WORD_SEARCH_MAX_LEVEL = 5;
 
-/** A partir de esta cantidad de selecciones erradas en un tablero, el nivel baja. */
-export const WORD_SEARCH_DROP_MISSES = 5;
+/**
+ * El tope que tenía el juego antes de entrar en la escala compartida, y el que
+ * sigue entendiendo el campo de la versión 1 en `storage.ts`. El espejo se
+ * recorta aquí para que revertir el despliegue lea un 3 —el máximo de
+ * entonces— y no un 5 que el código antiguo daría por inválido.
+ */
+export const WORD_SEARCH_LEGACY_MAX_LEVEL = 3;
 
-export type WordSearchLevel = 1 | 2 | 3;
+export type WordSearchLevel = 1 | 2 | 3 | 4 | 5;
+
+/** El tramo de dificultad del que sale una palabra. Es lo que trae el banco. */
+export type SearchWordTier = 1 | 2 | 3;
 
 export type Cell = { row: number; col: number };
 
@@ -31,7 +38,7 @@ export type SearchWord = {
   /** Palabra objetivo en mayúsculas y con su ortografía real, en NFC. */
   word: string;
   emoji: string;
-  level: WordSearchLevel;
+  level: SearchWordTier;
 };
 
 export type Placement = SearchWord & {
@@ -73,9 +80,20 @@ export const ALL_DIRECTIONS: Direction[] = [
 ];
 
 /**
- * Configuración por nivel. Los tamaños están pensados para que la cuadrícula
- * siga siendo cómoda en un móvil: 10 columnas es el máximo antes de que las
- * celdas se vuelvan diminutas.
+ * Configuración por escalón.
+ *
+ * Los tres primeros crecen como siempre: el tablero, cuántas palabras hay que
+ * encontrar y en cuántas direcciones pueden estar escritas. Ahí se para el
+ * tamaño —**10 columnas es el máximo** antes de que las celdas se vuelvan
+ * diminutas en un móvil—, así que los dos últimos crecen por otro lado:
+ *
+ * - El cuarto mete más palabras en el mismo tablero. Se cruzan más, quedan
+ *   menos letras de relleno y cada hallazgo deja menos pistas para el
+ *   siguiente.
+ * - El quinto enseña **una palabra cada vez**. Deja de valer buscar lo que
+ *   primero salte a la vista e ir tachando: hay que rastrear la que toca.
+ *
+ * Por eso `size` no sube del tercero en adelante, y no es un descuido.
  */
 export const WORD_SEARCH_LEVELS: Record<
   WordSearchLevel,
@@ -85,6 +103,10 @@ export const WORD_SEARCH_LEVELS: Record<
     directions: Direction[];
     /** Al colocar, prefiere posiciones que cruzan palabras ya puestas. */
     preferCrossings: boolean;
+    /** De qué tramo del banco salen las palabras. */
+    tier: SearchWordTier;
+    /** Si solo se enseña la palabra que toca buscar, en vez de la lista. */
+    oneAtATime: boolean;
   }
 > = {
   // Solo hacia adelante: izquierda a derecha y arriba abajo.
@@ -96,6 +118,8 @@ export const WORD_SEARCH_LEVELS: Record<
       { row: 1, col: 0 },
     ],
     preferCrossings: false,
+    tier: 1,
+    oneAtATime: false,
   },
   // Diagonales hacia adelante y los dos inversos rectos.
   2: {
@@ -110,6 +134,8 @@ export const WORD_SEARCH_LEVELS: Record<
       { row: -1, col: 0 },
     ],
     preferCrossings: true,
+    tier: 2,
+    oneAtATime: false,
   },
   // Todas las direcciones, incluidas las diagonales inversas.
   3: {
@@ -117,8 +143,52 @@ export const WORD_SEARCH_LEVELS: Record<
     words: 7,
     directions: ALL_DIRECTIONS,
     preferCrossings: true,
+    tier: 3,
+    oneAtATime: false,
+  },
+  // El mismo tablero, más lleno.
+  4: {
+    size: 10,
+    words: 9,
+    directions: ALL_DIRECTIONS,
+    preferCrossings: true,
+    tier: 3,
+    oneAtATime: false,
+  },
+  // Y buscándolas de una en una.
+  5: {
+    size: 10,
+    words: 9,
+    directions: ALL_DIRECTIONS,
+    preferCrossings: true,
+    tier: 3,
+    oneAtATime: true,
   },
 };
+
+/**
+ * Recorta al rango de este juego. Cuántos escalones tiene lo sabe solo este
+ * archivo; `storage.ts` guarda el número tal cual.
+ */
+export function clampWordSearchLevel(value: unknown): WordSearchLevel {
+  const level = clampDifficulty(value);
+  return Math.min(level, WORD_SEARCH_MAX_LEVEL) as WordSearchLevel;
+}
+
+/**
+ * La valoración de la sesión, de cero a tres, por la precisión: palabras
+ * encontradas sobre selecciones hechas. Mismos cortes que los demás juegos de
+ * la escala, porque es la única cifra comparable entre escalones.
+ */
+export function wordSearchSessionStars(
+  accuracy: number,
+  completed: boolean,
+): Stars {
+  if (!completed) return 0;
+  if (accuracy >= 90) return 3;
+  if (accuracy >= 75) return 2;
+  return 1;
+}
 
 /* --------------------------------------------------------------------------
  * Azar reproducible
@@ -285,9 +355,13 @@ export function pickSearchWords(
     rng,
   );
 
-  // Orden estable: primero las no usadas, y dentro de eso las del nivel pedido.
+  // Orden estable: primero las no usadas, y dentro de eso las del tramo que
+  // pide el escalón. Tramo y escalón dejan de coincidir a partir del tercero:
+  // los tres altos comparten las palabras largas y lo que los separa es el
+  // tablero y cómo se enseña la lista.
+  const tier = WORD_SEARCH_LEVELS[level].tier;
   const rank = (word: SearchWord) =>
-    (excludeIds.includes(word.id) ? 100 : 0) + Math.abs(word.level - level) * 10;
+    (excludeIds.includes(word.id) ? 100 : 0) + Math.abs(word.level - tier) * 10;
   const ordered = [...pool].sort((a, b) => rank(a) - rank(b));
 
   const chosen: SearchWord[] = [];
@@ -738,32 +812,6 @@ export function findSelection(
 /* --------------------------------------------------------------------------
  * Dificultad, tiempo y estadísticas
  * ----------------------------------------------------------------------- */
-
-/**
- * Misma regla de la casa que el resto de juegos, aplicada por tablero:
- * - 2 sopas seguidas casi limpias suben el nivel (máximo 3).
- * - Demasiadas selecciones erradas en una sopa bajan el nivel (mínimo 1).
- * - En medio el nivel se mantiene y la racha se reinicia.
- */
-export function nextWordSearchLevel(
-  level: number,
-  streak: number,
-  misses: number,
-): { level: number; streak: number } {
-  if (misses >= WORD_SEARCH_DROP_MISSES) {
-    return nextLevel(level, streak, true);
-  }
-  if (misses > 0) {
-    return { level, streak: 0 };
-  }
-  return nextLevel(level, streak, false);
-}
-
-export function clampSearchLevel(level: number): WordSearchLevel {
-  if (level >= WORD_SEARCH_MAX_LEVEL) return 3;
-  if (level <= 1) return 1;
-  return 2;
-}
 
 /** Tiempo de sesión legible: "48s" hasta el minuto, "2:05" a partir de ahí. */
 export function formatSearchTime(milliseconds: number): string {

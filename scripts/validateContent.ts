@@ -50,7 +50,6 @@ import {
 } from "../src/lib/wordScramble";
 import {
   WORD_SEARCH_LEVELS,
-  WORD_SEARCH_MAX_LEVEL,
   getSearchBank,
   type WordSearchLevel,
 } from "../src/lib/wordSearch";
@@ -77,6 +76,28 @@ const SCRAMBLE_LENGTH_BY_TIER: Record<number, [number, number]> = {
 const SCRAMBLE_TIERS_IN_USE = [
   ...new Set(Object.values(WORD_SCRAMBLE_LEVELS).map((level) => level.tier)),
 ];
+
+/** Los escalones de la sopa, leídos de su tabla y no escritos a mano. */
+const SEARCH_LEVELS_IN_USE = Object.keys(WORD_SEARCH_LEVELS)
+  .map(Number)
+  .sort((a, b) => a - b) as WordSearchLevel[];
+
+const SEARCH_MAX_TIER = Math.max(
+  ...Object.values(WORD_SEARCH_LEVELS).map((level) => level.tier),
+);
+
+/**
+ * El tablero más pequeño en el que puede acabar una palabra de cada tramo.
+ *
+ * Un tramo lo usan varios escalones y no todos tienen el mismo tamaño, así que
+ * lo que limita la longitud es el más estrecho de ellos.
+ */
+const SEARCH_SMALLEST_BOARD_BY_TIER: Record<number, number> = Object.values(
+  WORD_SEARCH_LEVELS,
+).reduce<Record<number, number>>((sizes, level) => {
+  sizes[level.tier] = Math.min(sizes[level.tier] ?? Infinity, level.size);
+  return sizes;
+}, {});
 
 const SCRAMBLE_MAX_TIER = Math.max(...Object.keys(SCRAMBLE_LENGTH_BY_TIER).map(Number));
 
@@ -580,18 +601,19 @@ function validateWordSearch(): void {
         );
       }
 
-      if (entry.level < 1 || entry.level > WORD_SEARCH_MAX_LEVEL) {
+      if (entry.level < 1 || entry.level > SEARCH_MAX_TIER) {
         fail(
           bank,
           at,
-          "nivel fuera de 1-" + WORD_SEARCH_MAX_LEVEL + ": " + entry.level,
+          "tramo fuera de 1-" + SEARCH_MAX_TIER + ": " + entry.level,
         );
         continue;
       }
 
-      // La palabra tiene que caber en el tablero de su propio nivel; si no,
-      // pickSearchWords la descarta siempre y nunca saldría a jugar.
-      const size = WORD_SEARCH_LEVELS[entry.level].size;
+      // La palabra tiene que caber en el tablero **más pequeño** de los
+      // escalones que usan su tramo; si no, `pickSearchWords` la descarta
+      // siempre en ese escalón y nunca saldría a jugar.
+      const size = SEARCH_SMALLEST_BOARD_BY_TIER[entry.level];
       const length = getWordLetters(entry.word).length;
       if (length > size) {
         fail(
@@ -600,7 +622,7 @@ function validateWordSearch(): void {
           entry.word +
             " mide " +
             length +
-            " letras y el tablero del nivel " +
+            " letras y el tablero más pequeño que usa el tramo " +
             entry.level +
             " es de " +
             size,
@@ -609,7 +631,7 @@ function validateWordSearch(): void {
     }
 
     // Un tablero de nivel N se llena con las palabras que quepan en su tamaño.
-    const levels: WordSearchLevel[] = [1, 2, 3];
+    const levels = SEARCH_LEVELS_IN_USE;
     for (const level of levels) {
       const config = WORD_SEARCH_LEVELS[level];
       const fitting = words.filter(

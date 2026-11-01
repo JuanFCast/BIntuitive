@@ -16,8 +16,21 @@ import {
   getUnassignedGameProgress,
   saveVisualResult,
   saveWordScrambleResult,
+  saveWordSearchResult,
   saveTracingResult,
 } from "@/lib/storage";
+import {
+  clampWordSearchLevel,
+  createRng,
+  generateBoard,
+  getSearchLetters,
+  pickSearchWords,
+  wordSearchSessionStars,
+  WORD_SEARCH_LEGACY_MAX_LEVEL,
+  WORD_SEARCH_LEVELS,
+  WORD_SEARCH_MAX_LEVEL,
+  type WordSearchLevel,
+} from "@/lib/wordSearch";
 import {
   clampVisualLevel,
   createFirstVisualCard,
@@ -408,6 +421,167 @@ console.log("\nWord Scramble · el puente no se lleva nada por delante");
   check(
     "y lo antiguo de los demás sí aparece",
     getUnassignedGameProgress(getProgress(), "tracing").unlocked === 4,
+  );
+}
+
+/* ==========================================================================
+ * Word Search
+ * ======================================================================= */
+
+function search() {
+  return getUnassignedGameProgress(getProgress(), "search");
+}
+
+console.log("\nWord Search · la tabla de escalones");
+{
+  const sizes = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].size);
+  const words = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].words);
+  const tiers = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].tier);
+  const dirs = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].directions.length);
+  const solo = LEVELS.map((level) => WORD_SEARCH_LEVELS[level].oneAtATime);
+
+  check("cinco escalones", WORD_SEARCH_MAX_LEVEL === 5);
+  check("tableros 7, 9, 10, 10, 10", sizes.join(",") === "7,9,10,10,10", sizes.join(","));
+  check(
+    "ningún tablero pasa de diez columnas: más y las celdas no se ven en un móvil",
+    sizes.every((size) => size <= 10),
+    sizes.join(","),
+  );
+  check(
+    "el tablero nunca encoge al subir",
+    sizes.every((size, index) => index === 0 || size >= sizes[index - 1]),
+  );
+  check("palabras 4, 6, 7, 9, 9", words.join(",") === "4,6,7,9,9", words.join(","));
+  check(
+    "el cuarto llena más el mismo tablero del tercero",
+    sizes[3] === sizes[2] && words[3] > words[2],
+  );
+  check(
+    "las direcciones nunca se reducen al subir",
+    dirs.every((count, index) => index === 0 || count >= dirs[index - 1]),
+    dirs.join(","),
+  );
+  check(
+    "de una en una solo en el quinto",
+    solo.join(",") === "false,false,false,false,true",
+    solo.join(","),
+  );
+  check(
+    "el quinto no cambia el tablero del cuarto: lo que cambia es cómo se pide",
+    sizes[4] === sizes[3] && words[4] === words[3] && solo[4] && !solo[3],
+  );
+  check("tramos 1, 2, 3, 3, 3", tiers.join(",") === "1,2,3,3,3", tiers.join(","));
+  check("el escalón se recorta al rango del juego", clampWordSearchLevel(9) === 5);
+}
+
+console.log("\nWord Search · los tableros se generan de verdad");
+{
+  for (const language of ["en", "es"] as const) {
+    for (const level of LEVELS) {
+      const config = WORD_SEARCH_LEVELS[level];
+      let allPlaced = true;
+      let grew = false;
+      let worstSize = 0;
+
+      // Varias semillas: colocar es con azar, y un tablero que cabe una vez de
+      // cada diez no sirve. Si el generador tiene que agrandar la cuadrícula es
+      // que el escalón pide más palabras de las que caben.
+      for (let seed = 1; seed <= 12; seed += 1) {
+        const board = generateBoard(language, level, createRng(seed));
+        if (board.placements.length < config.words) allPlaced = false;
+        if (board.size > config.size) grew = true;
+        worstSize = Math.max(worstSize, board.size);
+      }
+
+      check(
+        `${language} nivel ${level}: entran las ${config.words} palabras`,
+        allPlaced,
+      );
+      check(
+        `${language} nivel ${level}: caben sin agrandar el tablero de ${config.size}`,
+        !grew,
+        `llegó a ${worstSize}`,
+      );
+    }
+  }
+}
+
+console.log("\nWord Search · las palabras caben en su tablero");
+{
+  for (const language of ["en", "es"] as const) {
+    for (const level of LEVELS) {
+      const config = WORD_SEARCH_LEVELS[level];
+      const chosen = pickSearchWords(language, level, config.words, [], createRng(7));
+      check(
+        `${language} nivel ${level}: ninguna palabra es más larga que el lado`,
+        chosen.every(
+          (word) => getSearchLetters(word.word).length <= config.size,
+        ),
+      );
+      check(
+        `${language} nivel ${level}: se eligen las ${config.words} que pide`,
+        chosen.length === config.words,
+        `${chosen.length}`,
+      );
+    }
+  }
+}
+
+console.log("\nWord Search · estrellas de la sesión");
+{
+  check("sin terminar → 0", wordSearchSessionStars(100, false) === 0);
+  check("74 % → 1", wordSearchSessionStars(74, true) === 1);
+  check("75 % justo → 2", wordSearchSessionStars(75, true) === 2);
+  check("90 % justo → 3", wordSearchSessionStars(90, true) === 3);
+}
+
+function playSearch(
+  level: WordSearchLevel,
+  stars: Stars,
+  extra: { wordsFound?: number; misses?: number } = {},
+): void {
+  saveWordSearchResult({
+    playedLevel: level,
+    sessionStars: stars,
+    wordsFound: extra.wordsFound ?? 12,
+    misses: extra.misses ?? 2,
+    playedAt: "2026-10-31T13:00:00.000Z",
+  });
+}
+
+console.log("\nWord Search · los dos modelos dicen lo mismo");
+{
+  store.clear();
+  playSearch(2, 3, { wordsFound: 15, misses: 3 });
+
+  const stored = JSON.parse(store.get(PROGRESS_KEY)!);
+  check("el modelo nuevo guarda las palabras", search().best.wordsFound === 15);
+  check(
+    "y el campo de la versión 1 guarda la misma cifra",
+    stored.wordSearch.bestWordsFound === 15,
+    `${stored.wordSearch?.bestWordsFound}`,
+  );
+  check("los fallos se quedan con el mínimo", search().best.fewestMisses === 3);
+
+  playSearch(2, 3, { wordsFound: 9, misses: 1 });
+  check("una sesión con menos palabras no baja la marca", search().best.wordsFound === 15);
+  check("pero menos fallos sí mejoran los fallos", search().best.fewestMisses === 1);
+}
+
+console.log("\nWord Search · el espejo no degrada a nadie al revertir");
+{
+  store.clear();
+  playSearch(1, 3);
+  playSearch(2, 3);
+  playSearch(3, 3);
+  playSearch(4, 3);
+  check("se llega al quinto desbloqueado", search().unlocked === 5, `${search().unlocked}`);
+
+  const stored = JSON.parse(store.get(PROGRESS_KEY)!);
+  check(
+    "el campo de la versión 1 se recorta a su propio tope",
+    stored.wordSearch.level === WORD_SEARCH_LEGACY_MAX_LEVEL,
+    `${stored.wordSearch.level}`,
   );
 }
 

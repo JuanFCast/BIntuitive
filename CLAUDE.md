@@ -13,8 +13,9 @@ Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`, `npm run l
 `npm run validate:content` (valida el contenido educativo), `npm run check:migration` (comprueba
 que actualizar la aplicación no le pierde el progreso a nadie), y `npm run check:tracing`,
 `npm run check:memory` y `npm run check:coloring` (las reglas de nivel, estrellas y desbloqueo de
-los tres juegos que usan la escala compartida). No hay pruebas unitarias: esos siete comandos son
-la verificación, y los cinco últimos son las únicas pruebas automáticas.
+esos tres juegos) y `npm run check:levels` (las mismas reglas en los que entraron después en la
+escala compartida). No hay pruebas unitarias: esos ocho comandos son la verificación, y los seis
+últimos son las únicas pruebas automáticas.
 
 **El linter es parte de la verificación, no un extra.** `eslint.config.mjs` extiende
 `next/core-web-vitals` y `next/typescript`, e **imports y variables sin usar son error, no
@@ -268,8 +269,17 @@ src/lib/
   que explica cada categoría vive en la tabla `CATEGORY_INTRO`, indexada por `slug` y
   comprobada por TypeScript con `satisfies`: si se añade una categoría sin sus textos, el
   build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
-- **La dificultad se elige, no se mueve sola** (hoy en Trazos, Parejas y Colorear; es el patrón
-  que copiarán los demás). El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
+- **La dificultad se elige, no se mueve sola.** Lo hacen Trazos, Parejas, Colorear, Agilidad
+  visual, Word Scramble y la sopa de letras; de los juegos independientes solo falta Type Rush.
+  **Todos tienen cinco escalones**, y no menos: el modelo guarda hasta 5 y `unlockedAfterSession`
+  cuenta hasta 5, así que un juego de tres dejaría el desbloqueo topado a mitad del modelo. Los
+  juegos que no daban para cinco por contenido **crecen cambiando de mecánica**, como ya hacía
+  Colorear: Agilidad visual sube de 4 a 12 símbolos y luego gira y reescala —reconocer una forma
+  no es reconocer un dibujo—; Word Scramble usa los tres tramos de longitud del banco y después
+  retira la pista escrita y añade letras que no son de la palabra; la sopa llena más el mismo
+  tablero —diez columnas sigue siendo el máximo— y al final enseña una palabra cada vez. Subir el
+  tamaño cuando ya no da más es lo que **no** hay que hacer.
+  El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
   juego lo coloca en su introducción por la prop `beforeStart` de `GameShell` —que **no** va
   dentro de `intro` a propósito: `intro` es lo que la ayuda vuelve a enseñar encima de una
   partida en curso, y un selector ahí invitaría a cambiar de dificultad a mitad de sesión—.
@@ -282,7 +292,11 @@ src/lib/
   las marcas del juego, para que no se lean como la misma cuenta. "Jugar otra vez" vuelve a la
   introducción y no relanza la partida: es la única forma de elegir el nivel que se acaba de
   abrir. `npm run check:tracing`, `npm run check:memory` y `npm run check:coloring` protegen estas
-  reglas.
+  reglas en esos tres, y **`npm run check:levels`** en los que entraron después. Ese es uno solo
+  para varios juegos a propósito: los tres primeros protegen además su propia geometría —el
+  tablero, la forma del camino, el reparto del color— y por eso tienen script propio; los demás
+  comparten lo que hay que proteger, que es la escala, y un comando por juego dejaría la
+  verificación del proyecto en una lista que ya nadie corre entera.
 - **Un solo escritor de sesiones**: `recordSession`, en `storage.ts`, tiene las reglas que no
   pueden cambiar de un juego a otro —escalón elegido, desbloqueo, mejor valoración, una sesión
   cada vez—. Cada juego solo aporta cómo se juntan **sus** marcas (`saveTracingResult`,
@@ -438,9 +452,9 @@ y la carpeta `~/.impeccable`.
 
 - **Progress solo enseña lo que ya está guardado.** `/progress` lee `getProgress()` y no
   persiste nada nuevo: resumen, nivel por actividad, mejores marcas y las últimas sesiones.
-  Agilidad visual y Type Rush no guardan progreso a propósito y aparecen sin métricas, igual
-  que una actividad todavía sin jugar. Añadir una métrica a esa pantalla empieza por guardarla,
-  no al revés.
+  Type Rush es el único que no guarda progreso todavía, así que aparece sin métricas, igual que
+  una actividad sin jugar. Añadir una métrica a esa pantalla empieza por guardarla, no al revés:
+  Agilidad visual empezó a aparecer ahí el día que empezó a guardar, no antes.
 - **`getProgress()` devuelve siempre un objeto nuevo.** `saveSession` y las dos de palabras
   escriben sobre lo que devuelve, así que compartir una constante vacía la ensuciaría en la
   primera partida de un dispositivo sin datos.
@@ -497,9 +511,15 @@ y la carpeta `~/.impeccable`.
 - **Borrar progreso**: `clearProgress()` quita solo `bintuitive-progress`. Nunca
   `localStorage.clear()`: las preferencias y el perfil viven en sus propias claves y no se
   tocan. Quien borra su progreso no pide cambiar de idioma ni dejar de llamarse como se llama.
+- **El espejo de la versión 1 se recorta al tope que ese campo siempre tuvo.** Word Scramble y la
+  sopa guardan en los dos modelos, y su `level` antiguo nunca pasa de 3
+  (`WORD_SCRAMBLE_LEGACY_MAX_LEVEL`, `WORD_SEARCH_LEGACY_MAX_LEVEL`): el código anterior da por
+  inválido cualquier número por encima y lo **degradaría a 1**, así que escribir ahí el 5 que hoy
+  se puede alcanzar castigaría justo a quien más ha jugado si alguna vez se revierte el
+  despliegue. Guardar un 3 lo deja en lo más alto que el juego de entonces sabía decir.
 - `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
   (`wordScramble`), el de Word Search (`wordSearch`) y el de Trazos (`tracing`), cada uno en su
-  propio campo opcional y sin compartir datos. `visual` y `typing` no persisten nada. Parejas
+  propio campo opcional y sin compartir datos. `typing` no persiste nada todavía. Parejas
   (`memory`) sí, pero **solo en el modelo nuevo**: no guardaba nada antes, así que no tiene
   campos de la versión 1 ni puente. Su mejor tiempo se guarda con el escalón en que se hizo
   (`fastestLevel`): tres parejas se terminan en un tercio del tiempo que ocho, y sin el nivel

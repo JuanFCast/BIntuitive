@@ -17,6 +17,7 @@ import {
   type GradeProgress,
 } from "./progressModel";
 import { WORD_SCRAMBLE_LEGACY_MAX_LEVEL } from "./wordScramble";
+import { WORD_SEARCH_LEGACY_MAX_LEVEL } from "./wordSearch";
 
 const PROGRESS_KEY = "bintuitive-progress";
 
@@ -503,6 +504,37 @@ export function saveWordScrambleResult(
     // `getProgress` ya proyectó la marca del campo antiguo sobre el modelo
     // nuevo antes de llegar aquí, así que esta es la mejor de las dos.
     bestPerfectWords: next.best.perfectWords ?? 0,
+  };
+
+  saveProgress(progress);
+}
+
+/**
+ * Guarda una sesión terminada de la sopa de letras.
+ *
+ * Mismo trato que Word Scramble: los dos modelos a la vez y con la misma
+ * marca, el `level` de la versión 1 guardando lo desbloqueado y recortado al
+ * tope que ese campo siempre tuvo.
+ *
+ * `fewestMisses` solo existe en el modelo nuevo —la versión 1 nunca lo
+ * guardó—, así que el puente lo trae como `null` y no borra nada.
+ */
+export function saveWordSearchResult(
+  result: FinishedSession & { wordsFound: number; misses: number },
+): void {
+  const progress = getProgress();
+
+  const next = recordSession(progress, "search", result, (best) => ({
+    wordsFound: Math.max(best.wordsFound ?? 0, result.wordsFound),
+    fewestMisses:
+      best.fewestMisses === null
+        ? result.misses
+        : Math.min(best.fewestMisses, result.misses),
+  }));
+
+  progress.wordSearch = {
+    level: Math.min(next.unlocked, WORD_SEARCH_LEGACY_MAX_LEVEL),
+    bestWordsFound: next.best.wordsFound ?? 0,
   };
 
   saveProgress(progress);
