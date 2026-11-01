@@ -42,7 +42,12 @@ import {
   TRACING_LEVELS,
   type TracingLevel,
 } from "../src/lib/tracingGame";
-import { getTypingPhrases } from "../src/lib/typingGame";
+import {
+  getTypingBank,
+  TYPING_CHARS_PER_SECOND,
+  TYPING_LEVELS,
+  type TypingLevel,
+} from "../src/lib/typingGame";
 import { VISUAL_SYMBOLS, VISUAL_SYMBOLS_PER_CARD } from "../src/lib/visualGame";
 import {
   WORD_SCRAMBLE_LEVELS,
@@ -713,69 +718,159 @@ function validateWordSearch(): void {
 
 const TYPING_ALLOWED = /^[\p{L}\p{N} .,;:'"¿?¡!()\-]+$/u;
 
+/**
+ * Lo mínimo que puede tener un banco de Type Rush para que una ronda no dé
+ * vueltas sobre las mismas tres entradas.
+ *
+ * Ocho es el tamaño del banco de frases largas, que es el que lleva publicado
+ * desde que existe el juego: sirve de suelo medido, no de número elegido. Lo
+ * que de verdad protege una ronda larga es la regla de caracteres de abajo.
+ */
+const TYPING_MIN_ENTRIES = 8;
+
+/** Todos los escalones de Type Rush, leídos de su tabla. */
+const TYPING_LEVELS_IN_USE = Object.keys(TYPING_LEVELS)
+  .map(Number)
+  .sort((a, b) => a - b) as TypingLevel[];
+
+/**
+ * Un escalón por cada banco distinto, para recorrer los bancos sin revisar dos
+ * veces el que comparten el cuarto y el quinto.
+ */
+const TYPING_SOURCE_LEVELS = [
+  ...new Map(
+    TYPING_LEVELS_IN_USE.map((level) => [TYPING_LEVELS[level].source, level]),
+  ).values(),
+];
+
 function validateTyping(): void {
   const bank = "typing";
 
   for (const language of LANGUAGES) {
-    const phrases = getTypingPhrases(language);
+    // Cada banco se revisa una vez, aunque lo compartan dos escalones.
+    for (const level of TYPING_SOURCE_LEVELS) {
+      const source = TYPING_LEVELS[level].source;
+      const entries = getTypingBank(language, level);
+      const where = language + "/" + source;
 
-    // buildTypingPassage recorre phrases[index % phrases.length]: con el banco
-    // vacío la división es por cero y el bucle no termina nunca.
-    if (phrases.length === 0) {
-      fail(bank, language, "sin frases: el generador de textos no terminaría");
-      continue;
+      // buildTypingPassage recorre entries[index % entries.length]: con el
+      // banco vacío la división es por cero y el bucle no termina nunca.
+      if (entries.length === 0) {
+        fail(bank, where, "banco vacío: el generador de textos no terminaría");
+        continue;
+      }
+
+      for (const repeated of duplicates(entries)) {
+        fail(bank, where + "/" + repeated.slice(0, 32), "entrada repetida");
+      }
+
+      /*
+       * Los tres primeros escalones son para quien todavía busca las teclas,
+       * así que su texto va **en minúscula y sin un solo signo**: una mayúscula
+       * o un punto obligan a una tecla que ahí no toca. Las tildes y la Ñ sí,
+       * que son ortografía. El cuarto y el quinto son justo lo contrario, y por
+       * eso no se les aplica esta regla.
+       */
+      const mustBePlain = source !== "phrases";
+
+      entries.forEach((entry, index) => {
+        const at = where + "/" + (index + 1);
+        if (isBlank(entry)) {
+          fail(bank, at, "entrada vacía");
+          return;
+        }
+        if (entry !== entry.trim()) {
+          fail(bank, at, "empieza o termina con espacios");
+        }
+        if (entry.length > TYPING_MIN_PASSAGE) {
+          fail(
+            bank,
+            at,
+            "mide " +
+              entry.length +
+              " caracteres y un texto entero son " +
+              TYPING_MIN_PASSAGE +
+              ": llenaría la ronda ella sola",
+          );
+        }
+        if (!TYPING_ALLOWED.test(entry)) {
+          const offenders = [...entry].filter(
+            (character) => !TYPING_ALLOWED.test(character),
+          );
+          fail(
+            bank,
+            at,
+            "caracteres que no se escriben con un teclado: " +
+              [...new Set(offenders)]
+                .map((character) => JSON.stringify(character))
+                .join(", "),
+          );
+        }
+        if (mustBePlain) {
+          if (entry !== entry.toLocaleLowerCase(language)) {
+            fail(
+              bank,
+              at,
+              '"' + entry + '" lleva mayúsculas y este escalón es solo letras',
+            );
+          }
+          const punctuation = [...entry].filter((character) =>
+            /[.,;:!?¡¿"'()]/.test(character),
+          );
+          if (punctuation.length > 0) {
+            fail(
+              bank,
+              at,
+              '"' +
+                entry +
+                '" lleva signos (' +
+                [...new Set(punctuation)].join("") +
+                ") y este escalón es solo letras",
+            );
+          }
+        }
+      });
     }
 
-    for (const repeated of duplicates(phrases)) {
-      fail(bank, language + "/" + repeated.slice(0, 32), "frase repetida");
-    }
+    for (const level of TYPING_LEVELS_IN_USE) {
+      const source = TYPING_LEVELS[level].source;
+      const entries = getTypingBank(language, level);
 
-    phrases.forEach((phrase, index) => {
-      const at = language + "/frase " + (index + 1);
-      if (isBlank(phrase)) {
-        fail(bank, at, "frase vacía");
-        return;
-      }
-      if (phrase !== phrase.trim()) {
-        fail(bank, at, "la frase empieza o termina con espacios");
-      }
-      if (phrase.length > TYPING_MIN_PASSAGE) {
+      if (entries.length < TYPING_MIN_ENTRIES) {
         fail(
           bank,
-          at,
-          "mide " +
-            phrase.length +
-            " caracteres y un texto entero son " +
-            TYPING_MIN_PASSAGE +
-            ": llenaría la ronda ella sola",
+          language + "/nivel " + level,
+          "solo " +
+            entries.length +
+            " entradas: la ronda daría vueltas sobre las mismas",
         );
+        continue;
       }
-      if (!TYPING_ALLOWED.test(phrase)) {
-        const offenders = [...phrase].filter(
-          (character) => !TYPING_ALLOWED.test(character),
-        );
-        fail(
-          bank,
-          at,
-          "caracteres que no se escriben con un teclado: " +
-            [...new Set(offenders)]
-              .map((character) => JSON.stringify(character))
-              .join(", "),
-        );
-      }
-    });
 
-    const total = phrases.reduce((sum, phrase) => sum + phrase.length + 1, 0);
-    if (total < TYPING_MIN_PASSAGE) {
-      fail(
-        bank,
-        language,
-        "las frases suman " +
-          total +
-          " caracteres y un texto pide " +
-          TYPING_MIN_PASSAGE +
-          ": se repetirían dentro de la misma ronda",
-      );
+      /*
+       * Llenar el texto sin repetir solo se le pide a los bancos de **frases**:
+       * volver a leer la misma frase dentro de una ronda aburre y deja de medir
+       * nada. En los de palabras sueltas repetir es lo normal —y deseable: se
+       * está practicando dónde están esas letras—, así que ahí basta con que
+       * haya variedad suficiente, que es lo que comprueba el mínimo de arriba.
+       */
+      if (source !== "shortWords" && source !== "longWords") {
+        const wanted = TYPING_LEVELS[level].seconds * TYPING_CHARS_PER_SECOND;
+        const total = entries.reduce((sum, entry) => sum + entry.length + 1, 0);
+        if (total < wanted) {
+          fail(
+            bank,
+            language + "/nivel " + level,
+            "el banco suma " +
+              total +
+              " caracteres y los " +
+              TYPING_LEVELS[level].seconds +
+              " segundos de este escalón piden " +
+              wanted +
+              ": se repetiría dentro de la misma ronda",
+          );
+        }
+      }
     }
   }
 }
@@ -977,8 +1072,15 @@ const counts = [
     " scramble words",
   LANGUAGES.reduce((sum, l) => sum + getSearchBank(l).length, 0) +
     " search words",
-  LANGUAGES.reduce((sum, l) => sum + getTypingPhrases(l).length, 0) +
-    " typing phrases",
+  LANGUAGES.reduce(
+    (sum, l) =>
+      sum +
+      TYPING_SOURCE_LEVELS.reduce(
+        (count, level) => count + getTypingBank(l, level).length,
+        0,
+      ),
+    0,
+  ) + " typing entries",
   VISUAL_SYMBOLS.length + " visual symbols",
   MEMORY_SYMBOLS.length + " memory symbols",
   TRACING_EXERCISES.length + " tracing exercises",

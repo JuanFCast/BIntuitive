@@ -48,9 +48,25 @@ export type BestByGame = {
     fastestMs: number | null;
     fastestLevel: number | null;
   };
-  visual: { fastestMs: number | null; fewestMistakes: number | null };
+  /**
+   * `fastestMs` va emparejado con su escalón por lo mismo que en Parejas:
+   * cuatro símbolos se barren de un vistazo y doce hay que recorrerlos, así
+   * que sin el nivel repetir el primero dejaría un récord imbatible.
+   */
+  visual: {
+    fastestMs: number | null;
+    fastestLevel: number | null;
+    fewestMistakes: number | null;
+  };
+  /**
+   * `wpm` va emparejado con su escalón por lo mismo que el tiempo de Parejas
+   * y Agilidad visual: una tanda de palabras de tres letras se teclea mucho
+   * más rápido que una de frases con comas y mayúsculas, así que sin el nivel
+   * el escalón fácil dejaría un récord que el difícil no podría batir nunca.
+   */
   typing: {
     wpm: number | null;
+    wpmLevel: number | null;
     accuracy: number | null;
     correctChars: number | null;
   };
@@ -90,8 +106,17 @@ const BEST_DIRECTION: {
   // llegan dos fuentes que juntar: el tiempo y su nivel los escribe siempre
   // juntos `saveMemoryResult`, que es quien sabe que van emparejados.
   memory: { accuracy: "higher", fastestMs: "lower", fastestLevel: "higher" },
-  visual: { fastestMs: "lower", fewestMistakes: "lower" },
-  typing: { wpm: "higher", accuracy: "higher", correctChars: "higher" },
+  // Como en Parejas, el tiempo y su nivel los escribe siempre juntos
+  // `saveVisualResult`, que es quien sabe que van emparejados; estas
+  // direcciones solo sirven a la proyección del puente, y Agilidad visual no
+  // tiene campos de la versión 1 que proyectar.
+  visual: { fastestMs: "lower", fastestLevel: "higher", fewestMistakes: "lower" },
+  typing: {
+    wpm: "higher",
+    wpmLevel: "higher",
+    accuracy: "higher",
+    correctChars: "higher",
+  },
   tracing: { accuracy: "higher", completed: "higher", attempts: "higher" },
   coloring: { accuracy: "higher", pictures: "higher" },
 };

@@ -19,6 +19,7 @@ import { WORD_SCRAMBLE_MAX_LEVEL } from "@/lib/wordScramble";
 import { TRACING_MAX_LEVEL } from "@/lib/tracingGame";
 import { MEMORY_MAX_LEVEL } from "@/lib/memoryGame";
 import { WORD_SEARCH_MAX_LEVEL } from "@/lib/wordSearch";
+import { useDocumentTitle } from "@/lib/documentTitle";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
 
@@ -30,6 +31,7 @@ type ActivityProgress = { level: string; best?: string } | null;
 
 export default function ProgressClient() {
   const { language, t } = useLanguage();
+  useDocumentTitle(t("navProgress"));
   const [progress, setProgress] = useState<Progress | null>(null);
 
   useEffect(() => {

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useDocumentTitle } from "@/lib/documentTitle";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
 import {
@@ -32,6 +33,7 @@ import { clearProgress, getProgress, type Progress } from "@/lib/storage";
  */
 export default function ProfileClient() {
   const { language, t } = useLanguage();
+  useDocumentTitle(t("navProfile"));
   const [profile, setProfile] = useState<Profile | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [editing, setEditing] = useState(false);

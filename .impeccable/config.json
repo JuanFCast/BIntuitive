@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "src/app/progress/ProgressClient.tsx"
+        ],
+        "createdAt": "2026-11-01T02:58:36.452Z",
+        "reason": "CLAUDE.md: el boton de la casa es border-b-8 + active:scale-95 + active:border-b-4; el canto inferior da grosor y se hunde al pulsar, no es un acento que pelee con el redondeo"
+      },
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "src/app/profile/ProfileClient.tsx"
+        ],
+        "createdAt": "2026-11-01T02:58:53.161Z",
+        "reason": "CLAUDE.md: el boton de la casa es border-b-8 + active:scale-95 + active:border-b-4; el canto inferior da grosor y se hunde al pulsar, no es un acento que pelee con el redondeo"
+      }
+    ]
+  }
+}

@@ -7,6 +7,7 @@ import ExitDialog from "./ExitDialog";
 import GameHelp from "./GameHelp";
 import GameIntro, { type GameIntroContent } from "./GameIntro";
 import MuteButton from "./MuteButton";
+import { useDocumentTitle } from "@/lib/documentTitle";
 import { useLanguage } from "@/lib/i18n";
 import { cancelSpeech } from "@/lib/speech";
 import { EXPLORE } from "@/lib/routes";
@@ -74,6 +75,10 @@ export default function GameShell({
 }: GameShellProps) {
   const { t } = useLanguage();
   const [exitOpen, setExitOpen] = useState(false);
+
+  // El nombre del juego ya viene traducido en `intro`, así que los siete
+  // juegos ponen bien el título de la pestaña sin que ninguno lo escriba.
+  useDocumentTitle(intro.title);
 
   // Salir del juego calla cualquier explicación en curso.
   useEffect(() => () => cancelSpeech(), []);

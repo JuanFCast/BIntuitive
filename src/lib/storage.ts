@@ -547,6 +547,81 @@ export function saveMemoryResult(
   saveProgress(progress);
 }
 
+
+/**
+ * Guarda una sesión terminada de Agilidad visual.
+ *
+ * Solo en el modelo nuevo: no guardaba nada antes de tener escalones, así que
+ * no tiene campos de la versión 1 que mantener ni puente al que dar de comer.
+ *
+ * Los fallos se quedan con el mínimo —son comparables entre escalones, porque
+ * las rondas son diez en todos—. El tiempo va emparejado con su escalón y con
+ * la misma regla que Parejas: uno de un escalón mayor sustituye siempre al
+ * récord, uno del mismo escalón solo si es más rápido, y uno de un escalón
+ * menor no lo toca nunca.
+ */
+export function saveVisualResult(
+  result: FinishedSession & { timeMs: number; mistakes: number },
+): void {
+  const progress = getProgress();
+
+  recordSession(progress, "visual", result, (best) => {
+    const recordLevel = best.fastestLevel ?? 0;
+    const beatsRecord =
+      best.fastestMs === null ||
+      result.playedLevel > recordLevel ||
+      (result.playedLevel === recordLevel && result.timeMs < best.fastestMs);
+
+    return {
+      fastestMs: beatsRecord ? result.timeMs : best.fastestMs,
+      fastestLevel: beatsRecord ? result.playedLevel : best.fastestLevel,
+      fewestMistakes:
+        best.fewestMistakes === null
+          ? result.mistakes
+          : Math.min(best.fewestMistakes, result.mistakes),
+    };
+  });
+
+  saveProgress(progress);
+}
+
+/**
+ * Guarda una sesión terminada de Type Rush.
+ *
+ * Solo en el modelo nuevo: no guardaba nada antes de tener escalones.
+ *
+ * La precisión y los caracteres acertados se quedan con el mejor valor. Las
+ * pulsaciones por minuto van emparejadas con su escalón, con la misma regla
+ * que el tiempo de Parejas: uno de un escalón mayor sustituye siempre, uno
+ * del mismo solo si es más rápido, y uno menor no lo toca nunca.
+ */
+export function saveTypingResult(
+  result: FinishedSession & {
+    wpm: number;
+    accuracy: number;
+    correctChars: number;
+  },
+): void {
+  const progress = getProgress();
+
+  recordSession(progress, "typing", result, (best) => {
+    const recordLevel = best.wpmLevel ?? 0;
+    const beatsRecord =
+      best.wpm === null ||
+      result.playedLevel > recordLevel ||
+      (result.playedLevel === recordLevel && result.wpm > best.wpm);
+
+    return {
+      wpm: beatsRecord ? result.wpm : best.wpm,
+      wpmLevel: beatsRecord ? result.playedLevel : best.wpmLevel,
+      accuracy: Math.max(best.accuracy ?? 0, result.accuracy),
+      correctChars: Math.max(best.correctChars ?? 0, result.correctChars),
+    };
+  });
+
+  saveProgress(progress);
+}
+
 /**
  * Guarda una sesión terminada de Colorear.
  *

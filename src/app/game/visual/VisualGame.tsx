@@ -3,20 +3,39 @@
 import { useCallback, useEffect, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
+import LevelPicker from "@/components/LevelPicker";
 import ResultActions from "@/components/ResultActions";
 import ResultStat from "@/components/ResultStat";
+import SessionStars from "@/components/SessionStars";
 import { useClockPause } from "@/lib/clockPause";
+import type { Stars } from "@/lib/difficulty";
 import { useGameTimers } from "@/lib/gameTimers";
 import { useLanguage } from "@/lib/i18n";
-import { playCelebrationSound, playCorrectSound, playWrongSound } from "@/lib/sounds";
 import {
+  playCelebrationSound,
+  playCorrectSound,
+  playTapSound,
+  playWrongSound,
+} from "@/lib/sounds";
+import {
+  clampVisualLevel,
   createFirstVisualCard,
   createNextVisualCard,
   formatVisualTime,
+  visualAccuracy,
+  visualSessionStars,
   VISUAL_ERROR_PENALTY_MS,
+  VISUAL_LEVELS,
+  VISUAL_MAX_LEVEL,
   VISUAL_ROUNDS,
   type VisualCard,
+  type VisualLevel,
 } from "@/lib/visualGame";
+import {
+  getProgress,
+  getUnassignedGameProgress,
+  saveVisualResult,
+} from "@/lib/storage";
 import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "playing" | "results";
@@ -35,7 +54,27 @@ export default function VisualGame() {
   const [finalTime, setFinalTime] = useState(0);
   const [flash, setFlash] = useState<Flash>(null);
   const [locked, setLocked] = useState(false);
+
+  // El escalón de la partida en curso, fijado al empezar: el juego no lo sube
+  // ni lo baja solo. Aparte, el elegido en el selector, el más alto abierto y
+  // el aviso de haber tocado uno cerrado.
+  const [level, setLevel] = useState<VisualLevel>(1);
+  const [unlocked, setUnlocked] = useState<VisualLevel>(1);
+  const [selectedLevel, setSelectedLevel] = useState<VisualLevel>(1);
+  const [lockedHint, setLockedHint] = useState<VisualLevel | null>(null);
+  const [sessionStars, setSessionStars] = useState<Stars>(0);
+  const [openedLevel, setOpenedLevel] = useState<VisualLevel | null>(null);
   const timers = useGameTimers();
+
+  // Lo guardado se lee al montar y no al pulsar Comenzar: el selector tiene
+  // que enseñar los candados antes de que nadie elija nada.
+  useEffect(() => {
+    const stored = getUnassignedGameProgress(getProgress(), "visual");
+    const open = clampVisualLevel(stored.unlocked);
+    setUnlocked(open);
+    // El último elegido, salvo que fuera más alto de lo que hoy está abierto.
+    setSelectedLevel(clampVisualLevel(Math.min(stored.difficulty, open)));
+  }, []);
 
   // Ni leer la ayuda ni dudar ante la confirmación de salida pueden costar
   // tiempo: el cronómetro se detiene mientras haya algo superpuesto y el
@@ -67,9 +106,15 @@ export default function VisualGame() {
 
   const startGame = () => {
     timers.clear();
-    const firstCard = createFirstVisualCard();
-    const nextCard = createNextVisualCard(firstCard, 2);
+    // El escalón es el elegido en el selector y se queda fijo hasta el final.
+    const startingLevel = selectedLevel;
+    const firstCard = createFirstVisualCard(startingLevel);
+    const nextCard = createNextVisualCard(firstCard, 2, startingLevel);
     const start = Date.now();
+    setLevel(startingLevel);
+    setSessionStars(0);
+    setOpenedLevel(null);
+    setLockedHint(null);
     setBaseCard(firstCard);
     setPlayerCard(nextCard.card);
     setTargetId(nextCard.targetId);
@@ -83,14 +128,61 @@ export default function VisualGame() {
     setPhase("playing");
   };
 
+  /**
+   * La partida llegó a las diez rondas, así que hay valoración. Abandonar a
+   * mitad no pasa por aquí y por eso no desbloquea nada ni guarda nada.
+   *
+   * El tiempo que se guarda es el que se enseña, penalizaciones incluidas: es
+   * la marca que el jugador vio, y guardar otra distinta sería mentirle.
+   */
   const finishGame = (finalErrors: number) => {
-    setFinalTime(
-      Date.now() - startedAt + finalErrors * VISUAL_ERROR_PENALTY_MS,
-    );
+    const timeMs =
+      Date.now() - startedAt + finalErrors * VISUAL_ERROR_PENALTY_MS;
+    const finalAccuracy = visualAccuracy(finalErrors);
+    const rating = visualSessionStars(finalAccuracy, true);
+    const nextUnlocked =
+      rating >= 2 ? clampVisualLevel(Math.max(unlocked, level + 1)) : unlocked;
+
+    saveVisualResult({
+      playedLevel: level,
+      sessionStars: rating,
+      timeMs,
+      mistakes: finalErrors,
+      playedAt: new Date().toISOString(),
+    });
+
+    setFinalTime(timeMs);
+    setSessionStars(rating);
+    // Solo se anuncia lo que se acaba de abrir, no lo que ya estaba abierto.
+    setOpenedLevel(nextUnlocked > unlocked ? nextUnlocked : null);
+    setUnlocked(nextUnlocked);
     setCompleted(VISUAL_ROUNDS);
     setLocked(false);
     setPhase("results");
     playCelebrationSound();
+  };
+
+  /**
+   * Volver a la introducción, donde está el selector, igual que en Parejas: si
+   * se acaba de abrir un nivel, lo que se quiere es probarlo, y solo se puede
+   * elegir ahí. Empezar sigue estando a un toque.
+   */
+  const backToIntro = () => {
+    timers.clear();
+    setLockedHint(null);
+    setPhase("intro");
+  };
+
+  const pickLevel = (option: VisualLevel) => {
+    if (option > unlocked) {
+      // Un nivel cerrado no se elige: se explica cómo se abre.
+      setLockedHint(option);
+      playWrongSound();
+      return;
+    }
+    setLockedHint(null);
+    setSelectedLevel(option);
+    playTapSound();
   };
 
   const handleTap = (symbolId: string) => {
@@ -121,7 +213,7 @@ export default function VisualGame() {
         return;
       }
 
-      const next = createNextVisualCard(playerCard, playerCard.id + 1);
+      const next = createNextVisualCard(playerCard, playerCard.id + 1, level);
       setBaseCard(playerCard);
       setPlayerCard(next.card);
       setTargetId(next.targetId);
@@ -133,9 +225,7 @@ export default function VisualGame() {
     phase === "playing"
       ? Math.max(0, now - startedAt) + errors * VISUAL_ERROR_PENALTY_MS
       : finalTime;
-  const accuracy = Math.round(
-    (VISUAL_ROUNDS / Math.max(VISUAL_ROUNDS + errors, 1)) * 100,
-  );
+  const accuracy = visualAccuracy(errors);
 
   return (
     <GameShell
@@ -151,6 +241,15 @@ export default function VisualGame() {
       onStart={startGame}
       confirmExit={phase === "playing"}
       onOverlayOpenChange={handleOverlayOpenChange}
+      beforeStart={
+        <LevelPicker
+          maxLevel={VISUAL_MAX_LEVEL}
+          unlocked={unlocked}
+          selected={selectedLevel}
+          lockedHint={lockedHint}
+          onPick={(option) => pickLevel(clampVisualLevel(option))}
+        />
+      }
     >
       {phase === "playing" && baseCard && playerCard && (
         <section className="mx-auto flex w-full max-w-6xl flex-col justify-center pb-2 pt-2 text-center sm:min-h-[calc(100svh-6rem)] sm:pt-4">
@@ -158,6 +257,12 @@ export default function VisualGame() {
             <h1 className="text-base font-extrabold text-ink sm:text-2xl">
               {t("visualInstruction")}
             </h1>
+            <p className="-mt-1 text-sm font-extrabold text-ink/70 sm:text-base">
+              {t("visualLevelLabel", {
+                level,
+                symbols: VISUAL_LEVELS[level].symbols,
+              })}
+            </p>
 
             <div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-5">
               <VisualCardView
@@ -219,7 +324,17 @@ export default function VisualGame() {
             <p className="mt-2 text-xl font-semibold text-ink/65">
               {t("visualResultsText", { total: VISUAL_ROUNDS })}
             </p>
+            <p className="mt-1 text-base font-extrabold text-ink/70">
+              {t("visualLevelLabel", {
+                level,
+                symbols: VISUAL_LEVELS[level].symbols,
+              })}
+            </p>
           </div>
+
+          {/* Aparte del tiempo y los fallos, que van en sus tarjetas. */}
+          <SessionStars stars={sessionStars} openedLevel={openedLevel} />
+
           <div className="grid w-full grid-cols-3 gap-3">
             <ResultStat
               tone="neutral"
@@ -239,7 +354,7 @@ export default function VisualGame() {
           </div>
           <ResultActions
             playAgainLabel={t("visualPlayAgain")}
-            onPlayAgain={startGame}
+            onPlayAgain={backToIntro}
           />
         </section>
       )}

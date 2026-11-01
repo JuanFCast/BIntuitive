@@ -59,9 +59,11 @@ export default function GameClient() {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [exitOpen, setExitOpen] = useState(false);
 
-  // Espejo del nivel para poder mostrarlo. La dificultad la sigue mandando
-  // `levelRef` y `nextLevel`; esto solo la hace visible.
-  const [level, setLevel] = useState(1);
+  // La dificultad de estas categorías se mueve sola y no se enseña en ningún
+  // sitio: el encabezado de la lección lleva estrellas y progreso, no nivel.
+  // Por eso vive solo en un ref y no hay espejo en estado —uno hubo, escrito
+  // "para poder mostrarlo", y provocaba un render por respuesta sin que nadie
+  // lo leyera—. Si algún día se enseña, el espejo vuelve con su lector.
   const levelRef = useRef(1);
   const streakRef = useRef(0);
   const usedIdsRef = useRef<string[]>([]);
@@ -103,7 +105,6 @@ export default function GameClient() {
     if (!category) return;
     timers.clear();
     levelRef.current = getLevelForCategory(category.id);
-    setLevel(levelRef.current);
     streakRef.current = 0;
     usedIdsRef.current = [];
     setRound(0);
@@ -178,7 +179,6 @@ export default function GameClient() {
           ? nextLevel(levelRef.current, streakRef.current, false)
           : { level: levelRef.current, streak: 0 };
         levelRef.current = result.level;
-        setLevel(result.level);
         streakRef.current = result.streak;
         later(() => advance(true, newStars), 1400);
         return;
@@ -194,7 +194,6 @@ export default function GameClient() {
         setFeedback("reveal");
         const result = nextLevel(levelRef.current, streakRef.current, true);
         levelRef.current = result.level;
-        setLevel(result.level);
         streakRef.current = result.streak;
         later(() => advance(false, stars), 2200);
       } else {

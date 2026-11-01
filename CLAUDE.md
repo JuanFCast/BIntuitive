@@ -9,12 +9,23 @@ Next.js 15 App Router + React 19 + TypeScript + Tailwind CSS 4. Sin backend, sin
 analytics: todo el estado vive en `localStorage`. Producción en `bintuitive.aumcrsp.com` vía AWS
 CloudFront (el workflow de deploy vive fuera del repo).
 
-Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`,
+Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`, `npm run lint`,
 `npm run validate:content` (valida el contenido educativo), `npm run check:migration` (comprueba
 que actualizar la aplicación no le pierde el progreso a nadie), y `npm run check:tracing`,
 `npm run check:memory` y `npm run check:coloring` (las reglas de nivel, estrellas y desbloqueo de
-los tres juegos que usan la escala compartida). No hay linter configurado, y las únicas pruebas
-automáticas son esas cuatro: los seis comandos son la verificación.
+esos tres juegos) y `npm run check:levels` (las mismas reglas en los que entraron después en la
+escala compartida). No hay pruebas unitarias: esos ocho comandos son la verificación, y los seis
+últimos son las únicas pruebas automáticas.
+
+**El linter es parte de la verificación, no un extra.** `eslint.config.mjs` extiende
+`next/core-web-vitals` y `next/typescript`, e **imports y variables sin usar son error, no
+aviso**: el proyecto vivió meses sin linter y eso dejó pasar dos carpetas de ruta vacías que
+sobrevivieron a su propio redirect y una superficie de juegos duplicada, nada de lo cual rompe el
+build, así que `tsc` no lo iba a encontrar nunca. El guion bajo (`_algo`) es la forma de decir
+"esto sobra a propósito". Ignora `.claude/` —las skills de diseño son herramienta, no código de
+BIntuitive— y lo generado (`.next/`, `.content-check/`). ESLint es la única dependencia de
+desarrollo que no es Next, React o Tailwind; la regla de "sin dependencias nuevas" sigue valiendo
+entera para lo que se envía al navegador.
 
 ## Arquitectura
 
@@ -62,7 +73,7 @@ src/app/
     <id>/page.tsx       Server component: solo metadata + render del cliente
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
-src/components/         BrandMark, MuteButton, HexagonCard, AppShell, AppMenu, GameShell,
+src/components/         BrandMark, MuteButton, HexagonCard, HexagonRow, AppShell, AppMenu, GameShell,
                         AuthShell, AuthField, LanguageSwitch, ComingSoonNotice,
                         GameIntro, GameHelp, ResultActions, ResultStat, Confetti,
                         ConfirmDialog...
@@ -84,6 +95,9 @@ src/lib/
   clockPause.ts         useClockPause: parar el reloj de un juego mientras la ayuda está abierta
   gameTimers.ts         useGameTimers: esperas cortas congelables (destellos, pausas, transiciones)
   speakAfterSound.ts    useSpeakAfterSound: decir una palabra tras el sonido de acierto
+  documentTitle.ts      useDocumentTitle: el título de la pestaña en el idioma elegido
+  favorites.ts          Qué hexágonos están marcados como favoritos en este dispositivo
+  exploreView.ts        Si Explore se enseña como panal o como lista
   preferences.ts        useMuted / useTextSize: lectura reactiva de las preferencias
   profile.ts            Nombre, avatar y fecha de inicio de quien juega en este dispositivo
   routes.ts             Las direcciones de la aplicación, escritas una sola vez
@@ -99,6 +113,19 @@ src/lib/
   nuevos (no preguntas) el patrón real usado es distinto: los strings viven bilingües en
   `messages` de `i18n.tsx`, y los datos con nombre (símbolos, frases) usan
   `Record<Language, string>` o `Record<Language, string[]>` dentro de su lib.
+- **La metadata se sirve en inglés; el título de la pestaña sigue al idioma.** El idioma se
+  elige en el dispositivo y vive en `localStorage`, así que el servidor no puede saberlo: el
+  `title` y la `description` de cada ruta, el OG y el manifest van en inglés, que es el idioma
+  por defecto y el que tiene que ver quien comparte un enlace. La **descripción** se queda ahí y
+  no se traduce: se lee fuera de la aplicación, donde no hay idioma elegido. El **título** sí se
+  corrige en cliente con `useDocumentTitle`, porque es lo que se lee en el gestor de pestañas y
+  en el historial: jugar en español dejaba la pestaña diciendo "Coloring" mientras el juego decía
+  Colorear. Quien lo llama le pasa el nombre **ya traducido** que la pantalla tiene en la mano
+  —`GameShell` usa `intro.title` y cubre los siete juegos y la ruta de preguntas de una vez—, así
+  que no hay ninguna tabla de rutas que mantener. Lleva un `MutationObserver` y no una asignación
+  suelta a propósito: el `<title>` lo renderiza Next **dentro del `<body>`**, no en el head, y lo
+  vuelve a aplicar en cualquier re-render —abrir el menú de ajustes bastaba para devolver la
+  pestaña al inglés—. No sustituirlo por un `document.title =` a secas.
 - **Una opción nunca lleva escrita su respuesta**: por eso `QuestionOption.label` es opcional.
   Un "4" debajo de cuatro manzanas convierte "¿cuál grupo tiene más?" en leer cifras, y un
   "Verde" debajo del círculo verde convierte "toca el círculo verde" en leer palabras: en los
@@ -237,6 +264,26 @@ src/lib/
   favicon; el de 192 vive en `public/`. Ninguno se declara `maskable`: el logo llega cerca del
   borde y una máscara circular le cortaría el birrete. iOS no lee `display` del manifest, así
   que el modo standalone en Safari depende de las metas `appleWebApp` de `layout.tsx`.
+- **Explore tiene dos vistas y un filtro, y el panal sigue sin tocarse.** `HomeClient` enseña las
+  mismas fichas como panal o como lista (`HexagonRow`), y la elección se recuerda en su propia
+  clave (`bintuitive-explore-view`, en `exploreView.ts`). El panal es el valor por defecto porque
+  es la identidad de BIntuitive; la lista existe para lo que el panal hace peor, que es leer
+  nombres de corrido y encontrar rápido, y por eso ahí sí cabe la descripción.
+  **La estrella de favorito solo está en la lista.** El panal enseña cuáles lo son pero no deja
+  cambiarlo: son diez celdas grandes para que un niño de tres años acierte el toque, y meterle a
+  cada una un segundo objetivo pequeño al lado trabaja justo en contra; además marcar favoritos
+  es cosa del adulto. El enlace y la estrella son **hermanos**, nunca uno dentro de otro.
+  Los favoritos viven en `favorites.ts` con clave propia (`bintuitive-favorites`) y guardan
+  **ids**: el panal se reordena y los nombres se traducen, pero el id es lo único estable, y uno
+  que ya no exista se descarta al leer. `clearProgress()` no se los lleva, igual que no se lleva
+  el idioma ni el perfil.
+  El **filtro** de favoritos no se recuerda aunque la vista sí: volver a abrir la aplicación y
+  encontrar solo tres fichas, sin saber por qué, es la mejor forma de pensar que se ha perdido el
+  resto. Y el botón del filtro solo aparece cuando hay algún favorito, porque un filtro que no
+  puede filtrar nada es un botón que lleva a una pantalla vacía.
+  Con el filtro puesto el panal se calcula **para las fichas que se enseñan**, no para diez:
+  `honeycombLayout` ya sabe repartir cualquier cantidad y es a él a quien hay que preguntarle, no
+  a una rejilla escrita a mano.
 - **El panal es Explore**: la barra inferior tiene exactamente tres destinos (Home, Progress,
   Profile) y Home es el panal, servido desde `/explore`. Un enlace que dentro de la
   aplicación signifique "volver al principio" apunta a `EXPLORE` de `src/lib/routes.ts`, nunca
@@ -272,8 +319,28 @@ src/lib/
   que explica cada categoría vive en la tabla `CATEGORY_INTRO`, indexada por `slug` y
   comprobada por TypeScript con `satisfies`: si se añade una categoría sin sus textos, el
   build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
-- **La dificultad se elige, no se mueve sola** (hoy en Trazos, Parejas, Colorear, Word Scramble y
-  Word Search; es el patrón que copiarán los demás). El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
+- **La dificultad se elige, no se mueve sola.** Lo hacen **los siete juegos independientes**, sin
+  excepción. **Todos tienen cinco escalones**, y no menos: el modelo guarda hasta 5 y
+  `unlockedAfterSession` cuenta hasta 5, así que un juego de tres dejaría el desbloqueo topado a
+  mitad del modelo. Los juegos que no daban para cinco por contenido **crecen cambiando de
+  mecánica**, como ya hacía Colorear, y cada uno tiene su tabla:
+  - **Agilidad visual**: de 4 a 12 símbolos por carta, y desde el cuarto girados y reescalados
+    —reconocer una forma no es reconocer un dibujo—. El cuarto repite las nueve del tercero y
+    solo cambia la presentación, para que ese salto no pase inadvertido.
+  - **Word Scramble**: los tres tramos de longitud del banco, y luego **letras que no son de la
+    palabra** —dos en el cuarto, tres en el quinto—; el quinto además esconde el dibujo y deja la
+    pista, que el botón de escuchar lee.
+  - **Sopa de letras**: el tablero crece hasta 10 columnas y ahí se para, porque más no se ve en
+    un móvil; del cuarto en adelante entran más palabras y **la lista deja de decir cuáles son**
+    (`hideWords`), diciendo solo qué es cada una y cuántas letras tiene.
+  - **Type Rush**: empieza por palabras sueltas en minúscula y va añadiendo **teclas**
+    —mayúsculas y signos— antes que longitud.
+
+  Subir el tamaño cuando ya no da más es lo que **no** hay que hacer.
+  **La duración solo cuenta como dificultad en Type Rush**, y es la única excepción: lo que ahí se
+  mide son pulsaciones por minuto y sostener la precisión es parte de la destreza. En un juego de
+  mirar o de buscar, una sesión más larga solo cansa.
+  El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
   juego lo coloca en su introducción por la prop `beforeStart` de `GameShell` —que **no** va
   dentro de `intro` a propósito: `intro` es lo que la ayuda vuelve a enseñar encima de una
   partida en curso, y un selector ahí invitaría a cambiar de dificultad a mitad de sesión—.
@@ -286,7 +353,11 @@ src/lib/
   las marcas del juego, para que no se lean como la misma cuenta. "Jugar otra vez" vuelve a la
   introducción y no relanza la partida: es la única forma de elegir el nivel que se acaba de
   abrir. `npm run check:tracing`, `npm run check:memory` y `npm run check:coloring` protegen estas
-  reglas.
+  reglas en esos tres, y **`npm run check:levels`** en los que entraron después. Ese es uno solo
+  para varios juegos a propósito: los tres primeros protegen además su propia geometría —el
+  tablero, la forma del camino, el reparto del color— y por eso tienen script propio; los demás
+  comparten lo que hay que proteger, que es la escala, y un comando por juego dejaría la
+  verificación del proyecto en una lista que ya nadie corre entera.
 - **Un solo escritor de sesiones**: `recordSession`, en `storage.ts`, tiene las reglas que no
   pueden cambiar de un juego a otro —escalón elegido, desbloqueo, mejor valoración, una sesión
   cada vez—. Cada juego solo aporta cómo se juntan **sus** marcas (`saveTracingResult`,
@@ -442,9 +513,9 @@ y la carpeta `~/.impeccable`.
 
 - **Progress solo enseña lo que ya está guardado.** `/progress` lee `getProgress()` y no
   persiste nada nuevo: resumen, nivel por actividad, mejores marcas y las últimas sesiones.
-  Agilidad visual y Type Rush no guardan progreso a propósito y aparecen sin métricas, igual
-  que una actividad todavía sin jugar. Añadir una métrica a esa pantalla empieza por guardarla,
-  no al revés.
+  Ya no hay ninguna actividad sin métricas: los siete juegos independientes guardan. Añadir una
+  métrica a esa pantalla empieza por guardarla, no al revés —Agilidad visual y Type Rush
+  empezaron a aparecer ahí el día que empezaron a guardar, no antes—.
 - **`getProgress()` devuelve siempre un objeto nuevo.** `saveSession` y las dos de palabras
   escriben sobre lo que devuelve, así que compartir una constante vacía la ensuciaría en la
   primera partida de un dispositivo sin datos.
@@ -459,7 +530,12 @@ y la carpeta `~/.impeccable`.
   `IOS_CHROME_VIEWPORT_RECOVERY` cubre otro fallo de Chrome/iOS: al abrir otra vez un enlace desde
   una aplicación, el `WKWebView` puede conservar un inset nativo que no aparece en `scrollY`, en
   `visualViewport` ni en los rectángulos del DOM. La primera entrada reciente se registra en
-  `localStorage`. Toda entrada nueva de CriOS muestra `.bintuitive-ios-booting`: en la primera se
+  `localStorage`. **Su lista de rutas hay que mantenerla al mudar una pantalla**: cubre las que se
+  abren desde fuera —la portada, `/explore`, su dirección anterior `/hexagons`, `/progress` y
+  `/profile`—, y nunca las de juego, a las que se llega desde dentro. `/explore` le faltaba: el
+  panal se mudó ahí y la lista se quedó nombrando solo `/hexagons`, así que la recuperación
+  llevaba meses sin correr en la pantalla de entrada. Toda entrada nueva de CriOS muestra
+  `.bintuitive-ios-booting`: en la primera se
   funde con la aplicación después de `load`; una entrada posterior espera 1,5 s para que Chrome
   termine de animar sus barras y recarga una vez, conservando la marca hasta que el documento
   corregido está listo. Así el layout desplazado nunca se pinta y `sessionStorage` evita el
@@ -494,11 +570,19 @@ y la carpeta `~/.impeccable`.
   sobre él, con una tabla de textos por `variant` (`lesson` y `game`) y un único destino, el
   panal. No crear un modal nuevo para la siguiente confirmación.
 - **Borrar progreso**: `clearProgress()` quita solo `bintuitive-progress`. Nunca
-  `localStorage.clear()`: las preferencias y el perfil viven en sus propias claves y no se
-  tocan. Quien borra su progreso no pide cambiar de idioma ni dejar de llamarse como se llama.
+  `localStorage.clear()`: las preferencias, el perfil, los favoritos y la vista de Explore viven
+  en sus propias claves y no se tocan. Quien borra su progreso no pide cambiar de idioma, ni
+  dejar de llamarse como se llama, ni perder los juegos que tenía a mano.
+- **El espejo de la versión 1 se recorta al tope que ese campo siempre tuvo.** Word Scramble y la
+  sopa guardan en los dos modelos, y su `level` antiguo nunca pasa de 3
+  (`WORD_SCRAMBLE_LEGACY_MAX_LEVEL`, `WORD_SEARCH_LEGACY_MAX_LEVEL`): el código anterior da por
+  inválido cualquier número por encima y lo **degradaría a 1**, así que escribir ahí el 5 que hoy
+  se puede alcanzar castigaría justo a quien más ha jugado si alguna vez se revierte el
+  despliegue. Guardar un 3 lo deja en lo más alto que el juego de entonces sabía decir.
 - `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
   (`wordScramble`), el de Word Search (`wordSearch`) y el de Trazos (`tracing`), cada uno en su
-  propio campo opcional y sin compartir datos. `visual` y `typing` no persisten nada. Parejas
+  propio campo opcional y sin compartir datos. `visual` y `typing` nacieron ya en el modelo nuevo
+  y **solo** escriben ahí: no tienen campos de la versión 1 ni puente al que dar de comer. Parejas
   (`memory`) sí, pero **solo en el modelo nuevo**: no guardaba nada antes, así que no tiene
   campos de la versión 1 ni puente. Su mejor tiempo se guarda con el escalón en que se hizo
   (`fastestLevel`): tres parejas se terminan en un tercio del tiempo que ocho, y sin el nivel
@@ -526,8 +610,9 @@ y la carpeta `~/.impeccable`.
   `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Las
   lecciones siguen escribiendo **solo** en los campos de la versión 1; **Trazos, Word Scramble y
   Word Search ya escriben en los dos a la vez**, con exactamente los mismos totales, que es lo que
-  impide que la proyección les sume una sesión dos veces o les duplique marcas; y **Parejas y
-  Colorear escriben solo en el nuevo**, porque antes no guardaban nada. Los dos de palabras
+  impide que la proyección les sume una sesión dos veces o les duplique marcas; y **Parejas,
+  Colorear, Agilidad visual y Type Rush escriben solo en el nuevo**, porque nacieron después y no
+  tienen campos antiguos que mantener. Los dos de palabras
   tenían tres niveles y tienen cinco: sus escalones 1 a 3 son los tres de antes, idénticos, así
   que el nivel guardado se proyecta tal cual y nadie pierde lo que tenía abierto; y su espejo de
   la versión 1 guarda lo desbloqueado **recortado a 3** (`legacyWordLevel`), porque el código
