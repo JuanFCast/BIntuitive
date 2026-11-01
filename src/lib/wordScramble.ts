@@ -1,14 +1,25 @@
-import { nextLevel, shuffle } from "./gameEngine";
+import { shuffle } from "./gameEngine";
+import { clampDifficulty, type Stars } from "./difficulty";
 import type { Language } from "./language";
 import { getWordLetters, WORD_ALPHABET } from "./letters";
 
 export const WORD_SCRAMBLE_WORDS_PER_SESSION = 10;
-export const WORD_SCRAMBLE_MAX_LEVEL = 3;
+export const WORD_SCRAMBLE_MAX_LEVEL = 5;
 
-/** A partir de esta cantidad de errores en una palabra, el nivel baja. */
-export const WORD_SCRAMBLE_DROP_MISTAKES = 3;
+/**
+ * El tope que tenía el juego antes de entrar en la escala compartida, y el
+ * que sigue entendiendo el campo de la versión 1 en `storage.ts`. No es el
+ * mismo número que `WORD_SCRAMBLE_MAX_LEVEL` y no debe volver a serlo: el
+ * espejo de la versión 1 se recorta aquí para que, si alguna vez se revierte
+ * el despliegue, el código antiguo lea un 3 —su máximo— y no un 5 que daría
+ * por inválido y degradaría a 1.
+ */
+export const WORD_SCRAMBLE_LEGACY_MAX_LEVEL = 3;
 
-export type WordScrambleLevel = 1 | 2 | 3;
+export type WordScrambleLevel = 1 | 2 | 3 | 4 | 5;
+
+/** El tramo de longitud del que sale una palabra. Es lo que trae el banco. */
+export type ScrambleWordTier = 1 | 2 | 3;
 
 export type ScrambleWord = {
   id: string;
@@ -16,8 +27,79 @@ export type ScrambleWord = {
   word: string;
   emoji: string;
   clue: string;
-  level: WordScrambleLevel;
+  level: ScrambleWordTier;
 };
+
+/**
+ * Recorta al rango de este juego. Cuántos escalones tiene lo sabe solo este
+ * archivo; `storage.ts` guarda el número tal cual.
+ */
+export function clampWordScrambleLevel(value: unknown): WordScrambleLevel {
+  const level = clampDifficulty(value);
+  return Math.min(level, WORD_SCRAMBLE_MAX_LEVEL) as WordScrambleLevel;
+}
+
+/**
+ * Qué cambia en cada escalón.
+ *
+ * Los tres primeros son los tres tramos de longitud que el banco ya traía
+ * etiquetados —3 y 4 letras, 5 y 6, 7 y 8—. Del tercero no se sube de
+ * longitud: una palabra de diez letras no enseña nada que no enseñe una de
+ * ocho, solo cansa. Los dos últimos crecen **quitando ayudas**, que es donde
+ * está la dificultad real de ordenar una palabra:
+ *
+ * - El cuarto retira la pista escrita y deja solo el dibujo. Hasta ahí la
+ *   pista iba diciendo cuál era la palabra; sin ella hay que reconocerla.
+ * - El quinto añade letras que **no son de la palabra**. Dejan de valer la
+ *   cuenta y el descarte —"quedan tres fichas, tres huecos"— y hay que
+ *   deletrear de verdad.
+ */
+export const WORD_SCRAMBLE_LEVELS: Record<
+  WordScrambleLevel,
+  {
+    /** De qué tramo del banco sale la palabra. */
+    tier: ScrambleWordTier;
+    /** Si se enseña la pista escrita, además del dibujo. */
+    clue: boolean;
+    /** Cuántas fichas que no son de la palabra se añaden a la bandeja. */
+    decoys: number;
+  }
+> = {
+  1: { tier: 1, clue: true, decoys: 0 },
+  2: { tier: 2, clue: true, decoys: 0 },
+  3: { tier: 3, clue: true, decoys: 0 },
+  4: { tier: 3, clue: false, decoys: 0 },
+  5: { tier: 3, clue: false, decoys: 2 },
+};
+
+/**
+ * Letras de las que salen las fichas que sobran del quinto escalón.
+ *
+ * Sin tildes ni diéresis a propósito: una ficha `Á` suelta al lado de una
+ * palabra que lleva `A` se lee como un error de la aplicación, no como un
+ * señuelo. La `Ñ` sí está en español, que es una letra como cualquier otra.
+ */
+const DECOY_LETTERS: Record<Language, string[]> = {
+  en: [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"],
+  es: [..."ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"],
+};
+
+/**
+ * La valoración de la sesión, de cero a tres, por la precisión de los toques.
+ *
+ * Mismos cortes que los demás juegos de la escala: es lo único comparable
+ * entre escalones, porque la longitud de las palabras y las ayudas cambian
+ * pero "cuántos toques fueron al sitio" significa lo mismo en los cinco.
+ */
+export function wordScrambleSessionStars(
+  accuracy: number,
+  completed: boolean,
+): Stars {
+  if (!completed) return 0;
+  if (accuracy >= 90) return 3;
+  if (accuracy >= 75) return 2;
+  return 1;
+}
 
 export type LetterTile = {
   /** Único por ficha: la misma letra puede repetirse en una palabra. */
@@ -128,15 +210,18 @@ export function getWordBank(language: Language): ScrambleWord[] {
 }
 
 /**
- * Elige la siguiente palabra del idioma actual, prefiriendo el nivel pedido y
- * cayendo al nivel más cercano cuando ya no quedan palabras sin usar.
- * `usedIds` acumula las palabras ya jugadas, así que ninguna se repite dentro
- * de una misma partida. Sigue el mismo criterio de selección que usa
- * `pickNextQuestion` en el motor de lecciones, aplicado a palabras.
+ * Elige la siguiente palabra del idioma actual, prefiriendo el tramo del
+ * escalón que se está jugando y cayendo al tramo más cercano cuando ya no
+ * quedan palabras sin usar. `usedIds` acumula las palabras ya jugadas, así que
+ * ninguna se repite dentro de una misma partida.
+ *
+ * Recibe el **tramo** y no el escalón: del tercero en adelante los tres
+ * escalones altos comparten las palabras largas y lo que los separa son las
+ * ayudas, así que quien pide la palabra ya ha mirado la tabla.
  */
 export function pickNextWord(
   language: Language,
-  level: number,
+  tier: ScrambleWordTier,
   usedIds: string[],
 ): ScrambleWord | null {
   const available = WORD_BANK[language].filter(
@@ -145,11 +230,11 @@ export function pickNextWord(
   if (available.length === 0) return null;
 
   const sorted = [...available].sort(
-    (a, b) => Math.abs(a.level - level) - Math.abs(b.level - level),
+    (a, b) => Math.abs(a.level - tier) - Math.abs(b.level - tier),
   );
-  const bestDistance = Math.abs(sorted[0].level - level);
+  const bestDistance = Math.abs(sorted[0].level - tier);
   const candidates = sorted.filter(
-    (candidate) => Math.abs(candidate.level - level) === bestDistance,
+    (candidate) => Math.abs(candidate.level - tier) === bestDistance,
   );
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
@@ -157,8 +242,18 @@ export function pickNextWord(
 /**
  * Desordena las letras de la palabra. Cada ficha guarda su posición original
  * en el id para que las letras repetidas sigan siendo fichas distintas.
+ *
+ * `decoys` añade fichas que no están en la palabra, que es lo que hace del
+ * quinto escalón otra cosa. Se eligen **entre las letras que la palabra no
+ * usa**: una ficha repetida no sería un señuelo, porque colocarla acertaría.
+ * Si el alfabeto no da para tantas —no pasa con palabras de ocho letras, pero
+ * la función no puede depender de eso—, se ponen las que haya.
  */
-export function createLetterTiles(word: string): LetterTile[] {
+export function createLetterTiles(
+  word: string,
+  decoys = 0,
+  language: Language = "en",
+): LetterTile[] {
   const letters = getWordLetters(word);
   const solution = letters.join("");
   const tiles = letters.map((letter, index) => ({
@@ -166,34 +261,25 @@ export function createLetterTiles(word: string): LetterTile[] {
     letter,
   }));
 
-  // Evita entregar la palabra ya resuelta; se rinde si todas las letras son iguales.
+  if (decoys > 0) {
+    const used = new Set(letters);
+    const pool = DECOY_LETTERS[language].filter((letter) => !used.has(letter));
+    shuffle(pool)
+      .slice(0, decoys)
+      .forEach((letter, index) => {
+        tiles.push({ id: `decoy-${index}-${letter}`, letter });
+      });
+  }
+
+  // Evita entregar la palabra ya resuelta; se rinde si todas las letras son
+  // iguales. Con señuelos la comparación sigue valiendo: sobran fichas al
+  // final y la cadena nunca coincide con la solución.
   let shuffled = shuffle(tiles);
   for (let attempt = 0; attempt < 8; attempt += 1) {
     if (shuffled.map((tile) => tile.letter).join("") !== solution) break;
     shuffled = shuffle(tiles);
   }
   return shuffled;
-}
-
-/**
- * Dificultad suave. Reutiliza `nextLevel` del motor de lecciones para el ±1 y
- * el tope, pero la decisión se toma por palabra:
- * - 2 palabras seguidas sin errores suben el nivel (máximo 3).
- * - Una palabra con muchos errores baja el nivel (mínimo 1).
- * - Entre medias el nivel se mantiene y la racha se reinicia.
- */
-export function nextWordScrambleLevel(
-  level: number,
-  streak: number,
-  mistakes: number,
-): { level: number; streak: number } {
-  if (mistakes >= WORD_SCRAMBLE_DROP_MISTAKES) {
-    return nextLevel(level, streak, true);
-  }
-  if (mistakes > 0) {
-    return { level, streak: 0 };
-  }
-  return nextLevel(level, streak, false);
 }
 
 export function computeWordScrambleStats(

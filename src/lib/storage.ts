@@ -16,6 +16,7 @@ import {
   type GameProgress,
   type GradeProgress,
 } from "./progressModel";
+import { WORD_SCRAMBLE_LEGACY_MAX_LEVEL } from "./wordScramble";
 
 const PROGRESS_KEY = "bintuitive-progress";
 
@@ -469,6 +470,40 @@ export function saveMemoryResult(
       fastestLevel: beatsRecord ? result.playedLevel : best.fastestLevel,
     };
   });
+
+  saveProgress(progress);
+}
+
+/**
+ * Guarda una sesión terminada de Word Scramble.
+ *
+ * Escribe **en los dos modelos a la vez**, como Trazos, y con exactamente la
+ * misma marca: que coincidan es lo que impide que la proyección del puente
+ * —que se queda con la mejor de las dos— acabe discrepando consigo misma.
+ *
+ * El `level` de la versión 1 guarda lo **desbloqueado** y no lo elegido, que
+ * es lo que el código anterior entendía por "hasta dónde ha llegado": así
+ * repetir un escalón fácil no degrada a nadie. Y se recorta al tope que ese
+ * campo siempre tuvo, porque el código antiguo da por inválido cualquier cosa
+ * por encima de 3 y la degradaría a 1; revertir el despliegue deja a quien
+ * llegó al quinto en el tercero, que es lo más alto que el juego de entonces
+ * sabía decir.
+ */
+export function saveWordScrambleResult(
+  result: FinishedSession & { perfectWords: number },
+): void {
+  const progress = getProgress();
+
+  const next = recordSession(progress, "scramble", result, (best) => ({
+    perfectWords: Math.max(best.perfectWords ?? 0, result.perfectWords),
+  }));
+
+  progress.wordScramble = {
+    level: Math.min(next.unlocked, WORD_SCRAMBLE_LEGACY_MAX_LEVEL),
+    // `getProgress` ya proyectó la marca del campo antiguo sobre el modelo
+    // nuevo antes de llegar aquí, así que esta es la mejor de las dos.
+    bestPerfectWords: next.best.perfectWords ?? 0,
+  };
 
   saveProgress(progress);
 }

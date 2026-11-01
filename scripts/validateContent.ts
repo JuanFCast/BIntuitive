@@ -44,7 +44,7 @@ import {
 import { getTypingPhrases } from "../src/lib/typingGame";
 import { VISUAL_SYMBOLS, VISUAL_SYMBOLS_PER_CARD } from "../src/lib/visualGame";
 import {
-  WORD_SCRAMBLE_MAX_LEVEL,
+  WORD_SCRAMBLE_LEVELS,
   WORD_SCRAMBLE_WORDS_PER_SESSION,
   getWordBank,
 } from "../src/lib/wordScramble";
@@ -58,12 +58,27 @@ import {
 const LANGUAGES: Language[] = ["en", "es"];
 const CATEGORIES: CategoryId[] = ["lugares", "numeros", "colores"];
 
-/** Longitud de palabra que admite cada nivel de Word Scramble, según su banco. */
-const SCRAMBLE_LENGTH_BY_LEVEL: Record<number, [number, number]> = {
+/**
+ * Longitud de palabra que admite cada **tramo** del banco de Word Scramble.
+ *
+ * Tramo no es escalón: el juego tiene cinco y el banco tres. Del tercero en
+ * adelante los escalones comparten las palabras largas y lo que los separa son
+ * las ayudas que se quitan, así que lo que hay que comprobar es que cada tramo
+ * que la tabla de escalones usa tenga palabras, no que haya un tramo por
+ * escalón.
+ */
+const SCRAMBLE_LENGTH_BY_TIER: Record<number, [number, number]> = {
   1: [3, 4],
   2: [5, 6],
   3: [7, 8],
 };
+
+/** Los tramos que los escalones piden de verdad, sin repetir. */
+const SCRAMBLE_TIERS_IN_USE = [
+  ...new Set(Object.values(WORD_SCRAMBLE_LEVELS).map((level) => level.tier)),
+];
+
+const SCRAMBLE_MAX_TIER = Math.max(...Object.keys(SCRAMBLE_LENGTH_BY_TIER).map(Number));
 
 /** Rango de opciones que `AnswerGrid` sabe repartir en pantalla. */
 const MIN_OPTIONS = 2;
@@ -467,16 +482,16 @@ function validateWordScramble(): void {
         );
       }
 
-      if (entry.level < 1 || entry.level > WORD_SCRAMBLE_MAX_LEVEL) {
+      if (entry.level < 1 || entry.level > SCRAMBLE_MAX_TIER) {
         fail(
           bank,
           at,
-          "nivel fuera de 1-" + WORD_SCRAMBLE_MAX_LEVEL + ": " + entry.level,
+          "tramo fuera de 1-" + SCRAMBLE_MAX_TIER + ": " + entry.level,
         );
       } else {
         // Las tildes, la Ñ y la Ü cuentan como una sola letra.
         const length = getWordLetters(entry.word).length;
-        const range = SCRAMBLE_LENGTH_BY_LEVEL[entry.level];
+        const range = SCRAMBLE_LENGTH_BY_TIER[entry.level];
         if (length < range[0] || length > range[1]) {
           fail(
             bank,
@@ -484,7 +499,7 @@ function validateWordScramble(): void {
             entry.word +
               " mide " +
               length +
-              " letras; el nivel " +
+              " letras; el tramo " +
               entry.level +
               " admite " +
               range[0] +
@@ -506,12 +521,12 @@ function validateWordScramble(): void {
           " para una sesión sin repetir",
       );
     }
-    for (let level = 1; level <= WORD_SCRAMBLE_MAX_LEVEL; level += 1) {
-      if (!words.some((word) => word.level === level)) {
+    for (const tier of SCRAMBLE_TIERS_IN_USE) {
+      if (!words.some((word) => word.level === tier)) {
         fail(
           bank,
-          language + "/nivel " + level,
-          "ninguna palabra en este nivel",
+          language + "/tramo " + tier,
+          "ningún escalón podría jugarse: no hay palabras de esta longitud",
         );
       }
     }
