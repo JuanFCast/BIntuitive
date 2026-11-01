@@ -474,6 +474,43 @@ export function saveMemoryResult(
 }
 
 /**
+ * Guarda una sesión terminada de Agilidad visual.
+ *
+ * Solo en el modelo nuevo: no guardaba nada antes de tener escalones, así que
+ * no tiene campos de la versión 1 que mantener ni puente al que dar de comer.
+ *
+ * Los fallos se quedan con el mínimo —son comparables entre escalones, porque
+ * las rondas son diez en todos—. El tiempo va emparejado con su escalón y con
+ * la misma regla que Parejas: uno de un escalón mayor sustituye siempre al
+ * récord, uno del mismo escalón solo si es más rápido, y uno de un escalón
+ * menor no lo toca nunca.
+ */
+export function saveVisualResult(
+  result: FinishedSession & { timeMs: number; mistakes: number },
+): void {
+  const progress = getProgress();
+
+  recordSession(progress, "visual", result, (best) => {
+    const recordLevel = best.fastestLevel ?? 0;
+    const beatsRecord =
+      best.fastestMs === null ||
+      result.playedLevel > recordLevel ||
+      (result.playedLevel === recordLevel && result.timeMs < best.fastestMs);
+
+    return {
+      fastestMs: beatsRecord ? result.timeMs : best.fastestMs,
+      fastestLevel: beatsRecord ? result.playedLevel : best.fastestLevel,
+      fewestMistakes:
+        best.fewestMistakes === null
+          ? result.mistakes
+          : Math.min(best.fewestMistakes, result.mistakes),
+    };
+  });
+
+  saveProgress(progress);
+}
+
+/**
  * Guarda una sesión terminada de Colorear.
  *
  * Solo en el modelo nuevo, como Parejas: Colorear nace con la escala de
