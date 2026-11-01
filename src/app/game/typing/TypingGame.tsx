@@ -3,17 +3,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BrandMark from "@/components/BrandMark";
 import GameShell from "@/components/GameShell";
+import LevelPicker from "@/components/LevelPicker";
 import ResultActions from "@/components/ResultActions";
 import ResultStat from "@/components/ResultStat";
+import SessionStars from "@/components/SessionStars";
 import { useClockPause } from "@/lib/clockPause";
+import type { Stars } from "@/lib/difficulty";
 import { useLanguage } from "@/lib/i18n";
-import { playCelebrationSound } from "@/lib/sounds";
+import { playCelebrationSound, playTapSound, playWrongSound } from "@/lib/sounds";
 import {
   buildTypingPassage,
+  clampTypingLevel,
   computeTypingStats,
-  TYPING_DURATION_SECONDS,
+  typingSessionStars,
+  TYPING_LEVELS,
+  TYPING_MAX_LEVEL,
+  type TypingLevel,
   type TypingStats,
 } from "@/lib/typingGame";
+import {
+  getProgress,
+  getUnassignedGameProgress,
+  saveTypingResult,
+} from "@/lib/storage";
 import { hexagonImage } from "@/data/categories";
 
 type Phase = "intro" | "ready" | "playing" | "results";
@@ -28,6 +40,17 @@ export default function TypingGame() {
   const [finalElapsed, setFinalElapsed] = useState(0);
   const [mistakeIndices, setMistakeIndices] = useState<Set<number>>(new Set());
   const [result, setResult] = useState<TypingStats | null>(null);
+
+  // El escalón de la sesión en curso, fijado al preparar la ronda. Aparte, el
+  // elegido en el selector, el más alto abierto y el aviso de uno cerrado.
+  const [level, setLevel] = useState<TypingLevel>(4);
+  const [unlocked, setUnlocked] = useState<TypingLevel>(1);
+  const [selectedLevel, setSelectedLevel] = useState<TypingLevel>(1);
+  const [lockedHint, setLockedHint] = useState<TypingLevel | null>(null);
+  const [sessionStars, setSessionStars] = useState<Stars>(0);
+  const [openedLevel, setOpenedLevel] = useState<TypingLevel | null>(null);
+  const levelRef = useRef<TypingLevel>(1);
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const passageContainerRef = useRef<HTMLDivElement>(null);
   const activeCharacterRef = useRef<HTMLSpanElement>(null);
@@ -40,6 +63,15 @@ export default function TypingGame() {
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
+
+  // Lo guardado se lee al montar y no al pulsar Comenzar: el selector tiene
+  // que enseñar los candados antes de que nadie elija nada.
+  useEffect(() => {
+    const stored = getUnassignedGameProgress(getProgress(), "typing");
+    const open = clampTypingLevel(stored.unlocked);
+    setUnlocked(open);
+    setSelectedLevel(clampTypingLevel(Math.min(stored.difficulty, open)));
+  }, []);
 
   useEffect(() => {
     if (phase === "ready") inputRef.current?.focus({ preventScroll: true });
@@ -72,9 +104,10 @@ export default function TypingGame() {
 
   const finishRound = useCallback(() => {
     if (phaseRef.current !== "playing") return;
+    const played = levelRef.current;
     const elapsed = Math.min(
       Date.now() - startedAtRef.current,
-      TYPING_DURATION_SECONDS * 1000,
+      TYPING_LEVELS[played].seconds * 1000,
     );
     const finalStats = computeTypingStats(
       typedRef.current,
@@ -82,12 +115,36 @@ export default function TypingGame() {
       elapsed,
       mistakesRef.current.size,
     );
+
+    // Los caracteres que fueron al sitio: es lo que `computeTypingStats` usa
+    // para las pulsaciones por minuto, y se recalcula igual para guardarlo.
+    const correctChars = Math.round(
+      finalStats.accuracy * typedRef.current.length,
+    );
+    const accuracy = Math.round(finalStats.accuracy * 100);
+    const rating = typingSessionStars(accuracy, true);
+    const nextUnlocked =
+      rating >= 2 ? clampTypingLevel(Math.max(unlocked, played + 1)) : unlocked;
+
+    saveTypingResult({
+      playedLevel: played,
+      sessionStars: rating,
+      wpm: finalStats.wpm,
+      accuracy,
+      correctChars,
+      playedAt: new Date().toISOString(),
+    });
+
     phaseRef.current = "results";
     setFinalElapsed(elapsed);
     setResult(finalStats);
+    setSessionStars(rating);
+    // Solo se anuncia lo que se acaba de abrir, no lo que ya estaba abierto.
+    setOpenedLevel(nextUnlocked > unlocked ? nextUnlocked : null);
+    setUnlocked(nextUnlocked);
     setPhase("results");
     playCelebrationSound();
-  }, []);
+  }, [unlocked]);
 
   // La cuenta atrás se detiene mientras haya algo superpuesto —la ayuda o la
   // confirmación de salida—: si siguiera corriendo, la ronda podría
@@ -120,7 +177,7 @@ export default function TypingGame() {
       setNow(current);
       if (
         current - startedAtRef.current >=
-        TYPING_DURATION_SECONDS * 1000
+        TYPING_LEVELS[levelRef.current].seconds * 1000
       ) {
         finishRound();
       }
@@ -129,7 +186,14 @@ export default function TypingGame() {
   }, [phase, paused, finishRound]);
 
   const prepareRound = () => {
-    const nextPassage = buildTypingPassage(language);
+    // El escalón es el elegido en el selector y se queda fijo hasta el final.
+    const startingLevel = selectedLevel;
+    levelRef.current = startingLevel;
+    setLevel(startingLevel);
+    setSessionStars(0);
+    setOpenedLevel(null);
+    setLockedHint(null);
+    const nextPassage = buildTypingPassage(language, startingLevel);
     passageRef.current = nextPassage;
     typedRef.current = "";
     mistakesRef.current = new Set();
@@ -198,15 +262,34 @@ export default function TypingGame() {
 
   const elapsed =
     phase === "playing" ? Math.max(0, now - startedAt) : finalElapsed;
+  const seconds = TYPING_LEVELS[level].seconds;
   const remaining =
     phase === "ready"
-      ? TYPING_DURATION_SECONDS
-      : Math.max(
-          0,
-          Math.ceil(
-            (TYPING_DURATION_SECONDS * 1000 - elapsed) / 1000,
-          ),
-        );
+      ? seconds
+      : Math.max(0, Math.ceil((seconds * 1000 - elapsed) / 1000));
+  /**
+   * Volver a la introducción, donde está el selector, igual que en los demás
+   * juegos de la escala: si se acaba de abrir un nivel, lo que se quiere es
+   * probarlo, y solo se puede elegir ahí.
+   */
+  const backToIntro = () => {
+    phaseRef.current = "intro";
+    setLockedHint(null);
+    setPhase("intro");
+  };
+
+  const pickLevel = (option: TypingLevel) => {
+    if (option > unlocked) {
+      // Un nivel cerrado no se elige: se explica cómo se abre.
+      setLockedHint(option);
+      playWrongSound();
+      return;
+    }
+    setLockedHint(null);
+    setSelectedLevel(option);
+    playTapSound();
+  };
+
   const liveStats = useMemo(
     () =>
       computeTypingStats(
@@ -232,6 +315,15 @@ export default function TypingGame() {
       onStart={prepareRound}
       confirmExit={phase === "playing"}
       onOverlayOpenChange={handleOverlayOpenChange}
+      beforeStart={
+        <LevelPicker
+          maxLevel={TYPING_MAX_LEVEL}
+          unlocked={unlocked}
+          selected={selectedLevel}
+          lockedHint={lockedHint}
+          onPick={(option) => pickLevel(clampTypingLevel(option))}
+        />
+      }
     >
       {(phase === "ready" || phase === "playing") && (
         <section className="mx-auto flex w-full max-w-4xl flex-col gap-2 pb-3 pt-2 sm:gap-4 sm:pb-5 sm:pt-5">
@@ -342,7 +434,14 @@ export default function TypingGame() {
             <p className="mt-2 text-lg font-semibold text-ink/60">
               {t("typingResultsText")}
             </p>
+            <p className="mt-1 text-base font-extrabold text-ink/70">
+              {t("typingLevelLabel", { level, seconds })}
+            </p>
           </div>
+
+          {/* Aparte de las pulsaciones y la precisión, que van en sus tarjetas. */}
+          <SessionStars stars={sessionStars} openedLevel={openedLevel} />
+
           <div className="grid w-full grid-cols-3 gap-3">
             <ResultStat tone="berry" label={t("typingWpm")} value={result.wpm} />
             <ResultStat
@@ -354,7 +453,7 @@ export default function TypingGame() {
           </div>
           <ResultActions
             playAgainLabel={t("typingPlayAgain")}
-            onPlayAgain={prepareRound}
+            onPlayAgain={backToIntro}
           />
         </section>
       )}

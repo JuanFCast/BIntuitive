@@ -578,6 +578,43 @@ export function saveVisualResult(
 }
 
 /**
+ * Guarda una sesión terminada de Type Rush.
+ *
+ * Solo en el modelo nuevo: no guardaba nada antes de tener escalones.
+ *
+ * La precisión y los caracteres acertados se quedan con el mejor valor. Las
+ * pulsaciones por minuto van emparejadas con su escalón, con la misma regla
+ * que el tiempo de Parejas: uno de un escalón mayor sustituye siempre, uno
+ * del mismo solo si es más rápido, y uno menor no lo toca nunca.
+ */
+export function saveTypingResult(
+  result: FinishedSession & {
+    wpm: number;
+    accuracy: number;
+    correctChars: number;
+  },
+): void {
+  const progress = getProgress();
+
+  recordSession(progress, "typing", result, (best) => {
+    const recordLevel = best.wpmLevel ?? 0;
+    const beatsRecord =
+      best.wpm === null ||
+      result.playedLevel > recordLevel ||
+      (result.playedLevel === recordLevel && result.wpm > best.wpm);
+
+    return {
+      wpm: beatsRecord ? result.wpm : best.wpm,
+      wpmLevel: beatsRecord ? result.playedLevel : best.wpmLevel,
+      accuracy: Math.max(best.accuracy ?? 0, result.accuracy),
+      correctChars: Math.max(best.correctChars ?? 0, result.correctChars),
+    };
+  });
+
+  saveProgress(progress);
+}
+
+/**
  * Guarda una sesión terminada de Colorear.
  *
  * Solo en el modelo nuevo, como Parejas: Colorear nace con la escala de

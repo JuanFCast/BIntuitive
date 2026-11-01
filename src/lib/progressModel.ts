@@ -58,8 +58,15 @@ export type BestByGame = {
     fastestLevel: number | null;
     fewestMistakes: number | null;
   };
+  /**
+   * `wpm` va emparejado con su escalón por lo mismo que el tiempo de Parejas
+   * y Agilidad visual: una tanda de palabras de tres letras se teclea mucho
+   * más rápido que una de frases con comas y mayúsculas, así que sin el nivel
+   * el escalón fácil dejaría un récord que el difícil no podría batir nunca.
+   */
   typing: {
     wpm: number | null;
+    wpmLevel: number | null;
     accuracy: number | null;
     correctChars: number | null;
   };
@@ -104,7 +111,12 @@ const BEST_DIRECTION: {
   // direcciones solo sirven a la proyección del puente, y Agilidad visual no
   // tiene campos de la versión 1 que proyectar.
   visual: { fastestMs: "lower", fastestLevel: "higher", fewestMistakes: "lower" },
-  typing: { wpm: "higher", accuracy: "higher", correctChars: "higher" },
+  typing: {
+    wpm: "higher",
+    wpmLevel: "higher",
+    accuracy: "higher",
+    correctChars: "higher",
+  },
   tracing: { accuracy: "higher", completed: "higher", attempts: "higher" },
   coloring: { accuracy: "higher", pictures: "higher" },
 };

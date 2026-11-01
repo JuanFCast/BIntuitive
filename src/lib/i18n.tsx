@@ -197,6 +197,7 @@ const messages = {
     visualResultsText: "You completed all {total} cards.",
     visualPlayAgain: "Play again",
     visualLevelLabel: "Level {level} · {symbols} symbols",
+    typingLevelLabel: "Level {level} · {seconds} seconds",
     memoryTitle: "Memory",
     memoryIntro: "Find the two cards that hide the same picture.",
     memoryHowTo:
@@ -517,6 +518,7 @@ const messages = {
     visualResultsText: "Completaste las {total} cartas.",
     visualPlayAgain: "Jugar otra vez",
     visualLevelLabel: "Nivel {level} · {symbols} símbolos",
+    typingLevelLabel: "Nivel {level} · {seconds} segundos",
     memoryTitle: "Parejas",
     memoryIntro: "Encuentra las dos fichas que esconden el mismo dibujo.",
     memoryHowTo:

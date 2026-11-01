@@ -269,16 +269,20 @@ src/lib/
   que explica cada categoría vive en la tabla `CATEGORY_INTRO`, indexada por `slug` y
   comprobada por TypeScript con `satisfies`: si se añade una categoría sin sus textos, el
   build falla. `GameShell`, `GameIntro` y `GameHelp` no saben qué categorías existen.
-- **La dificultad se elige, no se mueve sola.** Lo hacen Trazos, Parejas, Colorear, Agilidad
-  visual, Word Scramble y la sopa de letras; de los juegos independientes solo falta Type Rush.
-  **Todos tienen cinco escalones**, y no menos: el modelo guarda hasta 5 y `unlockedAfterSession`
-  cuenta hasta 5, así que un juego de tres dejaría el desbloqueo topado a mitad del modelo. Los
-  juegos que no daban para cinco por contenido **crecen cambiando de mecánica**, como ya hacía
-  Colorear: Agilidad visual sube de 4 a 12 símbolos y luego gira y reescala —reconocer una forma
-  no es reconocer un dibujo—; Word Scramble usa los tres tramos de longitud del banco y después
-  retira la pista escrita y añade letras que no son de la palabra; la sopa llena más el mismo
-  tablero —diez columnas sigue siendo el máximo— y al final enseña una palabra cada vez. Subir el
-  tamaño cuando ya no da más es lo que **no** hay que hacer.
+- **La dificultad se elige, no se mueve sola.** Lo hacen **los siete juegos independientes**, sin
+  excepción. **Todos tienen cinco escalones**, y no menos: el modelo guarda hasta 5 y
+  `unlockedAfterSession` cuenta hasta 5, así que un juego de tres dejaría el desbloqueo topado a
+  mitad del modelo. Los juegos que no daban para cinco por contenido **crecen cambiando de
+  mecánica**, como ya hacía Colorear: Agilidad visual sube de 4 a 12 símbolos y luego gira y
+  reescala —reconocer una forma no es reconocer un dibujo—; Word Scramble usa los tres tramos de
+  longitud del banco y después retira la pista escrita y añade letras que no son de la palabra; la
+  sopa llena más el mismo tablero —diez columnas sigue siendo el máximo— y al final enseña una
+  palabra cada vez; Type Rush empieza por palabras sueltas en minúscula y va añadiendo teclas
+  —mayúsculas y signos— antes que longitud. Subir el tamaño cuando ya no da más es lo que **no**
+  hay que hacer.
+  **La duración solo cuenta como dificultad en Type Rush**, y es la única excepción: lo que ahí se
+  mide son pulsaciones por minuto y sostener la precisión es parte de la destreza. En un juego de
+  mirar o de buscar, una sesión más larga solo cansa.
   El selector de los cinco escalones es **uno solo**, `LevelPicker`, y cada
   juego lo coloca en su introducción por la prop `beforeStart` de `GameShell` —que **no** va
   dentro de `intro` a propósito: `intro` es lo que la ayuda vuelve a enseñar encima de una
@@ -452,9 +456,9 @@ y la carpeta `~/.impeccable`.
 
 - **Progress solo enseña lo que ya está guardado.** `/progress` lee `getProgress()` y no
   persiste nada nuevo: resumen, nivel por actividad, mejores marcas y las últimas sesiones.
-  Type Rush es el único que no guarda progreso todavía, así que aparece sin métricas, igual que
-  una actividad sin jugar. Añadir una métrica a esa pantalla empieza por guardarla, no al revés:
-  Agilidad visual empezó a aparecer ahí el día que empezó a guardar, no antes.
+  Ya no hay ninguna actividad sin métricas: los siete juegos independientes guardan. Añadir una
+  métrica a esa pantalla empieza por guardarla, no al revés —Agilidad visual y Type Rush
+  empezaron a aparecer ahí el día que empezaron a guardar, no antes—.
 - **`getProgress()` devuelve siempre un objeto nuevo.** `saveSession` y las dos de palabras
   escriben sobre lo que devuelve, así que compartir una constante vacía la ensuciaría en la
   primera partida de un dispositivo sin datos.
@@ -519,7 +523,8 @@ y la carpeta `~/.impeccable`.
   despliegue. Guardar un 3 lo deja en lo más alto que el juego de entonces sabía decir.
 - `storage.ts` modela el progreso de **categorías** (`levelByCategory`), el de Word Scramble
   (`wordScramble`), el de Word Search (`wordSearch`) y el de Trazos (`tracing`), cada uno en su
-  propio campo opcional y sin compartir datos. `typing` no persiste nada todavía. Parejas
+  propio campo opcional y sin compartir datos. `visual` y `typing` nacieron ya en el modelo nuevo
+  y **solo** escriben ahí: no tienen campos de la versión 1 ni puente al que dar de comer. Parejas
   (`memory`) sí, pero **solo en el modelo nuevo**: no guardaba nada antes, así que no tiene
   campos de la versión 1 ni puente. Su mejor tiempo se guarda con el escalón en que se hizo
   (`fastestLevel`): tres parejas se terminan en un tercio del tiempo que ocho, y sin el nivel
@@ -535,11 +540,12 @@ y la carpeta `~/.impeccable`.
   ausente en datos ya guardados.
 - **El progreso tiene dos modelos vivos, y es temporal.** `Progress` guarda a la vez los campos
   de la versión 1 —`levelByCategory`, `wordScramble`, `wordSearch`, `tracing`— y el modelo nuevo
-  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Siete
-  juegos siguen escribiendo **solo** en los campos de la versión 1; **Trazos ya escribe en los
-  dos a la vez**, con exactamente los mismos totales acumulados, que es lo que impide que la
-  proyección le sume una sesión dos veces o le duplique ejercicios; y **Parejas escribe solo en
-  el nuevo**, porque antes no guardaba nada. `projectLegacyProgress`
+  `byGrade`, con la dificultad 1-5, el desbloqueo y las marcas tipadas de cada actividad. Quién
+  escribe dónde, hoy: **las categorías de preguntas**, solo en los campos de la versión 1;
+  **Trazos, Word Scramble y la sopa**, en los dos a la vez y con exactamente la misma marca, que
+  es lo que impide que la proyección le sume una sesión dos veces o discrepe consigo misma; y
+  **Parejas, Colorear, Agilidad visual y Type Rush**, solo en el nuevo, porque nacieron después y
+  no tienen campos antiguos que mantener. `projectLegacyProgress`
   proyecta lo antiguo sobre `byGrade` en **cada lectura**, no una vez, que es lo que impide que
   los dos modelos discrepen. La dirección es siempre 1 → 2 y un dato antiguo **nunca** rebaja uno nuevo:
   las marcas se juntan por su mejor valor, el desbloqueo y las estrellas solo suben, y lo que el

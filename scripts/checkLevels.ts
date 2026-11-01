@@ -14,11 +14,22 @@
 import {
   getProgress,
   getUnassignedGameProgress,
+  saveTypingResult,
   saveVisualResult,
   saveWordScrambleResult,
   saveWordSearchResult,
   saveTracingResult,
 } from "@/lib/storage";
+import {
+  buildTypingPassage,
+  clampTypingLevel,
+  getTypingBank,
+  typingSessionStars,
+  TYPING_CHARS_PER_SECOND,
+  TYPING_LEVELS,
+  TYPING_MAX_LEVEL,
+  type TypingLevel,
+} from "@/lib/typingGame";
 import {
   clampWordSearchLevel,
   createRng,
@@ -582,6 +593,140 @@ console.log("\nWord Search · el espejo no degrada a nadie al revertir");
     "el campo de la versión 1 se recorta a su propio tope",
     stored.wordSearch.level === WORD_SEARCH_LEGACY_MAX_LEVEL,
     `${stored.wordSearch.level}`,
+  );
+}
+
+/* ==========================================================================
+ * Type Rush
+ * ======================================================================= */
+
+function typing() {
+  return getUnassignedGameProgress(getProgress(), "typing");
+}
+
+console.log("\nType Rush · la tabla de escalones");
+{
+  const sources = LEVELS.map((level) => TYPING_LEVELS[level].source);
+  const seconds = LEVELS.map((level) => TYPING_LEVELS[level].seconds);
+
+  check("cinco escalones", TYPING_MAX_LEVEL === 5);
+  check(
+    "palabras, palabras, frases cortas, frases, frases",
+    sources.join(",") ===
+      "shortWords,longWords,shortPhrases,phrases,phrases",
+    sources.join(","),
+  );
+  check("duración 20, 25, 30, 30, 45", seconds.join(",") === "20,25,30,30,45", seconds.join(","));
+  check(
+    "la sesión nunca se acorta al subir",
+    seconds.every((value, index) => index === 0 || value >= seconds[index - 1]),
+  );
+  check(
+    "el cuarto es el que introduce mayúsculas y signos, no la duración",
+    sources[3] === "phrases" && sources[2] !== "phrases" && seconds[3] === seconds[2],
+  );
+  check(
+    "el quinto es el mismo texto con más tiempo",
+    sources[4] === sources[3] && seconds[4] > seconds[3],
+  );
+  check("el escalón se recorta al rango del juego", clampTypingLevel(9) === 5);
+}
+
+console.log("\nType Rush · los tres primeros escalones son solo letras");
+{
+  for (const language of ["en", "es"] as const) {
+    for (const level of [1, 2, 3] as const) {
+      const entries = getTypingBank(language, level);
+      check(
+        `${language} nivel ${level}: nada en mayúscula`,
+        entries.every((entry) => entry === entry.toLocaleLowerCase(language)),
+      );
+      check(
+        `${language} nivel ${level}: ni un signo de puntuación`,
+        entries.every((entry) => !/[.,;:!?¡¿"'()]/.test(entry)),
+      );
+    }
+    // Y el cuarto es justo lo contrario, que es lo que lo hace más difícil.
+    const long = getTypingBank(language, 4);
+    check(
+      `${language}: el cuarto sí trae mayúsculas y puntuación`,
+      long.some((entry) => /[A-ZÁÉÍÓÚÑ]/.test(entry)) &&
+        long.some((entry) => /[.,]/.test(entry)),
+    );
+  }
+}
+
+console.log("\nType Rush · el texto nunca se acaba antes que el reloj");
+{
+  for (const language of ["en", "es"] as const) {
+    for (const level of LEVELS) {
+      const passage = buildTypingPassage(language, level);
+      const wanted = TYPING_LEVELS[level].seconds * TYPING_CHARS_PER_SECOND;
+      check(
+        `${language} nivel ${level}: el texto da para los ${TYPING_LEVELS[level].seconds} s`,
+        passage.length >= wanted,
+        `${passage.length} de ${wanted}`,
+      );
+    }
+  }
+}
+
+console.log("\nType Rush · estrellas de la sesión");
+{
+  check("sin terminar → 0", typingSessionStars(100, false) === 0);
+  check("74 % → 1", typingSessionStars(74, true) === 1);
+  check("75 % justo → 2", typingSessionStars(75, true) === 2);
+  check("90 % justo → 3", typingSessionStars(90, true) === 3);
+}
+
+function playTyping(
+  level: TypingLevel,
+  stars: Stars,
+  extra: { wpm?: number; accuracy?: number; correctChars?: number } = {},
+): void {
+  saveTypingResult({
+    playedLevel: level,
+    sessionStars: stars,
+    wpm: extra.wpm ?? 20,
+    accuracy: extra.accuracy ?? 85,
+    correctChars: extra.correctChars ?? 120,
+    playedAt: "2026-10-31T14:00:00.000Z",
+  });
+}
+
+console.log("\nType Rush · las pulsaciones van emparejadas con su escalón");
+{
+  store.clear();
+  playTyping(4, 3, { wpm: 25 });
+  check("la primera marca es el récord", typing().best.wpm === 25);
+  check("y guarda en qué escalón se hizo", typing().best.wpmLevel === 4);
+
+  playTyping(1, 3, { wpm: 80 });
+  check(
+    "ochenta pulsaciones en palabras de tres letras no baten el récord de frases",
+    typing().best.wpm === 25,
+    `${typing().best.wpm}`,
+  );
+
+  playTyping(5, 3, { wpm: 18 });
+  check(
+    "pero un escalón mayor sustituye siempre, aunque sea más lento",
+    typing().best.wpm === 18 && typing().best.wpmLevel === 5,
+  );
+}
+
+console.log("\nType Rush · desbloqueo");
+{
+  store.clear();
+  playTyping(1, 1);
+  check("una estrella no abre nada", typing().unlocked === 1);
+  playTyping(1, 2);
+  check("dos estrellas abren el siguiente", typing().unlocked === 2);
+  playTyping(1, 1);
+  check("y una mala racha no vuelve a cerrarlo", typing().unlocked === 2);
+  check(
+    "la precisión y los caracteres se quedan con el mejor valor",
+    typing().best.accuracy === 85 && typing().best.correctChars === 120,
   );
 }
 
