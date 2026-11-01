@@ -110,11 +110,15 @@ export const COLORING_COLORS: Record<
  *
  * La mano también pide más al subir, pero sin castigar nunca salirse: la
  * pintura sigue recortada a la zona en todos los escalones. Lo que cambia es
- * cuánto hay que cubrir antes de que la zona se rellene sola
- * (`coverageToFill`) y, del 4 en adelante, que el pincel grueso desaparece:
- * con él dos pasadas tapaban casi cualquier zona y el escalón alto se
- * terminaba tan deprisa como el primero. El 1 y el 2 se quedan como estaban,
- * porque son los del niño de tres años con el dedo.
+ * que del 4 en adelante el pincel grueso desaparece: con él dos pasadas
+ * tapaban casi cualquier zona y el escalón alto se terminaba tan deprisa como
+ * el primero. El 1 y el 2 se quedan con los tres pinceles, porque son los del
+ * niño de tres años con el dedo.
+ *
+ * `coverageToFill` **ya no es un escalón**: es 1 en los cinco, porque la zona
+ * se pinta entera a mano y no se rellena sola. Sigue por nivel y no como una
+ * constante suelta para que ablandar los escalones de abajo, si alguna vez
+ * hiciera falta, sea cambiar un número de esta tabla.
  */
 export const COLORING_LEVELS: Record<
   ColoringLevel,
@@ -129,31 +133,31 @@ export const COLORING_LEVELS: Record<
     mode: "spoken",
     paletteSize: 3,
     brushes: ["fino", "medio", "grueso"],
-    coverageToFill: 0.7,
+    coverageToFill: 1,
   },
   2: {
     mode: "spoken",
     paletteSize: 4,
     brushes: ["fino", "medio", "grueso"],
-    coverageToFill: 0.7,
+    coverageToFill: 1,
   },
   3: {
     mode: "key",
     paletteSize: 4,
     brushes: ["fino", "medio", "grueso"],
-    coverageToFill: 0.75,
+    coverageToFill: 1,
   },
   4: {
     mode: "key",
     paletteSize: 5,
     brushes: ["fino", "medio"],
-    coverageToFill: 0.8,
+    coverageToFill: 1,
   },
   5: {
     mode: "key",
     paletteSize: 6,
     brushes: ["fino", "medio"],
-    coverageToFill: 0.85,
+    coverageToFill: 1,
   },
 };
 
@@ -217,8 +221,13 @@ export type ColoringPoint = { x: number; y: number };
  * movimiento del dedo; esto es geometría y no lee nada: se siembra la zona de
  * puntos una vez por lámina y luego cada tramo de pincel marca los que le
  * caen debajo. Con paso 2 la zona más pequeña del banco sigue teniendo
- * decenas de puntos, que es resolución de sobra para umbrales de entre el
- * 70 % y el 85 %.
+ * decenas de puntos.
+ *
+ * El paso es además lo que hace **alcanzable** pedir el 100 %: los puntos van
+ * en el centro de celdas de 2, así que el último trozo sin pintar nunca es más
+ * fino que eso y el pincel fino (radio 3,5) lo tapa de sobra. Bajar el paso
+ * mediría más fino, pero dejaría puntos en rendijas a las que no llega ningún
+ * pincel y habría zonas imposibles de terminar.
  */
 export const COLORING_SAMPLE_STEP = 2;
 
@@ -298,13 +307,23 @@ export function coloringCoverage(covered: number, total: number): number {
 }
 
 /**
- * Si la zona ya está cubierta de sobra para su escalón y toca rellenarla
- * entera.
+ * Si la zona ya está cubierta entera.
  *
- * El umbral (`coverageToFill`) va del 70 % al 85 %: por debajo se vería a
- * medio hacer, y el 100 % obligaría a repasar los rincones del contorno con el
- * pincel fino, que mide el pulso y no el color. Al llegar al umbral la zona se
- * rellena entera y sola, así que el dibujo terminado siempre queda limpio.
+ * **Se pinta todo a mano.** El umbral es el 100 % en los cinco escalones: una
+ * zona no se da por hecha hasta que no queda un solo punto de medida sin
+ * tapar. Antes se rellenaba sola al llegar al 70-85 % y la última parte la
+ * ponía el juego; eso ahorraba repasar los rincones, pero también quitaba de
+ * las manos justo el final de cada zona, que es la parte que se siente como
+ * terminar algo.
+ *
+ * Llegar al 100 % no obliga a un pulso fino: la pintura va recortada a la
+ * zona, así que el dedo puede barrer por encima del contorno y de las zonas
+ * vecinas sin estropear nada, y el pincel tapa todo lo que le cae debajo. Lo
+ * que no se puede es dejarse media zona sin tocar.
+ *
+ * El umbral sigue viviendo en la tabla de escalones, y no escrito aquí, para
+ * que volver a ablandarlo en los escalones de abajo sea cambiar un número y no
+ * tocar esta regla.
  */
 export function coloringRegionIsFull(
   covered: number,
@@ -800,7 +819,10 @@ export const COLORING_PICTURES: ColoringPicture[] = [
           { x: 49.4, y: 62.3 },
           { x: 75.2, y: 62.3 },
         ],
-        colors: ["rojo", "amarillo", "azul"],
+        // Una rueda no es azul ni amarilla. La paleta no tiene negro —taparía
+        // el contorno— así que el café es el tono creíble que queda; el rojo
+        // se admite porque un tren de juguete sí las lleva pintadas.
+        colors: ["cafe", "rojo"],
       },
       {
         id: "via",
@@ -886,7 +908,11 @@ export const COLORING_PICTURES: ColoringPicture[] = [
           { x: 23.2, y: 67 },
           { x: 76, y: 66.6 },
         ],
-        colors: ["rojo", "amarillo", "azul", "naranja"],
+        // Las de un camión son neumáticos, no ruedas de juguete: solo café,
+        // que es lo más oscuro de la paleta. Va antes que `parte-de-abajo`,
+        // que también lo admite, así que el reparto le da el café a la rueda
+        // y a la otra zona le queda amarillo o rojo.
+        colors: ["cafe"],
       },
       {
         id: "parte-de-abajo",

@@ -118,6 +118,75 @@ console.log("\nLa tabla de escalones es la acordada");
   );
 }
 
+/*
+ * Hay zonas cuyo color no es cuestión de gusto: las hojas son verdes, el mar
+ * es azul y una rueda no es amarilla. El juego solo puede pintar de lo que
+ * diga `region.colors`, así que basta con comprobar esas listas para que un
+ * dibujo no salga incoherente. Las zonas que **sí** admiten gusto —la pared de
+ * una casa, el cuerpo de un cohete— no están aquí a propósito: ahí elegir es
+ * justo lo que se practica.
+ */
+const COHERENT_COLORS: Record<string, readonly ColorId[]> = {
+  "arbol/copa": ["verde"],
+  "arbol/tronco": ["cafe"],
+  "flor/tallo": ["verde"],
+  "flor/hoja": ["verde"],
+  "barco/mar": ["azul"],
+  "cohete/ventana": ["azul"],
+  "camion/ventana": ["azul"],
+  "casa-grande/ventanas": ["azul"],
+  "mariposa/cuerpo": ["cafe"],
+  "tren/via": ["cafe"],
+  // Una rueda es oscura. La paleta no tiene negro —taparía el contorno—, así
+  // que el café es lo que queda; el tren admite rojo porque uno de juguete sí
+  // las lleva pintadas, un camión no.
+  "tren/ruedas": ["cafe", "rojo"],
+  "camion/ruedas": ["cafe"],
+  "castillo/puerta": ["cafe"],
+  "arcoiris/suelo": ["verde"],
+  "castillo/suelo": ["verde"],
+};
+
+console.log("\nLas zonas con un color evidente solo admiten ese color");
+{
+  for (const [where, allowed] of Object.entries(COHERENT_COLORS)) {
+    const [pictureId, regionId] = where.split("/");
+    const picture = COLORING_PICTURES.find((item) => item.id === pictureId);
+    const region = picture?.regions.find((item) => item.id === regionId);
+
+    if (!region) {
+      // La zona se renombró o se fue: eso también hay que saberlo, porque la
+      // regla de coherencia habría dejado de comprobar nada en silencio.
+      check(`${where} existe`, false, "no está en el banco");
+      continue;
+    }
+
+    check(
+      `${where} solo puede ser ${allowed.join(" o ")}`,
+      region.colors.every((colorId) => allowed.includes(colorId)),
+      region.colors.join(","),
+    );
+  }
+}
+
+console.log("\nEl arcoíris sale en orden de arcoíris");
+{
+  const rainbow = COLORING_PICTURES.find((picture) => picture.id === "arcoiris");
+  const bands = (rainbow?.regions ?? []).filter((region) =>
+    region.id.startsWith("banda"),
+  );
+  check(
+    "cada banda tiene un solo color, que no se elige",
+    bands.every((region) => region.colors.length === 1),
+  );
+  check(
+    "y van de fuera hacia dentro como el arcoíris de verdad",
+    bands.map((region) => region.colors[0]).join(",") ===
+      ["rojo", "naranja", "amarillo", "verde"].join(","),
+    bands.map((region) => region.colors[0]).join(","),
+  );
+}
+
 console.log("\nCada escalón tiene láminas para una sesión entera");
 for (const level of LEVELS) {
   const pictures = picturesForLevel(level);
@@ -320,10 +389,14 @@ console.log("\nLa medida de lo pintado");
 
   check("la parte cubierta va de 0 a 1", coloringCoverage(35, 100) === 0.35);
   check("una zona a medias no se da por pintada", !coloringRegionIsFull(50, 100, 1));
-  check("cubierta de sobra sí", coloringRegionIsFull(70, 100, 1));
+  check("cubierta entera sí", coloringRegionIsFull(100, 100, 1));
   check(
-    "lo que basta en el escalón 1 no basta en el 5",
-    coloringRegionIsFull(70, 100, 1) && !coloringRegionIsFull(70, 100, 5),
+    "lo que vale en un escalón vale en todos: pintar entera no depende del nivel",
+    LEVELS.every(
+      (level) =>
+        coloringRegionIsFull(100, 100, level) &&
+        !coloringRegionIsFull(99, 100, level),
+    ),
   );
   check(
     "y una zona sin puntos de medida se cuenta cubierta, no imposible",
@@ -331,26 +404,34 @@ console.log("\nLa medida de lo pintado");
   );
 }
 
-console.log("\nLos escalones altos piden más a la mano");
+console.log("\nLa zona se pinta entera a mano");
 {
   const thresholds = LEVELS.map((level) => COLORING_LEVELS[level].coverageToFill);
   check(
-    "lo que hay que cubrir nunca baja al subir de nivel",
-    thresholds.every((value, index) => index === 0 || value >= thresholds[index - 1]),
-    thresholds.join(","),
-  );
-  // El 100 % mediría el pulso, que no es lo que este juego mide.
-  check(
-    "y nunca pide la zona perfecta",
-    thresholds.every((value) => value >= 0.7 && value <= 0.85),
+    "ningún escalón rellena la zona antes de tiempo: el umbral es el 100 %",
+    thresholds.every((value) => value === 1),
     thresholds.join(","),
   );
   check(
-    "el 1 y el 2 se quedan como estaban: tres grosores y el 70 %",
-    [1, 2].every(
+    "una zona a medias no se da por hecha, por muy cerca que esté",
+    LEVELS.every(
       (level) =>
-        coloringBrushesForLevel(level as ColoringLevel).length === 3 &&
-        COLORING_LEVELS[level as ColoringLevel].coverageToFill === 0.7,
+        !coloringRegionIsFull(99, 100, level) &&
+        !coloringRegionIsFull(85, 100, level),
+    ),
+  );
+  check(
+    "y se da por hecha justo al tapar el último punto",
+    LEVELS.every((level) => coloringRegionIsFull(100, 100, level)),
+  );
+}
+
+console.log("\nLos escalones altos piden más a la mano");
+{
+  check(
+    "el 1 y el 2 se quedan con los tres grosores: son los del dedo de tres años",
+    [1, 2].every(
+      (level) => coloringBrushesForLevel(level as ColoringLevel).length === 3,
     ),
   );
   check(

@@ -196,6 +196,12 @@ src/lib/
   escalón no elige colores sino cuántas fichas hay (`paletteSize`): si la lámina usa menos,
   se completan con colores que no pinta nadie, y nunca pasan de seis
   (`COLORING_MAX_SWATCHES`), que son las que caben en una fila de 375 px.
+  Las zonas cuyo color **no es cuestión de gusto** están escritas en `COHERENT_COLORS`, en
+  `check:coloring`: las hojas verdes, el mar azul, las ventanas azules, la vía y el cuerpo de
+  la mariposa café, el arcoíris en su orden. Ahí entra lo que la realidad decide, no lo que
+  elige quien juega; una pared o el cuerpo de un cohete **no** van en esa tabla, porque ahí
+  elegir es justo lo que se practica. Si una zona de esas se renombra, la comprobación falla
+  en vez de dejar de mirar en silencio.
 - **En Colorear se pinta arrastrando, con el grosor que se elija.** Un toque que
   rellenaba la zona entera convertía colorear en señalar, que es lo que ya hacen las
   lecciones de preguntas: ahora la mano trabaja, como en Trazos pero sin la exigencia de
@@ -203,14 +209,20 @@ src/lib/
   deslizador pide un gesto fino y no se puede nombrar en voz alta ni leer con un lector de
   pantalla. **La pintura se recorta a la zona**, así que salirse no estropea el dibujo —es
   lo que permite dárselo a un niño de tres años con el dedo— y el color que no toca
-  sencillamente no agarra: equivocarse nunca deja marca. Una zona se rellena sola al
-  llegar al `coverageToFill` de su escalón, no al quedar perfecta; pedir el 100 % obligaría a
-  repasar los rincones con el pincel fino y aquí se practica el color, no el pulso. **Los
-  escalones altos piden más a la mano sin castigar salirse**: el umbral sube del 70 % (1 y 2,
-  los del niño de tres años, intactos) al 75 %, 80 % y 85 %, y del 4 en adelante no hay pincel
-  grueso, que con dos pasadas tapaba casi cualquier zona. Ambos viven en `COLORING_LEVELS`
-  junto a la paleta, y `npm run check:coloring` impide que el umbral baje al subir, que llegue
-  a pedir la zona perfecta o que un escalón deje fuera el grosor de por defecto. La
+  sencillamente no agarra: equivocarse nunca deja marca. **La zona se pinta entera a mano**:
+  `coverageToFill` es 1 en los cinco escalones y una zona no se da por hecha hasta que no
+  queda un punto de medida sin tapar. Hubo una época en que se rellenaba sola al llegar al
+  70-85 %, y eso ahorraba repasar rincones pero le quitaba de las manos el final de cada
+  zona, que es la parte que se siente como terminar algo. Llegar al 100 % **no** pide pulso
+  fino: la pintura va recortada, así que el dedo barre por encima del contorno y de las zonas
+  vecinas sin estropear nada; lo que lo hace alcanzable es que los puntos de medida van en el
+  centro de celdas de 2 (`COLORING_SAMPLE_STEP`), así que el último trozo sin pintar nunca es
+  más fino que el pincel más fino. **Bajar ese paso dejaría zonas imposibles de terminar.**
+  El umbral sigue viviendo por nivel en `COLORING_LEVELS`, aunque hoy valga lo mismo en los
+  cinco, para que ablandar los de abajo sea cambiar un número. Lo que sí cambia al subir es
+  que del 4 en adelante no hay pincel grueso, que con dos pasadas tapaba casi cualquier zona.
+  `npm run check:coloring` impide que un escalón vuelva a rellenar solo, que dé una zona a
+  medias por hecha o que deje fuera el grosor de por defecto. La
   precisión cuenta **decisiones** —esta zona de este color, una sola vez por pareja
   (`coloringAttemptKey`)—, no pasadas: cobrar cada pasada haría que pintar bien con el
   pincel fino puntuara peor que pintar bien con el grueso. Lo pintado se mide con una
