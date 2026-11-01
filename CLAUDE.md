@@ -71,7 +71,7 @@ src/app/
     <id>/page.tsx       Server component: solo metadata + render del cliente
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
-src/components/         BrandMark, MuteButton, HexagonCard, AppShell, AppMenu, GameShell,
+src/components/         BrandMark, MuteButton, HexagonCard, HexagonRow, AppShell, AppMenu, GameShell,
                         AuthShell, AuthField, LanguageSwitch, ComingSoonNotice,
                         GameIntro, GameHelp, ResultActions, ResultStat, Confetti,
                         ConfirmDialog...
@@ -94,6 +94,8 @@ src/lib/
   gameTimers.ts         useGameTimers: esperas cortas congelables (destellos, pausas, transiciones)
   speakAfterSound.ts    useSpeakAfterSound: decir una palabra tras el sonido de acierto
   documentTitle.ts      useDocumentTitle: el título de la pestaña en el idioma elegido
+  favorites.ts          Qué hexágonos están marcados como favoritos en este dispositivo
+  exploreView.ts        Si Explore se enseña como panal o como lista
   preferences.ts        useMuted / useTextSize: lectura reactiva de las preferencias
   profile.ts            Nombre, avatar y fecha de inicio de quien juega en este dispositivo
   routes.ts             Las direcciones de la aplicación, escritas una sola vez
@@ -234,6 +236,26 @@ src/lib/
   favicon; el de 192 vive en `public/`. Ninguno se declara `maskable`: el logo llega cerca del
   borde y una máscara circular le cortaría el birrete. iOS no lee `display` del manifest, así
   que el modo standalone en Safari depende de las metas `appleWebApp` de `layout.tsx`.
+- **Explore tiene dos vistas y un filtro, y el panal sigue sin tocarse.** `HomeClient` enseña las
+  mismas fichas como panal o como lista (`HexagonRow`), y la elección se recuerda en su propia
+  clave (`bintuitive-explore-view`, en `exploreView.ts`). El panal es el valor por defecto porque
+  es la identidad de BIntuitive; la lista existe para lo que el panal hace peor, que es leer
+  nombres de corrido y encontrar rápido, y por eso ahí sí cabe la descripción.
+  **La estrella de favorito solo está en la lista.** El panal enseña cuáles lo son pero no deja
+  cambiarlo: son diez celdas grandes para que un niño de tres años acierte el toque, y meterle a
+  cada una un segundo objetivo pequeño al lado trabaja justo en contra; además marcar favoritos
+  es cosa del adulto. El enlace y la estrella son **hermanos**, nunca uno dentro de otro.
+  Los favoritos viven en `favorites.ts` con clave propia (`bintuitive-favorites`) y guardan
+  **ids**: el panal se reordena y los nombres se traducen, pero el id es lo único estable, y uno
+  que ya no exista se descarta al leer. `clearProgress()` no se los lleva, igual que no se lleva
+  el idioma ni el perfil.
+  El **filtro** de favoritos no se recuerda aunque la vista sí: volver a abrir la aplicación y
+  encontrar solo tres fichas, sin saber por qué, es la mejor forma de pensar que se ha perdido el
+  resto. Y el botón del filtro solo aparece cuando hay algún favorito, porque un filtro que no
+  puede filtrar nada es un botón que lleva a una pantalla vacía.
+  Con el filtro puesto el panal se calcula **para las fichas que se enseñan**, no para diez:
+  `honeycombLayout` ya sabe repartir cualquier cantidad y es a él a quien hay que preguntarle, no
+  a una rejilla escrita a mano.
 - **El panal es Explore**: la barra inferior tiene exactamente tres destinos (Home, Progress,
   Profile) y Home es el panal, servido desde `/explore`. Un enlace que dentro de la
   aplicación signifique "volver al principio" apunta a `EXPLORE` de `src/lib/routes.ts`, nunca
@@ -513,8 +535,9 @@ y la carpeta `~/.impeccable`.
   sobre él, con una tabla de textos por `variant` (`lesson` y `game`) y un único destino, el
   panal. No crear un modal nuevo para la siguiente confirmación.
 - **Borrar progreso**: `clearProgress()` quita solo `bintuitive-progress`. Nunca
-  `localStorage.clear()`: las preferencias y el perfil viven en sus propias claves y no se
-  tocan. Quien borra su progreso no pide cambiar de idioma ni dejar de llamarse como se llama.
+  `localStorage.clear()`: las preferencias, el perfil, los favoritos y la vista de Explore viven
+  en sus propias claves y no se tocan. Quien borra su progreso no pide cambiar de idioma, ni
+  dejar de llamarse como se llama, ni perder los juegos que tenía a mano.
 - **El espejo de la versión 1 se recorta al tope que ese campo siempre tuvo.** Word Scramble y la
   sopa guardan en los dos modelos, y su `level` antiguo nunca pasa de 3
   (`WORD_SCRAMBLE_LEGACY_MAX_LEVEL`, `WORD_SEARCH_LEGACY_MAX_LEVEL`): el código anterior da por
