@@ -27,7 +27,6 @@ import {
   COLORING_FILL_MS,
   COLORING_MAX_LEVEL,
   COLORING_MIN_STEP,
-  COLORING_PICTURES_PER_SESSION,
   type ColorId,
   type ColoringBrushId,
   type ColoringLevel,
@@ -72,6 +71,45 @@ const OUTLINE_WIDTH = 1.6;
 
 /** El tope del lienzo: por encima pesa cuatro veces más y no se nota. */
 const MAX_PIXEL_RATIO = 2;
+
+/**
+ * Todo se dibuja en el lienzo de 100 × 100 del dibujo, no en píxeles: así los
+ * caminos, los radios del pincel y los puntos de medida hablan en la misma
+ * unidad y el lienzo puede tener la resolución que quiera.
+ */
+const scaleToPicture = (
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+) => {
+  const scale = canvas.width / 100;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+};
+
+const strokeBrush = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
+  const hex = COLORING_COLORS[stroke.colorId].hex;
+  ctx.strokeStyle = hex;
+  ctx.fillStyle = hex;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = stroke.radius * 2;
+
+  const [first, ...rest] = stroke.points;
+  if (!first) return;
+
+  // Un toque sin arrastre deja una mancha redonda: un segmento de longitud
+  // cero no dibuja nada por mucho grosor que lleve.
+  if (rest.length === 0) {
+    ctx.beginPath();
+    ctx.arc(first.x, first.y, stroke.radius, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(first.x, first.y);
+  for (const point of rest) ctx.lineTo(point.x, point.y);
+  ctx.stroke();
+};
 
 export default function ColoringGame() {
   const { language, t } = useLanguage();
@@ -149,69 +187,45 @@ export default function ColoringGame() {
 
   /* ───────────────────── Pintar el lienzo ────────────────────── */
 
-  /**
-   * Todo se dibuja en el lienzo de 100 × 100 del dibujo, no en píxeles: así los
-   * caminos, los radios del pincel y los puntos de medida hablan en la misma
-   * unidad y el lienzo puede tener la resolución que quiera.
+  /*
+   * Los dos ayudantes que leen refs van en `useCallback` con dependencias
+   * vacías, y no como funciones sueltas del cuerpo del componente: toda su
+   * verdad sale de `pathsRef`, `filledRef` y `strokesRef`, así que su identidad
+   * puede ser estable y `redraw` puede declararlos de verdad en vez de
+   * declararse sin dependencias. Los otros dos no tocan nada del componente y
+   * viven a nivel de módulo.
    */
-  const scaleToPicture = (
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-  ) => {
-    const scale = canvas.width / 100;
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  };
 
   /** El papel de una zona —o su color, si ya está lista— y su contorno. */
-  const paintRegion = (ctx: CanvasRenderingContext2D, index: number) => {
-    const path = pathsRef.current[index];
-    if (!path) return;
-    const done = filledRef.current.get(index);
-    ctx.fillStyle = done ? COLORING_COLORS[done].hex : PAPER;
-    ctx.fill(path);
-    ctx.strokeStyle = OUTLINE;
-    ctx.lineWidth = OUTLINE_WIDTH;
-    ctx.lineJoin = "round";
-    ctx.stroke(path);
-  };
-
-  const strokeBrush = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
-    const hex = COLORING_COLORS[stroke.colorId].hex;
-    ctx.strokeStyle = hex;
-    ctx.fillStyle = hex;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = stroke.radius * 2;
-
-    const [first, ...rest] = stroke.points;
-    if (!first) return;
-
-    // Un toque sin arrastre deja una mancha redonda: un segmento de longitud
-    // cero no dibuja nada por mucho grosor que lleve.
-    if (rest.length === 0) {
-      ctx.beginPath();
-      ctx.arc(first.x, first.y, stroke.radius, 0, Math.PI * 2);
-      ctx.fill();
-      return;
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(first.x, first.y);
-    for (const point of rest) ctx.lineTo(point.x, point.y);
-    ctx.stroke();
-  };
+  const paintRegion = useCallback(
+    (ctx: CanvasRenderingContext2D, index: number) => {
+      const path = pathsRef.current[index];
+      if (!path) return;
+      const done = filledRef.current.get(index);
+      ctx.fillStyle = done ? COLORING_COLORS[done].hex : PAPER;
+      ctx.fill(path);
+      ctx.strokeStyle = OUTLINE;
+      ctx.lineWidth = OUTLINE_WIDTH;
+      ctx.lineJoin = "round";
+      ctx.stroke(path);
+    },
+    [],
+  );
 
   /** Las pasadas que haya dentro de una zona, recortadas a ella. */
-  const paintStrokes = (ctx: CanvasRenderingContext2D, index: number) => {
-    const path = pathsRef.current[index];
-    if (!path || filledRef.current.has(index)) return;
-    ctx.save();
-    ctx.clip(path);
-    for (const stroke of strokesRef.current) {
-      if (stroke.regionIndex === index) strokeBrush(ctx, stroke);
-    }
-    ctx.restore();
-  };
+  const paintStrokes = useCallback(
+    (ctx: CanvasRenderingContext2D, index: number) => {
+      const path = pathsRef.current[index];
+      if (!path || filledRef.current.has(index)) return;
+      ctx.save();
+      ctx.clip(path);
+      for (const stroke of strokesRef.current) {
+        if (stroke.regionIndex === index) strokeBrush(ctx, stroke);
+      }
+      ctx.restore();
+    },
+    [],
+  );
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -228,7 +242,7 @@ export default function ColoringGame() {
       paintRegion(ctx, index);
       paintStrokes(ctx, index);
     }
-  }, []);
+  }, [paintRegion, paintStrokes]);
 
   /**
    * Un tramo de pincel, nada más, para que el trazo vaya al ritmo del dedo.

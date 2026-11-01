@@ -100,7 +100,13 @@ html.bintuitive-ios-booting.bintuitive-ios-ready::before {
 const IOS_CHROME_VIEWPORT_RECOVERY = String.raw`
 (function () {
   if (!/CriOS\//.test(navigator.userAgent)) return;
-  if (!/^\/(hexagons|progress|profile)\/?$/.test(location.pathname)) return;
+  // Las rutas principales, las que se abren desde fuera: la portada —que es
+  // por donde entra el icono instalado y el dominio—, el panal y las otras dos
+  // pestañas. "/hexagons" sigue en la lista porque es la dirección anterior del
+  // panal y hay quien la tiene guardada. "/explore" faltaba: el panal se mudó
+  // ahí y la lista se quedó nombrando solo su dirección vieja, así que la
+  // recuperación llevaba meses sin correr en la pantalla de entrada.
+  if (!/^\/(explore|hexagons|progress|profile)?\/?$/.test(location.pathname)) return;
 
   var guard = "bintuitive:ios-chrome-viewport-reload";
   var lastEntryKey = "bintuitive:ios-chrome-last-entry";

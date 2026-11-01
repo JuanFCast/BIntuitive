@@ -9,12 +9,22 @@ Next.js 15 App Router + React 19 + TypeScript + Tailwind CSS 4. Sin backend, sin
 analytics: todo el estado vive en `localStorage`. Producción en `bintuitive.aumcrsp.com` vía AWS
 CloudFront (el workflow de deploy vive fuera del repo).
 
-Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`,
+Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`, `npm run lint`,
 `npm run validate:content` (valida el contenido educativo), `npm run check:migration` (comprueba
 que actualizar la aplicación no le pierde el progreso a nadie), y `npm run check:tracing`,
 `npm run check:memory` y `npm run check:coloring` (las reglas de nivel, estrellas y desbloqueo de
-los tres juegos que usan la escala compartida). No hay linter configurado, y las únicas pruebas
-automáticas son esas cuatro: los seis comandos son la verificación.
+los tres juegos que usan la escala compartida). No hay pruebas unitarias: esos siete comandos son
+la verificación, y los cinco últimos son las únicas pruebas automáticas.
+
+**El linter es parte de la verificación, no un extra.** `eslint.config.mjs` extiende
+`next/core-web-vitals` y `next/typescript`, e **imports y variables sin usar son error, no
+aviso**: el proyecto vivió meses sin linter y eso dejó pasar dos carpetas de ruta vacías que
+sobrevivieron a su propio redirect y una superficie de juegos duplicada, nada de lo cual rompe el
+build, así que `tsc` no lo iba a encontrar nunca. El guion bajo (`_algo`) es la forma de decir
+"esto sobra a propósito". Ignora `.claude/` —las skills de diseño son herramienta, no código de
+BIntuitive— y lo generado (`.next/`, `.content-check/`). ESLint es la única dependencia de
+desarrollo que no es Next, React o Tailwind; la regla de "sin dependencias nuevas" sigue valiendo
+entera para lo que se envía al navegador.
 
 ## Arquitectura
 
@@ -82,6 +92,7 @@ src/lib/
   clockPause.ts         useClockPause: parar el reloj de un juego mientras la ayuda está abierta
   gameTimers.ts         useGameTimers: esperas cortas congelables (destellos, pausas, transiciones)
   speakAfterSound.ts    useSpeakAfterSound: decir una palabra tras el sonido de acierto
+  documentTitle.ts      useDocumentTitle: el título de la pestaña en el idioma elegido
   preferences.ts        useMuted / useTextSize: lectura reactiva de las preferencias
   profile.ts            Nombre, avatar y fecha de inicio de quien juega en este dispositivo
   routes.ts             Las direcciones de la aplicación, escritas una sola vez
@@ -96,6 +107,19 @@ src/lib/
   nuevos (no preguntas) el patrón real usado es distinto: los strings viven bilingües en
   `messages` de `i18n.tsx`, y los datos con nombre (símbolos, frases) usan
   `Record<Language, string>` o `Record<Language, string[]>` dentro de su lib.
+- **La metadata se sirve en inglés; el título de la pestaña sigue al idioma.** El idioma se
+  elige en el dispositivo y vive en `localStorage`, así que el servidor no puede saberlo: el
+  `title` y la `description` de cada ruta, el OG y el manifest van en inglés, que es el idioma
+  por defecto y el que tiene que ver quien comparte un enlace. La **descripción** se queda ahí y
+  no se traduce: se lee fuera de la aplicación, donde no hay idioma elegido. El **título** sí se
+  corrige en cliente con `useDocumentTitle`, porque es lo que se lee en el gestor de pestañas y
+  en el historial: jugar en español dejaba la pestaña diciendo "Coloring" mientras el juego decía
+  Colorear. Quien lo llama le pasa el nombre **ya traducido** que la pantalla tiene en la mano
+  —`GameShell` usa `intro.title` y cubre los siete juegos y la ruta de preguntas de una vez—, así
+  que no hay ninguna tabla de rutas que mantener. Lleva un `MutationObserver` y no una asignación
+  suelta a propósito: el `<title>` lo renderiza Next **dentro del `<body>`**, no en el head, y lo
+  vuelve a aplicar en cualquier re-render —abrir el menú de ajustes bastaba para devolver la
+  pestaña al inglés—. No sustituirlo por un `document.title =` a secas.
 - **Una opción nunca lleva escrita su respuesta**: por eso `QuestionOption.label` es opcional.
   Un "4" debajo de cuatro manzanas convierte "¿cuál grupo tiene más?" en leer cifras, y un
   "Verde" debajo del círculo verde convierte "toca el círculo verde" en leer palabras: en los
@@ -431,7 +455,12 @@ y la carpeta `~/.impeccable`.
   `IOS_CHROME_VIEWPORT_RECOVERY` cubre otro fallo de Chrome/iOS: al abrir otra vez un enlace desde
   una aplicación, el `WKWebView` puede conservar un inset nativo que no aparece en `scrollY`, en
   `visualViewport` ni en los rectángulos del DOM. La primera entrada reciente se registra en
-  `localStorage`. Toda entrada nueva de CriOS muestra `.bintuitive-ios-booting`: en la primera se
+  `localStorage`. **Su lista de rutas hay que mantenerla al mudar una pantalla**: cubre las que se
+  abren desde fuera —la portada, `/explore`, su dirección anterior `/hexagons`, `/progress` y
+  `/profile`—, y nunca las de juego, a las que se llega desde dentro. `/explore` le faltaba: el
+  panal se mudó ahí y la lista se quedó nombrando solo `/hexagons`, así que la recuperación
+  llevaba meses sin correr en la pantalla de entrada. Toda entrada nueva de CriOS muestra
+  `.bintuitive-ios-booting`: en la primera se
   funde con la aplicación después de `load`; una entrada posterior espera 1,5 s para que Chrome
   termine de animar sus barras y recarga una vez, conservando la marca hasta que el documento
   corregido está listo. Así el layout desplazado nunca se pinta y `sessionStorage` evita el

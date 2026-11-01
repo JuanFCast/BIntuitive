@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "eslint .",
     "validate:content": "tsc -p tsconfig.validate.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/validateContent.js",
     "check:migration": "tsc -p tsconfig.migration.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/checkMigration.js",
     "check:tracing": "tsc -p tsconfig.tracing.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/checkTracing.js",
@@ -18,10 +19,13 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.3.4",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

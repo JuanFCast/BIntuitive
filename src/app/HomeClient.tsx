@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import HexagonCard from "@/components/HexagonCard";
 import { hexagons } from "@/data/categories";
 import { honeycombLayout, HONEYCOMB_BREAKPOINTS } from "@/lib/honeycomb";
+import { useDocumentTitle } from "@/lib/documentTitle";
 import { useLanguage } from "@/lib/i18n";
 
 /*
@@ -37,6 +38,7 @@ function cellStyle(index: number): CSSProperties {
 
 export default function HomeClient() {
   const { language, t } = useLanguage();
+  useDocumentTitle(t("navHome"));
 
   return (
     <main className="relative flex min-h-full flex-col items-center overflow-hidden bg-cream px-4 py-4 text-ink sm:px-6 sm:py-6">

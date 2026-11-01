@@ -62,6 +62,11 @@ npm run build
 npm start
 ```
 
+`npm run lint` runs ESLint over the project with `next/core-web-vitals` and `next/typescript`.
+Unused imports and variables are errors, not warnings: they are what the linter was added to
+catch, and a warning nothing breaks on piles up until nobody reads it. Prefix a name with an
+underscore to say it is deliberately unused.
+
 `npm run validate:content` checks the educational content: unique ids, answers that exist among
 their options, English copy present for every Spanish question, words in NFC and within their
 language alphabet, enough content per level to build a session, every option having something to

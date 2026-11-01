@@ -1,5 +1,5 @@
 import type { Hexagon } from "./categories";
-import type { CategoryId, Question, QuestionOption } from "./questions";
+import type { Question, QuestionOption } from "./questions";
 import type { Language } from "@/lib/language";
 
 // Exportado para que `validate:content` pueda comprobar la capa inglesa.
