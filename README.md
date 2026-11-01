@@ -12,11 +12,12 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which lives at `/explore` and is where every house button, exit and "back to the start" inside the app leads. There is no separate games section.
 - **10 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, Tracing, and Coloring.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
-- **Gentle adaptive difficulty:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options.
-- **Visual Agility:** a local, touch-first matching challenge where two nine-symbol cards share exactly one symbol and mistakes add a one-second penalty.
-- **Type Rush:** a responsive 30-second typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish.
-- **Word Scramble:** a 10-word spelling challenge where players tap large letter tiles in order to build a word, with a picture clue, spoken word, undo and clear controls, and adaptive word length.
-- **Word Search:** a three-puzzle session where players trace hidden words with a finger across a generated letter grid, with words running across, down, diagonally, and backwards as the level rises.
+- **Gentle adaptive difficulty in the question lessons:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options. The seven standalone games work the other way round — see below.
+- **Difficulty is chosen, not assigned:** every standalone game opens on a five-step level picker, the chosen step stays fixed for the whole session, and two stars out of three unlock the next one. What a step changes is the mechanic, never just the size: Visual Agility goes from 4 to 12 symbols and then rotates and rescales them, Word Scramble drops the written clue and adds letters that are not in the word, Word Search fills the same grid with more words and finally shows one word at a time, and Type Rush starts with single lowercase words before adding capitals and punctuation.
+- **Visual Agility:** a local, touch-first matching challenge where two cards share exactly one symbol and mistakes add a one-second penalty. Cards carry 4 to 12 symbols depending on the level, laid out straight on the first step and rotated and rescaled from the fourth.
+- **Type Rush:** a typing challenge with live speed, accuracy, progress, and mistake feedback in English or Spanish. The first steps are single lowercase words for players still hunting for the keys; capitals and punctuation only arrive at level 4.
+- **Word Scramble:** a 10-word spelling challenge where players tap large letter tiles in order to build a word, with a picture clue, spoken word, and undo and clear controls. The clue disappears at level 4 and decoy letters join the tray at level 5.
+- **Word Search:** a three-puzzle session where players trace hidden words with a finger across a generated letter grid, with words running across, down, diagonally, and backwards as the level rises. The grid never grows past ten columns: the last two steps add more words and then show one word at a time instead.
 - **Tracing:** five levels of dotted paths — straight, diagonal, curved, zigzag and long — traced with a finger or a mouse through pointer events. A visible tolerance lane decides how well the path was followed, stars reward the accuracy, and the word of the picture is spoken and shown with its translation.
 - **Memory:** a vertical board of twelve cards where six pairs hide behind the honeycomb, tries and time are counted, and each pair is read out loud in the chosen language.
 - **Coloring:** twelve hand-drawn pictures painted with a finger or an Apple Pencil, in one of three brush sizes. The paint only takes inside the area being coloured, so going over the lines never spoils the drawing, and an area fills itself in once it is well covered. The first two levels say which area to paint and what colour; from level 3 on every area carries a number and the palette says which colour each number is.
@@ -26,7 +27,8 @@ BIntuitive is a touch-friendly educational game for curious learners. Players li
 - **Activity icons:** every honeycomb tile, game introduction and the welcome page use one flat icon per activity, kept in `public/art/hexagons/`.
 - **Social sharing:** Open Graph and Twitter cards use the official BIntuitive brand mark, with favicon and Apple touch icon support.
 - **Local profile:** a name, an avatar and the date you started, saved on the device — no working sign-in yet, no email, no password. The profile screen shows them next to your stars and lessons.
-- **Local progress:** total stars, recent sessions, per-category levels, the levels and best marks of the word games and Tracing, language preference, and mute preference are stored in `localStorage`, each under its own key.
+- **Favourites and two views of Explore:** the honeycomb can be swapped for a list that shows each activity's description, and the choice is remembered. Activities are starred from the list — the honeycomb shows which ones are favourites but keeps its tap targets big and single-purpose — and a filter narrows Explore to them.
+- **Local progress:** total stars, recent sessions, per-category levels, every game's chosen and unlocked level with its best marks, language preference, mute preference, favourites, and the Explore view are stored in `localStorage`, each under its own key.
 - **Exit confirmation:** leaving a lesson or a game in progress asks first, so a stray tap cannot throw away the session. The introduction and the results screens leave straight away.
 - **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
 
@@ -75,6 +77,15 @@ layer never labelling an option that the Spanish source leaves unlabelled. The b
 question bank, Word Scramble, Word Search, Typing, Visual and Coloring each keep their own
 shape.
 
+`npm run check:migration` proves that updating the app never loses anybody's progress, and
+`npm run check:tracing`, `check:memory`, `check:coloring` and `check:levels` protect the rules of
+the shared difficulty scale: the level tables, the star thresholds, that two stars out of three
+unlock the next step and that nothing ever re-locks one, that a record is only compared against
+the step it was set on, and that saving one game never touches another's progress. The first
+three also guard their own geometry — the board, the shape of a path, how colour is dealt — which
+is why they have a script each; `check:levels` covers the four games that joined the scale later,
+because what has to be protected in all four is the same scale.
+
 The production build validates TypeScript, generates the application routes, and prepares the optimized Next.js output.
 
 ## Project structure
@@ -105,6 +116,8 @@ src/
                         # (artwork for the questions lives in public/art/)
   lib/
     coloringGame.ts     # Coloring pictures, teaching palette, colour dealing, and brushes
+    exploreView.ts      # Whether Explore is shown as the honeycomb or as a list
+    favorites.ts        # Which hexagons are starred on this device
     gameEngine.ts       # Question selection and adaptive difficulty
     i18n.tsx            # Language provider and interface translations
     language.ts         # Shared language type
@@ -112,10 +125,10 @@ src/
     speech.ts           # English and Spanish speech synthesis
     sounds.ts           # Generated interaction and celebration sounds
     storage.ts          # Progress and mute persistence
-    typingGame.ts       # Local typing passages and statistics
-    visualGame.ts       # Visual cards, symbols, and matching logic
-    wordScramble.ts     # Bilingual word bank, letter tiles, and difficulty
-    wordSearch.ts       # Bilingual word bank, board generator, and selection
+    typingGame.ts       # Typing banks per level, passages, and statistics
+    visualGame.ts       # Visual cards, symbols, levels, and matching logic
+    wordScramble.ts     # Bilingual word bank, letter tiles, levels, and decoys
+    wordSearch.ts       # Bilingual word bank, board generator, levels, and selection
 ```
 
 The Visual Agility and Type Rush hexagons adapt the core game mechanics from
@@ -150,7 +163,10 @@ When adding a question:
 The Word Scramble bank is not a translation: each language has its own words in
 `WORD_BANK` inside `src/lib/wordScramble.ts`. A new entry needs an `id`, the
 `word` in uppercase, an `emoji`, a short `clue` written in that language, and a
-`level`: 1 for 3-4 letters, 2 for 5-6 letters, 3 for 7-8 letters.
+`level`: 1 for 3-4 letters, 2 for 5-6 letters, 3 for 7-8 letters. That field is
+a **tier of the bank, not a game level**: the game has five steps and the bank
+three, because the top three steps share the long words and differ in the help
+they take away.
 
 Spanish words are spelled correctly, accents included: the allowed alphabet is
 `A-Z` plus `Á É Í Ó Ú Ñ Ü`, and a word is never simplified to avoid a character
@@ -166,7 +182,8 @@ The Word Search bank is its own list in `WORD_SEARCH_BANK` inside
 `src/lib/wordSearch.ts`: it is neither the Word Scramble bank nor a
 translation of it. A new entry needs an `id`, the `word` in uppercase, an
 `emoji` for the word list, and a `level`: 1 for 3-5 letters, 2 for 5-7, 3 for
-6-8. A word never exceeds the grid size of its level.
+6-8. As in Word Scramble that field is a **tier of the bank, not a game level**,
+and a word never exceeds the smallest grid of the steps that use its tier.
 
 Spanish spelling rules are the same as in Word Scramble: `A-Z` plus
 `Á É Í Ó Ú Ñ Ü`, written in NFC, never simplified to dodge a character. Both
