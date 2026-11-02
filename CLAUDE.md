@@ -223,22 +223,25 @@ src/lib/
      arrastre posible: `completeRegion` solo rellena con `flat`, y `flat` solo lo pasa
      `paintWithoutPointer`.
 
-  Llegar al 100 % **no** pide pulso fino: la pintura va recortada, así que el dedo barre por
-  encima del contorno y de las zonas vecinas sin estropear nada. Lo que lo hace alcanzable es
-  dónde se siembra la rejilla, no cuánto se perdona: `COLORING_SAMPLE_MARGIN` la aparta del
-  borde de la zona, que queda **debajo del contorno** —las zonas se meten unas celdas bajo la
-  tinta (`COLORING_GROW`) para que no asome un hilo blanco—, y medir ahí sería pedir que se
-  tape un trozo que no se ve. Con el margen, todo lo que se mide es papel a la vista. El paso
-  (`COLORING_SAMPLE_STEP`) es otra cosa: decide **qué hueco se cuela** entre dos puntos, y por
-  eso es 1 y no 2; con 2 se colaba una franja de unos 7 px y la zona se daba por hecha con el
-  papel asomando, que es justo lo que el relleno tapaba. Más fino que la celda de
-  `COLORING_GRID` no mediría pintura sino la escalera del borde.
+  Llegar al 100 % **no** pide pulso fino: la pintura va recortada, así que la mano barre por
+  encima del contorno y de las zonas vecinas sin estropear nada. **Lo que se mide es el papel
+  que se ve, y quien decide eso es la tinta, no una distancia.** Las zonas se meten unas celdas
+  bajo la línea que las rodea (`COLORING_GROW`) para que entre el color y el contorno no asome
+  un hilo blanco; ese reborde es suyo pero está tapado, y pedir que se tape lo que ya tapa la
+  línea dejaría la zona imposible de cerrar. Por eso `coloringRegionSamples` recibe la rejilla
+  de tinta y **no siembra ninguna celda que sea tinta, y sí todas las demás, incluidas las
+  pegadas al contorno**. Hubo una versión que en vez de mirar la tinta apartaba la siembra una
+  distancia fija del borde (`COLORING_SAMPLE_MARGIN`, 1,2): esa franja sin medir era justo la
+  que se quedaba blanca —unos 5 px— al darse la zona por hecha, que es el mismo fallo que el
+  relleno automático tapaba. El paso (`COLORING_SAMPLE_STEP`) es otra cosa: decide **qué hueco
+  se cuela** entre dos puntos, y por eso es 1 y no 2; con 2 se colaba una franja de unos 7 px.
+  Más fino que la celda de `COLORING_GRID` no mediría pintura sino la escalera del borde.
   El umbral sigue viviendo por nivel en `COLORING_LEVELS`, aunque hoy valga lo mismo en los
   cinco, para que ablandar los de abajo sea cambiar un número. Lo que sí cambia al subir es
   que del 4 en adelante no hay pincel grueso, que con dos pasadas tapaba casi cualquier zona.
   `npm run check:coloring` impide que un escalón vuelva a rellenar solo, que dé una zona a
-  medias por hecha, que la rejilla se acerque al borde o deje un hueco más ancho que el pincel
-  fino, y que un escalón deje fuera el grosor de por defecto. La
+  medias por hecha, que la rejilla siembre sobre la tinta o se despegue de ella, que deje un
+  hueco más ancho que el pincel fino, y que un escalón deje fuera el grosor de por defecto. La
   precisión cuenta **decisiones** —esta zona de este color, una sola vez por pareja
   (`coloringAttemptKey`)—, no pasadas: cobrar cada pasada haría que pintar bien con el
   pincel fino puntuara peor que pintar bien con el grueso. Lo pintado se mide con una

@@ -134,7 +134,11 @@ function loadPictureShapes(picture: ColoringPicture): Promise<PictureZones> {
       }
       resolve({
         paths: runs.map((zone) => coloringRunsPath(zone, COLORING_GRID)),
-        samples: runs.map((zone) => coloringRegionSamples(zone, COLORING_GRID)),
+        // La misma tinta con la que se buscaron las zonas: lo que está bajo la
+        // línea es suyo, pero no se ve, así que no se mide.
+        samples: runs.map((zone) =>
+          coloringRegionSamples(zone, COLORING_GRID, ink),
+        ),
       });
     };
     image.onerror = () => reject(new Error(`no carga ${picture.image}`));
