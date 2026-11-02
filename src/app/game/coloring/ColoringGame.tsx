@@ -20,14 +20,14 @@ import {
   coloringBrushRadius,
   coloringRegionCells,
   coloringRegionIsFull,
+  coloringRegionSamples,
   coloringRunsPath,
-  coloringSampleGrid,
   coloringSessionStars,
   coloringStrokeCovers,
   COLORING_BRUSHES,
   COLORING_COLORS,
   COLORING_DEFAULT_BRUSH,
-  COLORING_FILL_MS,
+  COLORING_DONE_MS,
   COLORING_GRID,
   COLORING_MAX_LEVEL,
   COLORING_MIN_STEP,
@@ -81,22 +81,30 @@ const OUTLINE = "#171717";
 const INK_ALPHA = 102;
 
 /**
- * Las zonas de cada lámina, como caminos, ya calculadas: leer la imagen y
- * buscar sus zonas se hace una vez por lámina y por visita, no cada vez que
+ * Una lámina ya leída: el camino de cada zona y los puntos con los que se mide
+ * lo que lleva pintado, en el orden de sus zonas.
+ */
+type PictureZones = { paths: string[]; samples: ColoringPoint[][] };
+
+/**
+ * Las zonas de cada lámina ya calculadas: leer la imagen, buscar sus zonas y
+ * sembrarlas de puntos se hace una vez por lámina y por visita, no cada vez que
  * vuelve a salir. Se guarda la promesa y no el resultado para que dos rondas
  * que piden la misma imagen a la vez no la lean dos veces.
  */
-const shapesCache = new Map<string, Promise<string[]>>();
+const shapesCache = new Map<string, Promise<PictureZones>>();
 
 /**
- * Lee la tinta de la lámina en la rejilla del juego y devuelve el camino de
- * cada zona, en el orden de sus zonas.
+ * Lee la tinta de la lámina en la rejilla del juego y devuelve, por zona, su
+ * camino y sus puntos de medida. Los dos salen de las mismas celdas, así que
+ * salen de una vez: el camino es con lo que el lienzo recorta la pintura y los
+ * puntos son con lo que se sabe cuánto queda por pintar.
  */
-function loadPictureShapes(picture: ColoringPicture): Promise<string[]> {
+function loadPictureShapes(picture: ColoringPicture): Promise<PictureZones> {
   const cached = shapesCache.get(picture.id);
   if (cached) return cached;
 
-  const promise = new Promise<string[]>((resolve, reject) => {
+  const promise = new Promise<PictureZones>((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
       const canvas = document.createElement("canvas");
@@ -124,7 +132,10 @@ function loadPictureShapes(picture: ColoringPicture): Promise<string[]> {
       for (const problem of problems) {
         console.warn(`Colorear, ${picture.id}: ${problem}`);
       }
-      resolve(runs.map((zone) => coloringRunsPath(zone, COLORING_GRID)));
+      resolve({
+        paths: runs.map((zone) => coloringRunsPath(zone, COLORING_GRID)),
+        samples: runs.map((zone) => coloringRegionSamples(zone, COLORING_GRID)),
+      });
     };
     image.onerror = () => reject(new Error(`no carga ${picture.image}`));
     image.src = picture.image;
@@ -221,7 +232,15 @@ export default function ColoringGame() {
   const samplesRef = useRef<ColoringPoint[][]>([]);
   const coveredRef = useRef<Set<number>[]>([]);
   const strokesRef = useRef<Stroke[]>([]);
+  /** Qué zonas ya están terminadas, y de qué color se terminaron. */
   const filledRef = useRef<Map<number, ColorId>>(new Map());
+  /**
+   * Las zonas que se pintaron **sin puntero**, de teclado o con lector de
+   * pantalla: son las únicas que el juego rellena de color, porque ahí no hay
+   * arrastre posible. Lo que se pinta con el dedo o el ratón no entra aquí
+   * nunca, y por eso lo que queda a la vista es lo que pintó la mano.
+   */
+  const flatRef = useRef<Set<number>>(new Set());
   const activeRef = useRef<{
     index: number;
     stroke: Stroke;
@@ -268,23 +287,36 @@ export default function ColoringGame() {
    * viven a nivel de módulo, arriba.
    */
 
-  /** Una zona ya terminada, rellena entera de su color. */
+  /**
+   * Una zona rellena entera de su color.
+   *
+   * **Solo las que se pintaron sin puntero.** Rellenar la zona al terminarla
+   * era lo que hacía que el dibujo saltara de golpe a pintado justo al final:
+   * borraba las pasadas y ponía el juego el último trozo. Lo que se pinta
+   * arrastrando se queda como quedó.
+   */
   const paintRegion = useCallback(
     (ctx: CanvasRenderingContext2D, index: number) => {
       const path = pathsRef.current[index];
       const done = filledRef.current.get(index);
-      if (!path || !done) return;
+      if (!path || !done || !flatRef.current.has(index)) return;
       ctx.fillStyle = COLORING_COLORS[done].hex;
       ctx.fill(path);
     },
     [],
   );
 
-  /** Las pasadas que haya dentro de una zona, recortadas a ella. */
+  /**
+   * Las pasadas que haya dentro de una zona, recortadas a ella.
+   *
+   * También las de las zonas ya terminadas: son el dibujo, no un paso
+   * intermedio, así que siguen repintándose cada vez que el lienzo cambia de
+   * tamaño —girar el iPad— hasta el final de la lámina.
+   */
   const paintStrokes = useCallback(
     (ctx: CanvasRenderingContext2D, index: number) => {
       const path = pathsRef.current[index];
-      if (!path || filledRef.current.has(index)) return;
+      if (!path) return;
       ctx.save();
       ctx.clip(path);
       for (const stroke of strokesRef.current) {
@@ -371,6 +403,7 @@ export default function ColoringGame() {
     setShapes(null);
     strokesRef.current = [];
     filledRef.current = new Map();
+    flatRef.current = new Set();
     activeRef.current = null;
     pointerIdRef.current = null;
     // Las zonas se llaman igual en varias láminas —"el cuerpo" está en el pez,
@@ -382,17 +415,12 @@ export default function ColoringGame() {
 
     let current = true;
     loadPictureShapes(round.picture)
-      .then((paths) => {
+      .then((zones) => {
         if (!current) return;
-        const measure = measuringContext();
-        pathsRef.current = paths.map((d) => new Path2D(d));
-        samplesRef.current = pathsRef.current.map((path) =>
-          measure
-            ? coloringSampleGrid((x, y) => measure.isPointInPath(path, x, y))
-            : [],
-        );
+        pathsRef.current = zones.paths.map((d) => new Path2D(d));
+        samplesRef.current = zones.samples;
         coveredRef.current = pathsRef.current.map(() => new Set<number>());
-        setShapes(paths);
+        setShapes(zones.paths);
         redraw();
       })
       // Sin imagen no hay lámina: el tablero se queda en blanco y sin zonas,
@@ -633,21 +661,26 @@ export default function ColoringGame() {
       return;
     }
     setNeedsColor(false);
-    completeRegion(index, task);
+    completeRegion(index, task, true);
   };
 
-  /** La zona llegó al umbral: se rellena entera y la lámina sigue. */
-  const completeRegion = (index: number, task: ColoringTask) => {
+  /**
+   * La zona está pintada entera y la lámina sigue.
+   *
+   * `flat` es solo para el camino sin puntero: ahí el juego rellena la zona
+   * porque no hay arrastre con el que pintarla. Con el dedo o el ratón no se
+   * repinta nada —lo que hay en el lienzo ya es la zona entera, pasada a
+   * pasada—, y eso es lo que quita el salto del final.
+   */
+  const completeRegion = (index: number, task: ColoringTask, flat = false) => {
     if (!round || filledRef.current.has(index)) return;
 
     releaseStroke();
     filledRef.current.set(index, task.colorId);
-    // Las pasadas ya no pintan nada que no tape el relleno, y un trazo menos es
-    // un trazo menos que repintar al girar la pantalla.
-    strokesRef.current = strokesRef.current.filter(
-      (stroke) => stroke.regionIndex !== index,
-    );
-    redraw();
+    if (flat) {
+      flatRef.current.add(index);
+      redraw();
+    }
 
     const nextFilled = { ...filled, [task.id]: task.colorId };
     const nextPainted = painted + 1;
@@ -680,7 +713,7 @@ export default function ColoringGame() {
           );
         }
       }
-    }, COLORING_FILL_MS);
+    }, COLORING_DONE_MS);
   };
 
   /* ───────────────────── Sesión y resultados ─────────────────── */

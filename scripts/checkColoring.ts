@@ -30,7 +30,7 @@ import {
   coloringCoverage,
   coloringRegionCells,
   coloringRegionIsFull,
-  coloringSampleGrid,
+  coloringRegionSamples,
   coloringSessionStars,
   coloringStrokeCovers,
   COLORING_BRUSHES,
@@ -41,11 +41,14 @@ import {
   COLORING_MAX_SWATCHES,
   COLORING_PICTURES,
   COLORING_PICTURES_PER_SESSION,
+  COLORING_GRID,
+  COLORING_SAMPLE_MARGIN,
   COLORING_SAMPLE_STEP,
   picturesForLevel,
   type ColorId,
   type ColoringBrushId,
   type ColoringLevel,
+  type ColoringRun,
 } from "@/lib/coloringGame";
 import type { Difficulty, Stars } from "@/lib/difficulty";
 
@@ -359,17 +362,69 @@ console.log("\nEl pincel");
 
 console.log("\nLa medida de lo pintado");
 {
-  const inside = (x: number, y: number) =>
-    x >= 25 && x <= 75 && y >= 25 && y <= 75;
-  const samples = coloringSampleGrid(inside);
+  // Una zona cuadrada de celdas, como las que salen de una lámina: de la 40 a
+  // la 215 de las 256, que en el lienzo de 100 va de 15,6 a 84,4.
+  const cell = 100 / COLORING_GRID;
+  const square: ColoringRun[] = [];
+  for (let y = 40; y <= 215; y += 1) square.push({ y, x0: 40, x1: 215 });
+  const samples = coloringRegionSamples(square, COLORING_GRID);
+  const low = 40 * cell;
+  const high = 216 * cell;
+
   check(
     "la rejilla solo siembra dentro de la zona",
-    samples.every((point) => inside(point.x, point.y)),
+    samples.every(
+      (point) =>
+        point.x > low && point.x < high && point.y > low && point.y < high,
+    ),
+  );
+  // El borde de la zona queda debajo del contorno, que se pinta encima: medir
+  // ahí sería pedir que se tape un trozo que no se ve.
+  const toEdge = Math.min(
+    ...samples.flatMap((point) => [
+      point.x - low,
+      high - point.x,
+      point.y - low,
+      high - point.y,
+    ]),
+  );
+  check(
+    "y se aparta del borde, que es donde la línea tapa el papel",
+    toEdge >= COLORING_SAMPLE_MARGIN,
+    `${toEdge.toFixed(2)} contra ${COLORING_SAMPLE_MARGIN}`,
   );
   check(
     "y la siembra con puntos de sobra",
     samples.length >= 500,
     `${samples.length}`,
+  );
+  // Dos puntos vecinos no pueden quedar tan lejos que entre ellos caiga un
+  // trozo sin pintar más ancho que el pincel: se daría por pintado.
+  const spacing = Math.min(
+    ...samples
+      .filter((point) => point.y === samples[0].y)
+      .map((point) => point.x)
+      .sort((a, b) => a - b)
+      .map((x, index, all) => (index === 0 ? Infinity : x - all[index - 1])),
+  );
+  check(
+    "sin dejar entre dos puntos un hueco que no se note",
+    spacing <= COLORING_BRUSHES[0].radius * 2,
+    `${spacing.toFixed(2)} contra ${COLORING_BRUSHES[0].radius * 2}`,
+  );
+
+  // Una franja de cuatro celdas de alto: no cabe ningún punto apartado del
+  // borde, y aun así tiene que poder medirse.
+  const strip: ColoringRun[] = [];
+  for (let y = 100; y <= 103; y += 1) strip.push({ y, x0: 40, x1: 215 });
+  check(
+    "una zona estrecha se siembra sin margen antes que quedarse sin medida",
+    coloringRegionSamples(strip, COLORING_GRID).length > 0,
+    `${coloringRegionSamples(strip, COLORING_GRID).length}`,
+  );
+  check(
+    "y una que no ocupa nada no siembra nada",
+    coloringRegionSamples([], COLORING_GRID).length === 0,
   );
 
   const dot = { x: 50, y: 50 };

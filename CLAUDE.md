@@ -209,27 +209,43 @@ src/lib/
   deslizador pide un gesto fino y no se puede nombrar en voz alta ni leer con un lector de
   pantalla. **La pintura se recorta a la zona**, así que salirse no estropea el dibujo —es
   lo que permite dárselo a un niño de tres años con el dedo— y el color que no toca
-  sencillamente no agarra: equivocarse nunca deja marca. **La zona se pinta entera a mano**:
-  `coverageToFill` es 1 en los cinco escalones y una zona no se da por hecha hasta que no
-  queda un punto de medida sin tapar. Hubo una época en que se rellenaba sola al llegar al
-  70-85 %, y eso ahorraba repasar rincones pero le quitaba de las manos el final de cada
-  zona, que es la parte que se siente como terminar algo. Llegar al 100 % **no** pide pulso
-  fino: la pintura va recortada, así que el dedo barre por encima del contorno y de las zonas
-  vecinas sin estropear nada; lo que lo hace alcanzable es que los puntos de medida van en el
-  centro de celdas de 2 (`COLORING_SAMPLE_STEP`), así que el último trozo sin pintar nunca es
-  más fino que el pincel más fino. **Bajar ese paso dejaría zonas imposibles de terminar.**
+  sencillamente no agarra: equivocarse nunca deja marca. **La zona la pinta entera la mano, y
+  el juego no pone ni el último trozo.** Son dos cosas, y faltando cualquiera de las dos
+  vuelve el salto a "pintado" justo al final:
+  1. `coverageToFill` es 1 en los cinco escalones: una zona no se da por hecha hasta que no
+     queda un punto de medida sin tapar.
+  2. **Terminar una zona no la repinta.** Lo que queda a la vista son las pasadas, tal como
+     salieron. Hubo dos épocas en que no era así: primero se rellenaba sola al llegar al
+     70-85 %, y después, ya con el umbral en el 100 %, al taparse el último punto se
+     borraban las pasadas y se rellenaba la zona de color plano —que es lo mismo visto desde
+     fuera, porque ese relleno tapaba lo que la rejilla no medía—. La única que se rellena es
+     la que se pinta **sin puntero**, de teclado o con lector de pantalla, donde no hay
+     arrastre posible: `completeRegion` solo rellena con `flat`, y `flat` solo lo pasa
+     `paintWithoutPointer`.
+
+  Llegar al 100 % **no** pide pulso fino: la pintura va recortada, así que el dedo barre por
+  encima del contorno y de las zonas vecinas sin estropear nada. Lo que lo hace alcanzable es
+  dónde se siembra la rejilla, no cuánto se perdona: `COLORING_SAMPLE_MARGIN` la aparta del
+  borde de la zona, que queda **debajo del contorno** —las zonas se meten unas celdas bajo la
+  tinta (`COLORING_GROW`) para que no asome un hilo blanco—, y medir ahí sería pedir que se
+  tape un trozo que no se ve. Con el margen, todo lo que se mide es papel a la vista. El paso
+  (`COLORING_SAMPLE_STEP`) es otra cosa: decide **qué hueco se cuela** entre dos puntos, y por
+  eso es 1 y no 2; con 2 se colaba una franja de unos 7 px y la zona se daba por hecha con el
+  papel asomando, que es justo lo que el relleno tapaba. Más fino que la celda de
+  `COLORING_GRID` no mediría pintura sino la escalera del borde.
   El umbral sigue viviendo por nivel en `COLORING_LEVELS`, aunque hoy valga lo mismo en los
   cinco, para que ablandar los de abajo sea cambiar un número. Lo que sí cambia al subir es
   que del 4 en adelante no hay pincel grueso, que con dos pasadas tapaba casi cualquier zona.
   `npm run check:coloring` impide que un escalón vuelva a rellenar solo, que dé una zona a
-  medias por hecha o que deje fuera el grosor de por defecto. La
+  medias por hecha, que la rejilla se acerque al borde o deje un hueco más ancho que el pincel
+  fino, y que un escalón deje fuera el grosor de por defecto. La
   precisión cuenta **decisiones** —esta zona de este color, una sola vez por pareja
   (`coloringAttemptKey`)—, no pasadas: cobrar cada pasada haría que pintar bien con el
   pincel fino puntuara peor que pintar bien con el grueso. Lo pintado se mide con una
   rejilla de puntos sembrada por lámina y geometría de punto a segmento, no leyendo los
   píxeles del lienzo: `coloringGame.ts` no puede tocar el DOM porque `validate:content` lo
-  compila sin él, así que `coloringSampleGrid` recibe el "está dentro" en vez de
-  calcularlo.
+  compila sin él, así que `coloringRegionSamples` siembra sobre las mismas celdas de las que
+  salen las zonas (`coloringRegionCells`) en vez de preguntarle al navegador punto por punto.
 - **El dibujo de Colorear son tres capas sobre el mismo cuadrado.** Abajo un `<canvas>` con
   el papel y las pasadas de pincel, recortadas a su zona. Encima la imagen de la lámina,
   que es solo tinta: tapa el borde de la pintura, así que el color llega justo a la línea y

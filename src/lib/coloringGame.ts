@@ -27,9 +27,9 @@ import type { Language } from "./language";
  * camino— y elegir el grosor es la primera decisión de herramienta que toma
  * quien juega. La pintura solo agarra **dentro** de la zona, así que salirse
  * no estropea el dibujo: eso es lo que permite dárselo a un niño de tres años
- * con el dedo. Y una zona queda lista cuando está cubierta de sobra
- * (`coverageToFill` de cada escalón), no cuando está perfecta: pedir el 100 %
- * castigaría el pulso, que no es lo que este juego mide.
+ * con el dedo. Y la zona la pinta entera la mano: no se rellena sola al
+ * acercarse al final, porque ese último trozo es justo la parte que se siente
+ * como terminar algo.
  *
  * **Los colores que se piden son los de la realidad.** Cada zona dice qué
  * colores tiene sentido pedirle —las hojas, verdes; el tronco, café; el mar,
@@ -220,16 +220,36 @@ export type ColoringPoint = { x: number; y: number };
  * Medir leyendo los píxeles del lienzo costaría una copia de memoria por cada
  * movimiento del dedo; esto es geometría y no lee nada: se siembra la zona de
  * puntos una vez por lámina y luego cada tramo de pincel marca los que le
- * caen debajo. Con paso 2 la zona más pequeña del banco sigue teniendo
- * decenas de puntos.
+ * caen debajo.
  *
- * El paso es además lo que hace **alcanzable** pedir el 100 %: los puntos van
- * en el centro de celdas de 2, así que el último trozo sin pintar nunca es más
- * fino que eso y el pincel fino (radio 3,5) lo tapa de sobra. Bajar el paso
- * mediría más fino, pero dejaría puntos en rendijas a las que no llega ningún
- * pincel y habría zonas imposibles de terminar.
+ * El paso es lo que decide **qué hueco se nota**: un trozo sin pintar más fino
+ * que el paso puede quedar entre dos puntos de medida y colarse como pintado.
+ * Con paso 2 se colaba una franja de 2 —unos 7 px en un móvil— y la zona se
+ * daba por hecha con el papel a la vista; antes eso no se veía porque al llegar
+ * al umbral el juego rellenaba la zona entera y tapaba lo que faltaba. Sin ese
+ * relleno, el paso tiene que ser fino: con 1 lo que puede quedar sin pintar es
+ * un hilo que el contorno ya tapa.
+ *
+ * Más fino no sería mejor: medir por debajo de la celda de la rejilla de zonas
+ * (100/`COLORING_GRID`, unas cuatro décimas) es medir ruido de la escalera del
+ * borde. El que hace alcanzable el 100 % es `COLORING_SAMPLE_MARGIN`, no este.
  */
-export const COLORING_SAMPLE_STEP = 2;
+export const COLORING_SAMPLE_STEP = 1;
+
+/**
+ * Cuánto se aparta la rejilla del borde de la zona, en el lienzo de 100.
+ *
+ * Es lo que hace **alcanzable** pedir el 100 %. Las zonas se meten unas celdas
+ * bajo la tinta (`COLORING_GROW`) para que no quede un hilo blanco entre el
+ * color y el contorno, así que su borde cae debajo de la línea, donde no se ve
+ * si está pintado o no. Medir ahí sería pedir que se tape un trozo invisible:
+ * la zona se vería entera pintada y el juego seguiría esperando.
+ *
+ * Apartándose un poco, todo lo que se mide es papel que se ve, y el borde se
+ * pinta igual de paso, porque la pintura va recortada a la zona y el dedo barre
+ * por encima del contorno sin estropear nada.
+ */
+export const COLORING_SAMPLE_MARGIN = 1.2;
 
 /**
  * Lo que tiene que moverse el dedo para que cuente como tramo nuevo, en el
@@ -240,28 +260,71 @@ export const COLORING_SAMPLE_STEP = 2;
 export const COLORING_MIN_STEP = 0.4;
 
 /**
- * Siembra el lienzo de 100 × 100 de puntos y devuelve los que caen dentro.
+ * Siembra una zona de puntos de medida, en el lienzo de 100 × 100.
  *
- * Recibe el "está dentro" en vez de calcularlo porque quien sabe si un punto
- * cae dentro del camino de una zona es el navegador (`isPointInPath`), y este
- * archivo no puede depender de él: `validate:content` lo compila sin las
- * librerías del DOM justo para que el contenido no acabe importando código de
- * navegador.
+ * Los puntos salen de las **mismas celdas** que la zona (`coloringRegionCells`)
+ * y no de preguntarle al navegador si cada punto cae dentro del camino. Las dos
+ * cosas dan lo mismo, pero esta no necesita lienzo —así que este archivo sigue
+ * compilando sin las librerías del DOM, que es lo que `validate:content`
+ * comprueba— y cuesta una pasada por la rejilla en vez de un `isPointInPath`
+ * por punto, que con la rejilla fina y el borde apartado serían cientos de
+ * miles al abrir cada lámina.
  *
- * Los puntos van en el centro de cada celda y no en sus esquinas: en el borde
- * exacto de un camino, "dentro" depende del redondeo.
+ * `margin` aparta la siembra del borde: un punto solo entra si la zona también
+ * ocupa lo que tiene alrededor a esa distancia. Una zona tan estrecha que no
+ * deje ni un punto apartado se siembra sin margen antes que quedarse sin medida
+ * —si no, se daría por pintada al primer toque—, y una que no ocupa nada
+ * devuelve la lista vacía, que es como `coloringCoverage` cuenta "no hay nada
+ * que medir".
  */
-export function coloringSampleGrid(
-  isInside: (x: number, y: number) => boolean,
+export function coloringRegionSamples(
+  runs: readonly ColoringRun[],
+  size: number,
   step: number = COLORING_SAMPLE_STEP,
+  margin: number = COLORING_SAMPLE_MARGIN,
 ): ColoringPoint[] {
-  const samples: ColoringPoint[] = [];
-  for (let y = step / 2; y < 100; y += step) {
-    for (let x = step / 2; x < 100; x += step) {
-      if (isInside(x, y)) samples.push({ x, y });
+  const cell = 100 / size;
+  const stride = Math.max(1, Math.round(step / cell));
+  const inset = Math.max(1, Math.round(margin / cell));
+  // En diagonal la distancia la pone la hipotenusa, así que el salto es más
+  // corto: con el mismo `inset` en las ocho direcciones, una esquina a 45° se
+  // quedaría más cerca del borde que el margen pedido.
+  const skew = Math.max(1, Math.round(inset / Math.SQRT2));
+
+  const mine = new Uint8Array(size * size);
+  for (const { y, x0, x1 } of runs) {
+    if (y < 0 || y >= size) continue;
+    const from = Math.max(0, x0);
+    const to = Math.min(size - 1, x1);
+    for (let x = from; x <= to; x += 1) mine[y * size + x] = 1;
+  }
+
+  const has = (x: number, y: number) =>
+    x >= 0 && x < size && y >= 0 && y < size && mine[y * size + x] === 1;
+  const isInner = (x: number, y: number) =>
+    has(x - inset, y) &&
+    has(x + inset, y) &&
+    has(x, y - inset) &&
+    has(x, y + inset) &&
+    has(x - skew, y - skew) &&
+    has(x + skew, y - skew) &&
+    has(x - skew, y + skew) &&
+    has(x + skew, y + skew);
+
+  const inner: ColoringPoint[] = [];
+  const edge: ColoringPoint[] = [];
+  const middle = Math.floor(stride / 2);
+  for (let y = middle; y < size; y += stride) {
+    for (let x = middle; x < size; x += stride) {
+      if (!has(x, y)) continue;
+      // El centro de la celda, no su esquina: en el borde exacto de una celda
+      // "dentro" depende del redondeo.
+      const point = { x: (x + 0.5) * cell, y: (y + 0.5) * cell };
+      if (isInner(x, y)) inner.push(point);
+      else edge.push(point);
     }
   }
-  return samples;
+  return inner.length > 0 ? inner : edge;
 }
 
 /**
@@ -1152,8 +1215,14 @@ export function coloringSessionStars(
   return 1;
 }
 
-/** Pausa tras pintar bien, para que se vea el color antes de seguir. */
-export const COLORING_FILL_MS = 420;
+/**
+ * Pausa tras terminar una zona, para verla acabada antes de seguir.
+ *
+ * Se llamaba `COLORING_FILL_MS` cuando era el tiempo de enseñar el relleno que
+ * ponía el juego. Ya no hay relleno: lo que se mira en esa pausa es lo que
+ * pintó la mano.
+ */
+export const COLORING_DONE_MS = 420;
 
 /**
  * El tope de fichas de la paleta. Con seis, las fichas de 48 px de un teléfono
