@@ -232,24 +232,9 @@ export type ColoringPoint = { x: number; y: number };
  *
  * Más fino no sería mejor: medir por debajo de la celda de la rejilla de zonas
  * (100/`COLORING_GRID`, unas cuatro décimas) es medir ruido de la escalera del
- * borde. El que hace alcanzable el 100 % es `COLORING_SAMPLE_MARGIN`, no este.
+ * borde.
  */
 export const COLORING_SAMPLE_STEP = 1;
-
-/**
- * Cuánto se aparta la rejilla del borde de la zona, en el lienzo de 100.
- *
- * Es lo que hace **alcanzable** pedir el 100 %. Las zonas se meten unas celdas
- * bajo la tinta (`COLORING_GROW`) para que no quede un hilo blanco entre el
- * color y el contorno, así que su borde cae debajo de la línea, donde no se ve
- * si está pintado o no. Medir ahí sería pedir que se tape un trozo invisible:
- * la zona se vería entera pintada y el juego seguiría esperando.
- *
- * Apartándose un poco, todo lo que se mide es papel que se ve, y el borde se
- * pinta igual de paso, porque la pintura va recortada a la zona y el dedo barre
- * por encima del contorno sin estropear nada.
- */
-export const COLORING_SAMPLE_MARGIN = 1.2;
 
 /**
  * Lo que tiene que moverse el dedo para que cuente como tramo nuevo, en el
@@ -267,29 +252,30 @@ export const COLORING_MIN_STEP = 0.4;
  * cosas dan lo mismo, pero esta no necesita lienzo —así que este archivo sigue
  * compilando sin las librerías del DOM, que es lo que `validate:content`
  * comprueba— y cuesta una pasada por la rejilla en vez de un `isPointInPath`
- * por punto, que con la rejilla fina y el borde apartado serían cientos de
- * miles al abrir cada lámina.
+ * por punto, que con la rejilla fina serían cientos de miles al abrir cada
+ * lámina.
  *
- * `margin` aparta la siembra del borde: un punto solo entra si la zona también
- * ocupa lo que tiene alrededor a esa distancia. Una zona tan estrecha que no
- * deje ni un punto apartado se siembra sin margen antes que quedarse sin medida
- * —si no, se daría por pintada al primer toque—, y una que no ocupa nada
- * devuelve la lista vacía, que es como `coloringCoverage` cuenta "no hay nada
- * que medir".
+ * **Se mide el papel que se ve, y eso lo decide la tinta.** Una zona se mete
+ * `COLORING_GROW` celdas bajo la línea que la rodea, para que entre el color y
+ * el contorno no asome un hilo blanco; ese reborde es suyo pero está tapado, y
+ * pedir que se tape lo que ya tapa la línea dejaría la zona imposible de
+ * cerrar: se vería entera pintada y el juego seguiría esperando. Por eso no
+ * entra en la siembra ninguna celda que sea tinta, y sí entran todas las demás,
+ * incluidas las pegadas al contorno. Hubo una versión que apartaba la rejilla
+ * una distancia fija del borde en vez de mirar la tinta, y esa franja sin medir
+ * era justo la que se quedaba blanca al darse la zona por hecha.
+ *
+ * Una zona cuyas celdas sean todas tinta devuelve la lista vacía, que es como
+ * `coloringCoverage` cuenta "no hay nada que medir".
  */
 export function coloringRegionSamples(
   runs: readonly ColoringRun[],
   size: number,
+  ink: Readonly<Uint8Array>,
   step: number = COLORING_SAMPLE_STEP,
-  margin: number = COLORING_SAMPLE_MARGIN,
 ): ColoringPoint[] {
   const cell = 100 / size;
   const stride = Math.max(1, Math.round(step / cell));
-  const inset = Math.max(1, Math.round(margin / cell));
-  // En diagonal la distancia la pone la hipotenusa, así que el salto es más
-  // corto: con el mismo `inset` en las ocho direcciones, una esquina a 45° se
-  // quedaría más cerca del borde que el margen pedido.
-  const skew = Math.max(1, Math.round(inset / Math.SQRT2));
 
   const mine = new Uint8Array(size * size);
   for (const { y, x0, x1 } of runs) {
@@ -299,32 +285,18 @@ export function coloringRegionSamples(
     for (let x = from; x <= to; x += 1) mine[y * size + x] = 1;
   }
 
-  const has = (x: number, y: number) =>
-    x >= 0 && x < size && y >= 0 && y < size && mine[y * size + x] === 1;
-  const isInner = (x: number, y: number) =>
-    has(x - inset, y) &&
-    has(x + inset, y) &&
-    has(x, y - inset) &&
-    has(x, y + inset) &&
-    has(x - skew, y - skew) &&
-    has(x + skew, y - skew) &&
-    has(x - skew, y + skew) &&
-    has(x + skew, y + skew);
-
-  const inner: ColoringPoint[] = [];
-  const edge: ColoringPoint[] = [];
+  const samples: ColoringPoint[] = [];
   const middle = Math.floor(stride / 2);
   for (let y = middle; y < size; y += stride) {
     for (let x = middle; x < size; x += stride) {
-      if (!has(x, y)) continue;
+      const index = y * size + x;
+      if (mine[index] !== 1 || ink[index]) continue;
       // El centro de la celda, no su esquina: en el borde exacto de una celda
       // "dentro" depende del redondeo.
-      const point = { x: (x + 0.5) * cell, y: (y + 0.5) * cell };
-      if (isInner(x, y)) inner.push(point);
-      else edge.push(point);
+      samples.push({ x: (x + 0.5) * cell, y: (y + 0.5) * cell });
     }
   }
-  return inner.length > 0 ? inner : edge;
+  return samples;
 }
 
 /**

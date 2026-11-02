@@ -42,7 +42,6 @@ import {
   COLORING_PICTURES,
   COLORING_PICTURES_PER_SESSION,
   COLORING_GRID,
-  COLORING_SAMPLE_MARGIN,
   COLORING_SAMPLE_STEP,
   picturesForLevel,
   type ColorId,
@@ -363,13 +362,25 @@ console.log("\nEl pincel");
 console.log("\nLa medida de lo pintado");
 {
   // Una zona cuadrada de celdas, como las que salen de una lámina: de la 40 a
-  // la 215 de las 256, que en el lienzo de 100 va de 15,6 a 84,4.
+  // la 215 de las 256, que en el lienzo de 100 va de 15,6 a 84,4. Las dos
+  // celdas de cada borde son tinta, que es lo que pasa de verdad: la zona se
+  // mete `COLORING_GROW` celdas bajo la línea que la rodea.
   const cell = 100 / COLORING_GRID;
   const square: ColoringRun[] = [];
   for (let y = 40; y <= 215; y += 1) square.push({ y, x0: 40, x1: 215 });
-  const samples = coloringRegionSamples(square, COLORING_GRID);
+  const ink = new Uint8Array(COLORING_GRID * COLORING_GRID);
+  for (let y = 40; y <= 215; y += 1) {
+    for (let x = 40; x <= 215; x += 1) {
+      const borde = x < 42 || x > 213 || y < 42 || y > 213;
+      if (borde) ink[y * COLORING_GRID + x] = 1;
+    }
+  }
+  const samples = coloringRegionSamples(square, COLORING_GRID, ink);
   const low = 40 * cell;
   const high = 216 * cell;
+  // Donde empieza y acaba el papel que se ve, una vez quitada la tinta.
+  const paperLow = 42 * cell;
+  const paperHigh = 214 * cell;
 
   check(
     "la rejilla solo siembra dentro de la zona",
@@ -378,20 +389,33 @@ console.log("\nLa medida de lo pintado");
         point.x > low && point.x < high && point.y > low && point.y < high,
     ),
   );
-  // El borde de la zona queda debajo del contorno, que se pinta encima: medir
-  // ahí sería pedir que se tape un trozo que no se ve.
-  const toEdge = Math.min(
+  // El reborde de la zona queda debajo del contorno, que se pinta encima:
+  // medir ahí sería pedir que se tape un trozo que no se ve.
+  check(
+    "y nunca sobre la tinta, que es lo que tapa la línea",
+    samples.every(
+      (point) =>
+        point.x > paperLow &&
+        point.x < paperHigh &&
+        point.y > paperLow &&
+        point.y < paperHigh,
+    ),
+  );
+  // Y lo contrario, que es lo que se rompió: si la siembra se aparta de la
+  // línea, esa franja no se mide y la zona se da por hecha con el papel a la
+  // vista. Lo que puede quedar sin medir junto al contorno no llega al paso.
+  const toPaper = Math.min(
     ...samples.flatMap((point) => [
-      point.x - low,
-      high - point.x,
-      point.y - low,
-      high - point.y,
+      point.x - paperLow,
+      paperHigh - point.x,
+      point.y - paperLow,
+      paperHigh - point.y,
     ]),
   );
   check(
-    "y se aparta del borde, que es donde la línea tapa el papel",
-    toEdge >= COLORING_SAMPLE_MARGIN,
-    `${toEdge.toFixed(2)} contra ${COLORING_SAMPLE_MARGIN}`,
+    "pero sí pegada a ella: el papel que se ve, se mide",
+    toPaper <= COLORING_SAMPLE_STEP,
+    `${toPaper.toFixed(2)} contra ${COLORING_SAMPLE_STEP}`,
   );
   check(
     "y la siembra con puntos de sobra",
@@ -413,18 +437,25 @@ console.log("\nLa medida de lo pintado");
     `${spacing.toFixed(2)} contra ${COLORING_BRUSHES[0].radius * 2}`,
   );
 
-  // Una franja de cuatro celdas de alto: no cabe ningún punto apartado del
-  // borde, y aun así tiene que poder medirse.
+  // Una franja de cuatro celdas de alto, de las más estrechas que da el banco:
+  // tiene que poder medirse igual.
   const strip: ColoringRun[] = [];
   for (let y = 100; y <= 103; y += 1) strip.push({ y, x0: 40, x1: 215 });
   check(
-    "una zona estrecha se siembra sin margen antes que quedarse sin medida",
-    coloringRegionSamples(strip, COLORING_GRID).length > 0,
-    `${coloringRegionSamples(strip, COLORING_GRID).length}`,
+    "una zona estrecha se mide igual, hasta pegada a la línea",
+    coloringRegionSamples(strip, COLORING_GRID, ink).length > 0,
+    `${coloringRegionSamples(strip, COLORING_GRID, ink).length}`,
+  );
+  // Una que fuera toda tinta no tendría papel que medir, y entonces vale más
+  // darla por cubierta que dejarla imposible de cerrar.
+  const allInk = new Uint8Array(COLORING_GRID * COLORING_GRID).fill(1);
+  check(
+    "y una que solo es tinta no tiene nada que medir",
+    coloringRegionSamples(square, COLORING_GRID, allInk).length === 0,
   );
   check(
     "y una que no ocupa nada no siembra nada",
-    coloringRegionSamples([], COLORING_GRID).length === 0,
+    coloringRegionSamples([], COLORING_GRID, ink).length === 0,
   );
 
   const dot = { x: 50, y: 50 };
