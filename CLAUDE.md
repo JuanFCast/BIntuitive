@@ -448,6 +448,11 @@ src/lib/
   espaciadas dentro de los juegos; quien juega puede estar aprendiendo el idioma y leer despacio, y esas
   etiquetas quedaban además por debajo de 4.5:1. Las etiquetas van en minúscula normal, a
   `text-ink/70` como mínimo. La única excepción son las letras de juego (sopa, fichas).
+- **Las tipografías van en el repositorio, no en Google Fonts**: Baloo 2 y Bricolage Grotesque
+  se cargan con `next/font/local` desde `src/app/fonts/` (corte latino, variables). Con
+  `next/font/google` el build las descargaba al compilar, y el 2026-11-15 una respuesta rara de
+  Google tumbó dos despliegues seguidos con un código que compilaba en local. No volver a
+  `next/font/google`. Licencia OFL: ver `src/app/fonts/README.md`.
 - **Movimiento reducido**: `globals.css` tiene una regla global que cambia `pop`, `enter` y
   `fade-up` por un fundido corto y para sacudidas, bailes y confeti. Una animación nueva
   tiene que entrar en esa regla.

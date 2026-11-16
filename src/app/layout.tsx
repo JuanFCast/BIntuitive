@@ -1,15 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Baloo_2, Bricolage_Grotesque } from "next/font/google";
+import localFont from "next/font/local";
 import { LanguageProvider } from "@/lib/i18n";
 import { siteDescription, siteName, siteUrl } from "./siteMetadata";
 import AppShell from "@/components/AppShell";
 import TextSizePreference from "@/components/TextSizePreference";
 import "./globals.css";
 
-const baloo = Baloo_2({
-  subsets: ["latin"],
+/*
+ * Las dos tipografías viven en el repositorio (`src/app/fonts/`), no se
+ * descargan al compilar.
+ *
+ * Con `next/font/google` cada build salía a Google Fonts a por ellas, y el
+ * 2026-11-15 Google respondió dos veces algo que `next/font` no supo leer
+ * ("Cannot read properties of null (reading '1')"): falló el despliegue de
+ * Amplify y el de Vercel con un código que compilaba bien en local. Un build
+ * no puede depender de que un tercero conteste bien ese minuto.
+ *
+ * Son los mismos archivos que servía Google: el corte latino de cada familia,
+ * que cubre español e inglés enteros (tildes, ñ, ¿¡, comillas y guiones), y
+ * variables, así que un solo archivo da todos los grosores. Licencia OFL: ver
+ * `src/app/fonts/README.md`.
+ */
+const baloo = localFont({
+  src: "./fonts/baloo-2-latin.woff2",
   variable: "--font-baloo",
-  weight: ["400", "600", "700", "800"],
+  weight: "400 800",
+  display: "swap",
 });
 
 /*
@@ -22,10 +38,11 @@ const baloo = Baloo_2({
  * contra sus métricas. Dos familias con un papel claro cada una, no dos
  * fuentes compitiendo.
  */
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
+const bricolage = localFont({
+  src: "./fonts/bricolage-grotesque-latin.woff2",
   variable: "--font-bricolage",
-  weight: ["600", "700", "800"],
+  weight: "600 800",
+  display: "swap",
 });
 
 const title = siteName;
