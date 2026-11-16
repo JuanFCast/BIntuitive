@@ -1,8 +1,14 @@
 # BIntuitive
 
-BIntuitive is a touch-friendly educational game for curious learners. Players listen to or read a short instruction and tap the correct answer. The experience is designed for iPad first and adapts to phones and desktop browsers.
+BIntuitive is a touch-friendly educational game for adults. Players listen to or read a short instruction and tap the correct answer. The experience is designed for iPad first and adapts to phones and desktop browsers.
 
 **Live app:** [bintuitive.aumcrsp.com](https://bintuitive.aumcrsp.com)
+
+## Audience and distribution
+
+- **Built for adults (18+).** BIntuitive is made for learners aged 18 and over. It is not a children's app and is not presented as one: product copy, store listings and documentation speak to adult learners.
+- **Headed for the app stores.** The target is Google Play and the Apple App Store, alongside the web version. The store build (`NEXT_PUBLIC_BUILD_TARGET=store`) is the one that will be submitted.
+- **Friendly by design, Duolingo-style.** The interface is bright, simple and encouraging so that it feels intuitive from the first tap: short sessions, one clear task at a time, instant feedback, stars and unlocked levels. Friendly and playful does not mean childish.
 
 ## Features
 

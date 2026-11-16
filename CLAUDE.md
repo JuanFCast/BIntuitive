@@ -9,6 +9,18 @@ Next.js 15 App Router + React 19 + TypeScript + Tailwind CSS 4. Sin backend, sin
 analytics: todo el estado vive en `localStorage`. Producción en `bintuitive.aumcrsp.com` vía AWS
 CloudFront (el workflow de deploy vive fuera del repo).
 
+**Público y destino: adultos, en las tiendas.** BIntuitive es para personas de **18 años o
+más** y va a **Google Play y al App Store**, además de la web; el build que se envía es el de
+tienda. **No es una aplicación infantil y no se presenta como tal**: ni el README, ni los textos
+de tienda, ni la interfaz, ni este documento hablan de niños, padres o colegios. Se dice "quien
+juega" o "quien aprende". La interfaz es amable, clara y alentadora para que sea intuitiva desde
+el primer toque, al estilo de Duolingo: sesiones cortas, una tarea a la vez, respuesta inmediata,
+estrellas y escalones que se abren. Amable no quiere decir infantil. Dos cosas del código son
+anteriores a esta decisión y hay que resolverlas antes de que el modelo llegue a una base de
+datos: las claves de grado de `grade.ts` (`pre-k` a `grade-3`) y un banco de preguntas pensado en
+origen para edades tempranas (contar manzanas, nombrar colores). Cuando haya cuentas, son de
+quien juega: no hay cuenta de adulto con perfiles infantiles colgando.
+
 Comandos: `npm run dev`, `npm run build` (valida tipos), `npm start`, `npm run lint`,
 `npm run validate:content` (valida el contenido educativo), `npm run check:migration` (comprueba
 que actualizar la aplicación no le pierde el progreso a nadie), y `npm run check:tracing`,
@@ -41,7 +53,7 @@ va primero; las dos de cuenta van debajo, agrupadas bajo "Tu cuenta". El build d
 **El panal (`/explore`) es la única superficie de descubrimiento.** Es la pantalla de entrada
 de la aplicación —la pestaña se llama Home (Inicio en español), aunque la ruta sea `/explore`— y todo lo que dentro significa "volver al
 principio" apunta ahí, nunca a `/`. Las direcciones viven en `src/lib/routes.ts`: un
-`href="/"` suelto en un juego mandaría al niño a la pantalla de registro. Renderiza
+`href="/"` suelto en un juego mandaría a quien juega a la pantalla de registro. Renderiza
 `hexagons = [...categories, ...gameHexagons]`, es decir lecciones y juegos en el mismo panal.
 No existe una sección `games`: hubo una (`/games`, de la etapa "worlds", commit `9f1d81d`) que
 quedó como superficie duplicada al llegar el panal en `94bc7df`, y se eliminó. Si vuelve a
@@ -177,8 +189,8 @@ src/lib/
   espesa frente a parque con columpios; desierto sin una gota de agua frente a playa. Un
   lugar nuevo se revisa **en pareja con sus distractores**, no suelto.
 - **Colorear crece cambiando de mecánica, no de tamaño**: los escalones 1 y 2 dicen en voz
-  alta qué zona pintar y de qué color, y van zona por zona, así que sirven a quien todavía no
-  reconoce cifras; del 3 al 5 cada zona lleva un número, la paleta dice qué color es cada
+  alta qué zona pintar y de qué color, y van zona por zona, así que no piden leer ni cifras ni
+  palabras; del 3 al 5 cada zona lleva un número, la paleta dice qué color es cada
   número y se pinta en el orden que se quiera. Es un solo juego con dos formas de pedir lo
   mismo, y es lo que hace que los cinco escalones sean cinco cosas distintas.
 - **En Colorear se piden los colores de la realidad.** Cada zona declara en `colors` los
@@ -208,7 +220,7 @@ src/lib/
   seguir un camino. Tres grosores (`COLORING_BRUSHES`) y no un deslizador, porque un
   deslizador pide un gesto fino y no se puede nombrar en voz alta ni leer con un lector de
   pantalla. **La pintura se recorta a la zona**, así que salirse no estropea el dibujo —es
-  lo que permite dárselo a un niño de tres años con el dedo— y el color que no toca
+  lo que permite pintar deprisa con el dedo, sin apuntar— y el color que no toca
   sencillamente no agarra: equivocarse nunca deja marca. **La zona la pinta entera la mano, y
   el juego no pone ni el último trozo.** Son dos cosas, y faltando cualquiera de las dos
   vuelve el salto a "pintado" justo al final:
@@ -301,9 +313,9 @@ src/lib/
   es la identidad de BIntuitive; la lista existe para lo que el panal hace peor, que es leer
   nombres de corrido y encontrar rápido, y por eso ahí sí cabe la descripción.
   **La estrella de favorito solo está en la lista.** El panal enseña cuáles lo son pero no deja
-  cambiarlo: son diez celdas grandes para que un niño de tres años acierte el toque, y meterle a
+  cambiarlo: son diez celdas grandes para que el toque se acierte sin apuntar, y meterle a
   cada una un segundo objetivo pequeño al lado trabaja justo en contra; además marcar favoritos
-  es cosa del adulto. El enlace y la estrella son **hermanos**, nunca uno dentro de otro.
+  es organizar, no jugar, y organizar es lo que hace la lista. El enlace y la estrella son **hermanos**, nunca uno dentro de otro.
   Los favoritos viven en `favorites.ts` con clave propia (`bintuitive-favorites`) y guardan
   **ids**: el panal se reordena y los nombres se traducen, pero el id es lo único estable, y uno
   que ya no exista se descarta al leer. `clearProgress()` no se los lleva, igual que no se lleva
@@ -406,7 +418,7 @@ src/lib/
   confirmación de salida. Las esperas cortas de un juego van por `useGameTimers` (`later`, no
   `setTimeout` suelto), y `onOverlayOpenChange` las congela y las reanuda con el tiempo que
   les faltaba. Un `setTimeout` propio seguiría corriendo detrás del overlay y cambiaría la
-  carta, la palabra o el tablero mientras el niño lee o decide.
+  carta, la palabra o el tablero mientras quien juega lee o decide.
 - **La voz nunca arranca sola**: en iOS SpeechSynthesis solo habla como consecuencia directa
   de un gesto, así que el audio de la introducción es un botón, no una reproducción
   automática. `AudioButton` comprueba `isMuted()` en los dos caminos.
@@ -424,9 +436,9 @@ src/lib/
   secciones de juego se centran en vertical, y en las lecciones la pregunta va pegada a sus
   respuestas. Un contenedor flexible centrado se encoge a su contenido: si un tablero usa
   `min(100%, …)`, su columna necesita `w-full` o el 100% se resuelve contra casi nada.
-- **Letra de niño, no de panel de control**: nada de `font-mono` (los números van en Baloo con
+- **Letra amable, no de panel de control**: nada de `font-mono` (los números van en Baloo con
   `tabular-nums`, que no baila con el reloj) ni de etiquetas diminutas en mayúsculas
-  espaciadas dentro de los juegos; quien juega no sabe leer todavía o lee despacio, y esas
+  espaciadas dentro de los juegos; quien juega puede estar aprendiendo el idioma y leer despacio, y esas
   etiquetas quedaban además por debajo de 4.5:1. Las etiquetas van en minúscula normal, a
   `text-ink/70` como mínimo. La única excepción son las letras de juego (sopa, fichas).
 - **Movimiento reducido**: `globals.css` tiene una regla global que cambia `pop`, `enter` y
@@ -652,8 +664,8 @@ y la carpeta `~/.impeccable`.
   los dos modelos discrepen. La dirección es siempre 1 → 2 y un dato antiguo **nunca** rebaja uno nuevo:
   las marcas se juntan por su mejor valor, el desbloqueo y las estrellas solo suben, y lo que el
   modelo antiguo no sabía medir llega como `null` y no borra nada. Todo el progreso anterior vive
-  bajo la clave `unassigned`, que no es un grado: atribuirlo a Pre-K sería inventarle un curso a
-  quien no lo ha elegido. Cuándo se puede retirar el puente está escrito sobre
+  bajo la clave `unassigned`, que no es un grado: atribuirlo a cualquiera de ellos sería
+  inventarle un nivel a quien no lo ha elegido. Cuándo se puede retirar el puente está escrito sobre
   `projectLegacyProgress`, y `npm run check:migration` es lo que lo protege: si se toca el
   progreso, ese comando tiene que seguir en verde.
 - **Campo heredado**: `Progress.wordPuzzle` es el nombre que tenía Word Scramble antes de
@@ -683,8 +695,8 @@ y la carpeta `~/.impeccable`.
   Parejas y ejercicios de Trazos. El de Trazos tiene la forma de una fila de base de datos
   —id, nivel, categoría, salida, destino y tipo de camino— justamente para que mañana pueda
   venir de una: lo único que habría que cambiar es de dónde sale la tabla, no el juego. No hay banco
-  central y no toca unificarlos hasta que estén decididos los rangos de edad y llegue el
-  PowerPoint revisado.
+  central y no toca unificarlos hasta que estén decididos los niveles del público adulto y
+  llegue el PowerPoint revisado.
 - **`npm run validate:content`** comprueba las invariantes que cada banco ya asume: ids únicos,
   `answerId` existente, traducciones inglesas presentes y sin huérfanas, NFC y alfabeto por
   idioma, longitud de palabra compatible con su nivel o con el tamaño de su tablero, forma de
