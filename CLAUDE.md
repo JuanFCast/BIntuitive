@@ -5,8 +5,9 @@ Guía para trabajar en este repositorio.
 ## Qué es
 
 BIntuitive: juego educativo bilingüe (EN por defecto / ES), touch-first (iPad → móvil → desktop).
-Next.js 15 App Router + React 19 + TypeScript + Tailwind CSS 4. Sin backend, sin cuentas, sin
-analytics: todo el estado vive en `localStorage`. Producción en `bintuitive.aumcrsp.com` vía AWS
+Next.js 15 App Router + React 19 + TypeScript + Tailwind CSS 4. Build estático y sin servidor
+propio; las **cuentas** van con Supabase Auth desde el navegador (ver "Cuentas" más abajo) y
+todo lo demás —progreso, perfil, preferencias— sigue en `localStorage`. Sin analytics. Producción en `bintuitive.aumcrsp.com` vía AWS
 CloudFront (el workflow de deploy vive fuera del repo).
 
 **Público y destino: adultos, en las tiendas.** BIntuitive es para personas de **18 años o
@@ -36,19 +37,20 @@ sobrevivieron a su propio redirect y una superficie de juegos duplicada, nada de
 build, así que `tsc` no lo iba a encontrar nunca. El guion bajo (`_algo`) es la forma de decir
 "esto sobra a propósito". Ignora `.claude/` —las skills de diseño son herramienta, no código de
 BIntuitive— y lo generado (`.next/`, `.content-check/`). ESLint es la única dependencia de
-desarrollo que no es Next, React o Tailwind; la regla de "sin dependencias nuevas" sigue valiendo
-entera para lo que se envía al navegador.
+desarrollo que no es Next, React o Tailwind; para lo que se envía al navegador, la única excepción
+a "sin dependencias nuevas" es `@supabase/supabase-js` (ver la convención).
 
 ## Arquitectura
 
 **La raíz (`/`) es la portada pública.** Presenta BIntuitive y ofrece tres puertas: iniciar
-sesión, crear una cuenta y continuar como invitado. Las dos primeras son **prototipos
-visuales**: no hay proveedor de identidad, ni base de datos, ni sesión, y las pantallas lo
-dicen en vez de fingirlo. No guardan correos, ni contraseñas, ni cuentas falsas en
-`localStorage`. La tercera es la que lleva a la aplicación de verdad, y por eso es la grande y
-va primero; las dos de cuenta van debajo, agrupadas bajo "Tu cuenta". El build de tienda
-(`NEXT_PUBLIC_BUILD_TARGET=store`, en `src/lib/buildTarget.ts`) no las enseña y sus rutas dan
-404: en una tienda, una función que no funciona es motivo de rechazo.
+sesión, crear una cuenta y continuar como invitado. Las dos primeras funcionan con Supabase
+cuando el proyecto está configurado (`.env.local`); sin configurar, los formularios validan y
+dicen que las cuentas aún no están, sin fingir ningún envío. La de invitado no pide nada y por
+eso sigue siendo la grande y la primera; las dos de cuenta van debajo, agrupadas bajo "Tu
+cuenta". Con sesión abierta, la grande saluda por el nombre y las de cuenta se cambian por
+cerrar sesión. El build de tienda (`NEXT_PUBLIC_BUILD_TARGET=store`, en
+`src/lib/buildTarget.ts`) todavía no las enseña y sus rutas dan 404: Apple exige poder borrar
+la cuenta desde la propia aplicación, y eso aún no existe.
 
 **El panal (`/explore`) es la única superficie de descubrimiento.** Es la pantalla de entrada
 de la aplicación —la pestaña se llama Home (Inicio en español), aunque la ruta sea `/explore`— y todo lo que dentro significa "volver al
@@ -76,7 +78,9 @@ src/app/
   manifest.ts           Manifest de la app instalable (Next lo sirve y lo enlaza)
   page.tsx              Portada pública (renderiza LandingClient)
   LandingClient.tsx     Identidad, y las tres puertas: sesión, cuenta e invitado
-  signin/, signup/, forgot-password/   Prototipos visuales de cuenta, sin backend
+  signin/, signup/, forgot-password/   Cuentas: entrar, registro en cuatro pasos, recuperar
+  reset-password/       Elegir contraseña nueva al volver del enlace del correo
+  auth/callback/        Adonde vuelve el enlace de confirmación del alta
   explore/page.tsx      El panal: pantalla de entrada de la aplicación
   HomeClient.tsx        El panal con todos los Hexagon
   hexagons/             Dirección anterior del panal: misma pantalla, 200, canonical a /explore
@@ -86,7 +90,8 @@ src/app/
     <id>/<Name>Game.tsx "use client": toda la máquina de estados del juego
   progress/, profile/
 src/components/         BrandMark, MuteButton, HexagonCard, HexagonRow, AppShell, AppMenu, GameShell,
-                        AuthShell, AuthField, LanguageSwitch, ComingSoonNotice,
+                        AuthShell, AuthField, BirthdateField, PasswordStrength, AuthButton,
+                        AuthAlert, LanguageSwitch, ComingSoonNotice,
                         GameIntro, GameHelp, ResultActions, ResultStat, Confetti,
                         ConfirmDialog...
 src/data/
@@ -113,7 +118,9 @@ src/lib/
   preferences.ts        useMuted / useTextSize: lectura reactiva de las preferencias
   profile.ts            Nombre, avatar y fecha de inicio de quien juega en este dispositivo
   routes.ts             Las direcciones de la aplicación, escritas una sola vez
-  authForm.ts           Validación visual de los formularios de cuenta (sin backend)
+  authForm.ts           Validación de los formularios de cuenta: nombre, edad (18+), contraseña
+  supabase.ts           El cliente de Supabase, o null si no hay proyecto configurado
+  account.ts            useAccount, signUp, signIn, signOut, contraseña: la cuenta entera
   buildTarget.ts        IS_STORE_BUILD: qué cambia entre la web y el build de tienda
   storage.ts, sounds.ts, speech.ts, language.ts
 ```
@@ -453,11 +460,10 @@ src/lib/
   ruido, porque el menú está en todas las pantallas. La verdad sigue en `localStorage`:
   `storage.ts` avisa a quien se suscriba y `useMuted` / `useTextSize` leen con
   `useSyncExternalStore`, así que no hay un segundo estado que pueda desincronizarse.
-- **Perfil es identidad, no cuenta**: `src/lib/profile.ts` guarda nombre, avatar y fecha de
-  inicio en su propia clave (`bintuitive-profile`). No hay servidor, así que no hay correo,
-  contraseña ni sesión que gestionar, y la pantalla lo dice en su tarjeta de "Cuenta" en vez de
-  enseñar campos que no hacen nada. Ahí es donde entrará iniciar sesión el día que existan
-  cuentas. El avatar se guarda por `id`, no por emoji: el dibujo puede cambiar y quien eligió
+- **Perfil es identidad local; la cuenta va aparte**: `src/lib/profile.ts` guarda nombre, avatar
+  y fecha de inicio en su propia clave (`bintuitive-profile`), exista cuenta o no. La tarjeta de
+  "Cuenta" de `Profile` es la única que sabe de la sesión: con qué correo se ha entrado y
+  cerrar sesión, o las dos puertas de cuenta para quien juega como invitado. El avatar se guarda por `id`, no por emoji: el dibujo puede cambiar y quien eligió
   zorro debe seguir teniendo zorro. `Profile` solo enseña estrellas y lecciones —las dos
   métricas globales— y enlaza a `/progress` para el detalle, en vez de copiarlo.
 - **Tamaño de texto**: escala los tokens `--text-*` de Tailwind desde `[data-text-size]` en
@@ -465,8 +471,35 @@ src/lib/
   calculado contra el viewport. La geometría es inmune porque dimensiona su letra con
   `text-[clamp(...)]`, que compila a un valor literal; si un elemento cuyo tamaño es parte de
   la mecánica necesita letra, debe usar un valor arbitrario, no `text-lg`.
-- **Sin dependencias nuevas**: el proyecto solo depende de Next/React. Nada de librerías de
-  animación, estado o UI.
+- **Sin dependencias nuevas**: el proyecto depende de Next/React y de `@supabase/supabase-js`, que
+  entró el 2026-11-15 con las cuentas y va fijado a una versión exacta. Nada de librerías de
+  animación, estado o UI, ni otro SDK de Supabase (`@supabase/ssr` sobra: no hay servidor).
+- **Cuentas con Supabase, desde el navegador**. Todo pasa por `src/lib/account.ts`; nada más
+  importa el cliente para la cuenta, así que añadir Google es una función más ahí. Reglas:
+  - **Sin las dos variables la aplicación funciona entera como invitado.**
+    `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (plantilla en `.env.example`) son
+    públicas por diseño —lo que protege los datos es RLS—; la `service_role` no entra nunca en
+    la aplicación. `IS_SUPABASE_CONFIGURED` decide si los formularios envían o dicen que las
+    cuentas aún no están. Un build sin ellas (Vercel, la tienda) no se rompe.
+  - **La sesión vive en `bintuitive-auth`**, clave propia: `clearProgress()` no la toca y
+    cerrar sesión no borra progreso, perfil ni preferencias. El progreso **todavía no viaja con
+    la cuenta**; ninguna pantalla debe prometer lo contrario.
+  - **Solo mayores de 18, dos veces.** `validateBirthdate` lo para en la pantalla; el disparador
+    de `supabase/migrations/` lo vuelve a comprobar al crear la fila de `profiles`, porque la
+    API de Supabase se puede llamar sin pasar por la pantalla. Un alta por Google no traerá
+    fecha: ese día el disparador tiene que dejarla pendiente y la aplicación pedirla.
+  - **El registro es una conversación de cuatro pasos** (nombre, fecha de nacimiento, correo,
+    contraseña): la abeja pregunta en un bocadillo, una celda del panal por paso, y desde el
+    segundo llama por el nombre. Cada paso se valida al pulsar Continuar, no mientras se
+    escribe. No hay "repetir contraseña": el campo trae mostrar/ocultar. La fecha son tres
+    casillas numéricas en el orden del idioma (mes-día-año en inglés, día-mes-año en español),
+    no un `<input type="date">`.
+  - **Los errores se traducen por `code`, nunca por el mensaje** (`describe` en `account.ts`),
+    y "recuperar contraseña" contesta igual exista o no la cuenta.
+  - **`/auth/callback` y `/reset-password` no van en la lista de `IOS_CHROME_VIEWPORT_RECOVERY`**
+    aunque se abran desde fuera: esa recuperación recarga la página, y la sesión llega en la
+    dirección del enlace. Antes de añadirlas, comprobar en Chrome de iOS que la sesión sobrevive
+    a esa recarga.
 
 ## Cómo agregar un juego nuevo
 

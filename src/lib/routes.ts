@@ -4,7 +4,7 @@
  * Existen aquí por un motivo concreto: la raíz dejó de ser el panal. Ahora es
  * la portada pública, y todos los botones de casa, salida y "volver al
  * principio" de dentro de la aplicación tienen que llevar a `EXPLORE`, no a
- * `/`. Un `href="/"` suelto en un juego mandaría al niño a la pantalla de
+ * `/`. Un `href="/"` suelto en un juego mandaría a quien juega a la pantalla de
  * registro en mitad de una partida, y ese error no lo ve el compilador.
  *
  * `LEGACY_EXPLORE` sigue sirviendo el panal con un 200 y **no redirige**, ni
@@ -23,6 +23,10 @@ export const PROFILE = "/profile";
 export const SIGN_IN = "/signin";
 export const SIGN_UP = "/signup";
 export const FORGOT_PASSWORD = "/forgot-password";
+/** Adonde vuelve el enlace de confirmación del correo de alta. */
+export const AUTH_CALLBACK = "/auth/callback";
+/** Adonde vuelve el enlace del correo de "olvidé mi contraseña". */
+export const RESET_PASSWORD = "/reset-password";
 
 /** Las que llevan el marco de la aplicación: cabecera y barra inferior. */
 export const APP_FRAME_ROUTES = [

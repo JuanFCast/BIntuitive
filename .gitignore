@@ -9,6 +9,8 @@ next-env.d.ts
 
 .vercel
 .env*
+# La plantilla sí viaja: dice qué variables hacen falta, sin valores.
+!.env.example
 
 docs/
 

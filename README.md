@@ -14,7 +14,8 @@ BIntuitive is a touch-friendly educational game for adults. Players listen to or
 
 - **English-first bilingual experience:** English is the default language and Spanish is available from the `EN/ES` switch on every screen.
 - **Fully localized gameplay:** interface text, categories, instructions, hints, answers, accessibility labels, and speech all follow the selected language.
-- **A public welcome page:** the site root introduces BIntuitive and offers three doors — sign in, create an account, or continue as a guest. The first two are honest visual prototypes: there is no identity provider, no database and no session yet, and the screens say so instead of pretending otherwise. Nothing is stored, and no fake account is ever written to the browser. Store builds (`NEXT_PUBLIC_BUILD_TARGET=store`) hide both account doors, and their routes return 404.
+- **A public welcome page:** the site root introduces BIntuitive and offers three doors — continue as a guest, sign in, or create an account. Playing as a guest needs nothing, so it stays the big button; once signed in, it greets you by name. Store builds (`NEXT_PUBLIC_BUILD_TARGET=store`) still hide both account doors, and their routes return 404, until in-app account deletion exists.
+- **Accounts with Supabase:** sign-up is a four-step conversation — name, date of birth, email, password — with the BIntuitive bee asking one question at a time, honeycomb progress cells, a password-strength meter and no "repeat password" box. BIntuitive is for adults: anyone under 18 is stopped on screen and again by the database. Email confirmation, sign-in, password recovery and sign-out are all wired. Without a configured Supabase project the app still works fully as a guest, and the forms say accounts are not available yet.
 - **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which lives at `/explore` and is where every house button, exit and "back to the start" inside the app leads. There is no separate games section.
 - **10 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, Tracing, and Coloring.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
@@ -36,7 +37,7 @@ BIntuitive is a touch-friendly educational game for adults. Players listen to or
 - **Favourites and two views of Explore:** the honeycomb can be swapped for a list that shows each activity's description, and the choice is remembered. Activities are starred from the list — the honeycomb shows which ones are favourites but keeps its tap targets big and single-purpose — and a filter narrows Explore to them.
 - **Local progress:** total stars, recent sessions, per-category levels, every game's chosen and unlocked level with its best marks, language preference, mute preference, favourites, and the Explore view are stored in `localStorage`, each under its own key.
 - **Exit confirmation:** leaving a lesson or a game in progress asks first, so a stray tap cannot throw away the session. The introduction and the results screens leave straight away.
-- **Privacy-friendly MVP:** no accounts, ads, payments, analytics SDKs, or remote user-data storage.
+- **Privacy-friendly:** no ads, payments or analytics SDKs. Accounts store only the name, date of birth and email; progress, profile and preferences stay on the device.
 
 ## Tech stack
 
@@ -46,6 +47,7 @@ BIntuitive is a touch-friendly educational game for adults. Players listen to or
 - Tailwind CSS 4
 - Web Speech API and Web Audio API
 - Browser `localStorage`
+- Supabase Auth (`@supabase/supabase-js`), from the browser only
 
 ## Run locally
 
@@ -60,6 +62,16 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Accounts (Supabase)
+
+The app runs without any configuration, as a guest. To turn accounts on:
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Copy `.env.example` to `.env.local` and fill in the **Project URL** and the **anon / publishable key** from *Project Settings → API*. Both are public by design. Never put the `service_role` or `secret` key in the app.
+3. Run `supabase/migrations/20261115000000_profiles.sql` once in the project's *SQL Editor*. It creates the `profiles` table with row-level security, and the trigger that fills it on sign-up and rejects anyone under 18.
+4. In *Authentication → URL Configuration*, set the Site URL to the production domain and add `http://localhost:3000/**` and the production domain with `/**` to the redirect URLs.
+5. Restart `npm run dev`. The same two variables must be set wherever the app is built for production.
 
 To test on an iPad or phone connected to the same Wi-Fi network, start the development server and open `http://<computer-ip>:3000` in the device browser.
 
@@ -101,7 +113,9 @@ src/
   app/                  # Home, play routes, metadata, social cards, and icons
     page.tsx            # The public welcome page
     LandingClient.tsx   # Identity, and the three doors into the app
-    signin/, signup/, forgot-password/   # Visual account prototypes, no backend
+    signin/, signup/, forgot-password/   # Accounts: sign in, four-step sign-up, recovery
+    reset-password/     # Choose a new password from the email link
+    auth/callback/      # Where the sign-up confirmation link lands
     explore/            # The honeycomb that lists every hexagon
     HomeClient.tsx      # The honeycomb itself
     hexagons/           # A former address of the honeycomb: same screen, canonical to /explore
@@ -121,6 +135,8 @@ src/
     localization.ts     # English category, question, option, and accessibility copy
                         # (artwork for the questions lives in public/art/)
   lib/
+    account.ts          # The account: session, sign-up, sign-in, sign-out, password
+    supabase.ts         # The Supabase client, or null when no project is configured
     coloringGame.ts     # Coloring pictures, areas found in the image, real-world colours, and brushes
     exploreView.ts      # Whether Explore is shown as the honeycomb or as a list
     favorites.ts        # Which hexagons are starred on this device
@@ -256,10 +272,11 @@ The AWS deployment workflow and infrastructure configuration are managed
 outside this repository; no deployment-as-code configuration is currently
 tracked here.
 
-CloudFront currently delivers the application, but BIntuitive does not yet
-have a remote application backend, user authentication, or database. The
-profile, the progress and the preferences continue to be stored locally in the
-browser, each under its own key.
+CloudFront delivers the application, which is a static build with no server
+of its own. Accounts use Supabase Auth directly from the browser, so the build
+needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`; without
+them it ships as guest-only. The profile, the progress and the preferences are
+still stored locally in the browser, each under its own key.
 
 ## Credits
 

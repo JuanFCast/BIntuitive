@@ -1156,3 +1156,19 @@ button {
     animation: none;
   }
 }
+
+/* -----------------------------------------------------------------------
+ * Cuentas: la celda del panal en pequeño.
+ *
+ * El progreso del registro y el medidor de la contraseña son celdas del panal
+ * —hexágonos con la punta arriba, como los de `/explore`— y no barras: la
+ * misma forma que dice "esto es BIntuitive" en toda la aplicación. Es el
+ * mismo polígono que `.hexagon-card` y que `HEXAGON_CLIP` (`lib/hexagon.ts`):
+ * si uno cambia, cambian los tres. Es un recorte y no un dibujo, así que el
+ * color lo pone quien la usa.
+ * ----------------------------------------------------------------------- */
+
+/* Sin `display`: va fuera de capa y ganaría al `flex` de quien la usa. */
+.hex-cell {
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}

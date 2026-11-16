@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { signOut, useAccount } from "@/lib/account";
+import { IS_STORE_BUILD } from "@/lib/buildTarget";
 import { useDocumentTitle } from "@/lib/documentTitle";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
@@ -15,6 +17,7 @@ import {
   today,
   type Profile,
 } from "@/lib/profile";
+import { SIGN_IN, SIGN_UP } from "@/lib/routes";
 import { clearProgress, getProgress, type Progress } from "@/lib/storage";
 
 /**
@@ -25,11 +28,11 @@ import { clearProgress, getProgress, type Progress } from "@/lib/storage";
  * las duplicaba, y una lista de solo lectura de lo que ya se ve arriba no es
  * información, es ruido.
  *
- * Tampoco hay cuenta que gestionar, y la pantalla lo dice en vez de callarlo:
- * sin servidor no hay correo ni contraseña que valgan, así que el nombre y el
- * avatar viven en este navegador (`src/lib/profile.ts`) y el resumen sale del
- * progreso que ya estaba guardado. El día que existan cuentas, la tarjeta de
- * "Cuenta" es el sitio donde entra iniciar sesión.
+ * El nombre y el avatar de esta pantalla viven en este navegador
+ * (`src/lib/profile.ts`) y el resumen sale del progreso ya guardado. La
+ * cuenta va aparte, en su tarjeta: dice con qué correo se ha entrado y deja
+ * cerrar la sesión, o invita a crear una. El progreso todavía no viaja con la
+ * cuenta, y la tarjeta no lo promete.
  */
 export default function ProfileClient() {
   const { language, t } = useLanguage();
@@ -137,15 +140,7 @@ export default function ProfileClient() {
       </Section>
 
       <Section title={t("profileAccount")} id="account-heading">
-        <div className="rounded-3xl border border-ink/10 bg-white p-4 shadow-sm sm:p-5">
-          <p className="flex items-center gap-2 text-lg font-extrabold">
-            <span aria-hidden="true">🔒</span>
-            {t("profileAccountTitle")}
-          </p>
-          <p className="mt-1 text-sm font-semibold leading-snug text-ink/55">
-            {t("profileAccountText")}
-          </p>
-        </div>
+        <AccountCard />
       </Section>
 
       {/*
@@ -283,6 +278,84 @@ function ProfileEditor({
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * La tarjeta de la cuenta, en sus tres estados.
+ *
+ * Con sesión: con qué correo se ha entrado y el botón de salir. Sin sesión:
+ * las dos puertas de cuenta, salvo en el build de tienda, que no las enseña.
+ * Sin proyecto de Supabase configurado, o en la tienda, lo que había: no hay
+ * cuenta que crear y todo se guarda en este dispositivo.
+ */
+function AccountCard() {
+  const { t } = useLanguage();
+  const account = useAccount();
+  const card = "rounded-3xl border border-ink/10 bg-white p-4 shadow-sm sm:p-5";
+  const secondary =
+    "flex min-h-12 items-center justify-center rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 text-base font-extrabold text-ink transition-transform active:scale-95 active:border-b-2";
+
+  if (account.status === "loading") {
+    return <div className={`${card} min-h-24`} aria-busy="true" />;
+  }
+
+  if (account.status === "signed-in") {
+    return (
+      <div className={card}>
+        <p className="flex items-center gap-2 text-lg font-extrabold">
+          <span aria-hidden="true">✅</span>
+          {t("profileSignedInTitle")}
+        </p>
+        <p className="mt-1 break-words text-sm font-semibold leading-snug text-ink/70">
+          {t("profileSignedInText", { email: account.user.email })}
+        </p>
+        <button
+          type="button"
+          onClick={() => void signOut()}
+          className={`mt-3 w-full sm:w-auto sm:px-6 ${secondary}`}
+        >
+          {t("profileSignOut")}
+        </button>
+      </div>
+    );
+  }
+
+  if (account.status === "unavailable" || IS_STORE_BUILD) {
+    return (
+      <div className={card}>
+        <p className="flex items-center gap-2 text-lg font-extrabold">
+          <span aria-hidden="true">🔒</span>
+          {t("profileAccountTitle")}
+        </p>
+        <p className="mt-1 text-sm font-semibold leading-snug text-ink/70">
+          {t("profileAccountText")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={card}>
+      <p className="flex items-center gap-2 text-lg font-extrabold">
+        <span aria-hidden="true">🐝</span>
+        {t("profileGuestTitle")}
+      </p>
+      <p className="mt-1 text-sm font-semibold leading-snug text-ink/70">
+        {t("profileGuestText")}
+      </p>
+      <div className="mt-3 grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+        <Link
+          href={SIGN_UP}
+          className="flex min-h-12 items-center justify-center rounded-2xl border-b-[6px] border-[#9b7600] bg-sun px-4 text-base font-extrabold text-black shadow-sm transition-transform active:scale-95 active:border-b-2"
+        >
+          {t("createAccount")}
+        </Link>
+        <Link href={SIGN_IN} className={secondary}>
+          {t("signIn")}
+        </Link>
+      </div>
+    </div>
   );
 }
 

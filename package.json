@@ -15,6 +15,7 @@
     "check:levels": "tsc -p tsconfig.levels.json && node -r ./scripts/resolveAlias.cjs .content-check/scripts/checkLevels.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
     "next": "^15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

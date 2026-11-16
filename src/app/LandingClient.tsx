@@ -4,8 +4,10 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import { hexagonImage } from "@/data/categories";
+import { signOut, useAccount } from "@/lib/account";
 import { IS_STORE_BUILD } from "@/lib/buildTarget";
 import { useLanguage } from "@/lib/i18n";
+import { IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { EXPLORE, SIGN_IN, SIGN_UP } from "@/lib/routes";
 
 /**
@@ -16,17 +18,22 @@ import { EXPLORE, SIGN_IN, SIGN_UP } from "@/lib/routes";
  * acciones debajo, porque lo que trae a alguien aquí es entrar y el pulgar
  * llega antes a lo de abajo.
  *
- * De las tres puertas solo una está abierta, y la pantalla no lo esconde: el
- * aviso de que las cuentas llegarán después está junto a los botones, no
- * escondido detrás de ellos, y "continuar como invitado" es la que lleva a la
- * aplicación de verdad, con el progreso de este dispositivo intacto. En el
- * build de tienda las dos de cuenta no aparecen (ver `buildTarget.ts`).
+ * Tres puertas: entrar como invitado, iniciar sesión y crear una cuenta. La
+ * de invitado sigue siendo la grande y la primera, porque es la que lleva a
+ * jugar sin pedir nada. Con una sesión abierta las dos de cuenta sobran: la
+ * grande saluda por el nombre y debajo queda cerrar la sesión. Sin proyecto
+ * de Supabase configurado, el aviso de que las cuentas llegarán después sigue
+ * junto a los botones. En el build de tienda las dos de cuenta no aparecen
+ * (ver `buildTarget.ts`).
  *
  * El panal de la izquierda es decorativo y se anuncia como una imagen sola:
  * repetir hexágono por hexágono no le diría nada a quien escucha la pantalla.
  */
 export default function LandingClient() {
   const { t } = useLanguage();
+  const account = useAccount();
+  const signedIn = account.status === "signed-in" ? account.user : null;
+  const firstName = signedIn?.name.trim().split(/\s+/)[0] ?? "";
 
   return (
     <main className="landing-surface flex min-h-[100svh] flex-col px-4 py-5 text-ink sm:px-6 sm:py-8">
@@ -50,10 +57,8 @@ export default function LandingClient() {
           <section className="w-full max-w-md">
             <div className="rounded-3xl border border-ink/10 bg-white p-5 shadow-[0_18px_48px_rgba(74,56,0,0.12)] sm:p-7">
               {/*
-                La puerta grande es la que funciona. Iniciar sesión y crear
-                cuenta son prototipos, y antes eran el botón amarillo: el que
-                se toca primero llevaba a una pantalla que dice que aún no
-                existe. Ahora entrar a jugar es lo primero, y las cuentas
+                La puerta grande es entrar a jugar, siempre. Con sesión abierta
+                saluda por el nombre; sin ella es la de invitado, y las cuentas
                 quedan agrupadas aparte.
               */}
               <Link
@@ -61,10 +66,22 @@ export default function LandingClient() {
                 className="flex min-h-16 w-full items-center justify-center gap-2 break-words rounded-2xl border-b-8 border-[#9b7600] bg-sun px-5 py-3 text-2xl font-extrabold leading-snug text-black shadow-lg transition-transform active:scale-95 active:border-b-4"
               >
                 <span aria-hidden="true">▶</span>
-                {t("continueAsGuest")}
+                {signedIn && firstName
+                  ? t("landingContinueAs", { name: firstName })
+                  : t("continueAsGuest")}
               </Link>
 
-              {!IS_STORE_BUILD && (
+              {signedIn && (
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  className="mt-4 flex min-h-12 w-full items-center justify-center break-words rounded-2xl px-4 py-2 text-base font-extrabold text-ink/70 underline underline-offset-4 transition-transform active:scale-95"
+                >
+                  {t("landingSignOut")}
+                </button>
+              )}
+
+              {!IS_STORE_BUILD && !signedIn && (
                 <>
                   <div
                     className="my-5 flex items-center gap-3"
@@ -93,9 +110,11 @@ export default function LandingClient() {
                     </Link>
                   </div>
 
-                  <p className="mt-4 break-words px-1 text-center text-sm font-semibold leading-snug text-ink/70">
-                    {t("accountsComingSoon")}
-                  </p>
+                  {!IS_SUPABASE_CONFIGURED && (
+                    <p className="mt-4 break-words px-1 text-center text-sm font-semibold leading-snug text-ink/70">
+                      {t("accountsComingSoon")}
+                    </p>
+                  )}
                 </>
               )}
             </div>
