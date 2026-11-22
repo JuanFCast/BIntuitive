@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { signOut, useAccount } from "@/lib/account";
+import { deleteAccount, signOut, useAccount } from "@/lib/account";
 import { IS_STORE_BUILD } from "@/lib/buildTarget";
 import { useDocumentTitle } from "@/lib/documentTitle";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
@@ -17,7 +17,7 @@ import {
   today,
   type Profile,
 } from "@/lib/profile";
-import { SIGN_IN, SIGN_UP } from "@/lib/routes";
+import { PRIVACY, SIGN_IN, SIGN_UP, TERMS } from "@/lib/routes";
 import { clearProgress, getProgress, type Progress } from "@/lib/storage";
 
 /**
@@ -160,6 +160,15 @@ export default function ProfileClient() {
             {t("profileReset")}
           </button>
         </div>
+        {/* Dentro de la aplicación también, como piden las tiendas. */}
+        <nav className="mt-3 flex flex-wrap gap-4 px-1 text-sm font-bold text-ink/70">
+          <Link href={PRIVACY} className="min-h-12 underline underline-offset-2">
+            {t("legalPrivacy")}
+          </Link>
+          <Link href={TERMS} className="min-h-12 underline underline-offset-2">
+            {t("legalTerms")}
+          </Link>
+        </nav>
       </Section>
 
       <ConfirmDialog
@@ -292,9 +301,26 @@ function ProfileEditor({
 function AccountCard() {
   const { t } = useLanguage();
   const account = useAccount();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<MessageKey | null>(null);
+  const [deleted, setDeleted] = useState(false);
   const card = "rounded-3xl border border-ink/10 bg-white p-4 shadow-sm sm:p-5";
   const secondary =
     "flex min-h-12 items-center justify-center rounded-2xl border-2 border-b-[6px] border-ink/15 bg-white px-4 text-base font-extrabold text-ink transition-transform active:scale-95 active:border-b-2";
+
+  // Borrar la cuenta es para siempre, así que pasa por la confirmación
+  // destructiva. Al terminar la sesión se cierra sola y la tarjeta vuelve a
+  // la de invitado, con un aviso de que la cuenta ya no existe.
+  const removeAccount = async () => {
+    setConfirmDelete(false);
+    setDeleting(true);
+    setDeleteError(null);
+    const result = await deleteAccount();
+    setDeleting(false);
+    if (result.ok) setDeleted(true);
+    else setDeleteError(result.error);
+  };
 
   if (account.status === "loading") {
     return <div className={`${card} min-h-24`} aria-busy="true" />;
@@ -313,10 +339,44 @@ function AccountCard() {
         <button
           type="button"
           onClick={() => void signOut()}
+          disabled={deleting}
           className={`mt-3 w-full sm:w-auto sm:px-6 ${secondary}`}
         >
           {t("profileSignOut")}
         </button>
+
+        {deleteError && (
+          <p role="alert" className="mt-3 text-sm font-bold leading-snug text-[#b3402f]">
+            {t(deleteError)}
+          </p>
+        )}
+
+        {/*
+          Discreto y aparte: se tiene que encontrar sin buscar —Apple lo
+          exige—, pero no puede estar al lado de "Cerrar sesión" con el mismo
+          peso, porque uno se deshace entrando otra vez y el otro no.
+        */}
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(true)}
+          disabled={deleting}
+          aria-busy={deleting || undefined}
+          className="mt-4 block min-h-12 text-sm font-extrabold text-[#b3402f] underline underline-offset-4 disabled:opacity-60"
+        >
+          {deleting ? t("profileDeleting") : t("profileDeleteAccount")}
+        </button>
+
+        <ConfirmDialog
+          open={confirmDelete}
+          ariaLabel={t("deleteDialogAria")}
+          title={t("deleteDialogTitle")}
+          description={t("deleteDialogMessage")}
+          confirmLabel={t("deleteDialogConfirm")}
+          cancelLabel={t("cancel")}
+          destructive
+          onConfirm={() => void removeAccount()}
+          onCancel={() => setConfirmDelete(false)}
+        />
       </div>
     );
   }
@@ -337,6 +397,11 @@ function AccountCard() {
 
   return (
     <div className={card}>
+      {deleted && (
+        <p role="status" className="mb-3 rounded-2xl bg-mintsoft px-3 py-2 text-sm font-extrabold text-[#1f7a4a]">
+          {t("profileAccountDeleted")}
+        </p>
+      )}
       <p className="flex items-center gap-2 text-lg font-extrabold">
         <span aria-hidden="true">🐝</span>
         {t("profileGuestTitle")}

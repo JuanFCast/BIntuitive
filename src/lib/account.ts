@@ -277,6 +277,29 @@ export async function updatePassword(password: string): Promise<AccountResult> {
 }
 
 /**
+ * Borra la cuenta de quien tiene la sesión abierta, para siempre: correo,
+ * contraseña, nombre y fecha de nacimiento. Lo hace la función
+ * `delete_own_account` de la base (ver `supabase/migrations/`), que solo puede
+ * borrar la cuenta propia.
+ *
+ * Después se cierra la sesión en este dispositivo. El progreso, el perfil local
+ * y las preferencias se quedan: viven en el dispositivo y no eran de la cuenta.
+ */
+export async function deleteAccount(): Promise<AccountResult> {
+  const supabase = getSupabase();
+  if (!supabase) return unavailable();
+
+  const { error } = await supabase.rpc("delete_own_account");
+  // Un error de la base no es un `AuthError`: no pasa por `describe`, y todo
+  // lo que puede decir aquí se resume en que la cuenta no se borró.
+  if (error) return { ok: false, error: "authErrorDeleteFailed" };
+
+  // El token ya no vale porque la cuenta no existe: se cierra solo aquí.
+  await supabase.auth.signOut({ scope: "local" });
+  return { ok: true };
+}
+
+/**
  * Cierra la sesión en este dispositivo. El progreso, el perfil y las
  * preferencias se quedan: viven en sus propias claves y no son la cuenta.
  */

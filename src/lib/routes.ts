@@ -27,6 +27,14 @@ export const FORGOT_PASSWORD = "/forgot-password";
 export const AUTH_CALLBACK = "/auth/callback";
 /** Adonde vuelve el enlace del correo de "olvidé mi contraseña". */
 export const RESET_PASSWORD = "/reset-password";
+/**
+ * Las dos páginas legales. Públicas en la web y en el build de tienda: Apple y
+ * Google exigen enlazarlas en la ficha y dentro de la aplicación. La sección
+ * de borrar la cuenta tiene ancla propia (`/privacy#delete`), que es la URL que
+ * pide Google Play para explicar cómo borrarla.
+ */
+export const PRIVACY = "/privacy";
+export const TERMS = "/terms";
 
 /** Las que llevan el marco de la aplicación: cabecera y barra inferior. */
 export const APP_FRAME_ROUTES = [

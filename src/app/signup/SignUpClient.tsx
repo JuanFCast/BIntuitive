@@ -23,7 +23,7 @@ import {
 } from "@/lib/authForm";
 import { signUp } from "@/lib/account";
 import { IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
-import { EXPLORE, SIGN_IN } from "@/lib/routes";
+import { EXPLORE, PRIVACY, SIGN_IN, TERMS } from "@/lib/routes";
 
 type Step = "name" | "birthdate" | "email" | "password";
 
@@ -220,6 +220,13 @@ export default function SignUpClient() {
         <AuthButton busy={busy} busyLabel={t("authCreating")}>
           {step === "password" ? t("createAccount") : t("authContinue")}
         </AuthButton>
+
+        {/*
+          Justo debajo del botón que crea la cuenta, que es cuando se aceptan.
+          Los enlaces van dentro de la frase y no al final, porque el orden de
+          las palabras cambia de un idioma a otro.
+        */}
+        {step === "password" && <LegalConsent />}
       </form>
     </AuthShell>
   );
@@ -271,5 +278,34 @@ function StepProgress({ current, total }: { current: number; total: number }) {
         );
       })}
     </div>
+  );
+}
+
+/**
+ * "Al crear tu cuenta aceptas los Términos y la Política de privacidad", con
+ * los dos nombres como enlaces. La frase sale de la traducción con `{terms}` y
+ * `{privacy}` y aquí se parte por esas marcas, para que cada idioma ponga los
+ * enlaces donde le toca.
+ */
+function LegalConsent() {
+  const { t } = useLanguage();
+  const links: Record<string, React.ReactNode> = {
+    terms: (
+      <Link key="terms" href={TERMS} className="font-extrabold text-ink underline">
+        {t("legalTerms")}
+      </Link>
+    ),
+    privacy: (
+      <Link key="privacy" href={PRIVACY} className="font-extrabold text-ink underline">
+        {t("legalPrivacy")}
+      </Link>
+    ),
+  };
+  const parts = t("legalSignUpConsent", { terms: "\u0000terms\u0000", privacy: "\u0000privacy\u0000" })
+    .split("\u0000")
+    .map((part) => links[part] ?? part);
+
+  return (
+    <p className="mt-4 text-center text-sm font-semibold leading-snug text-ink/70">{parts}</p>
   );
 }

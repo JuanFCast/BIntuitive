@@ -8,7 +8,7 @@ import { signOut, useAccount } from "@/lib/account";
 import { IS_STORE_BUILD } from "@/lib/buildTarget";
 import { useLanguage } from "@/lib/i18n";
 import { IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
-import { EXPLORE, SIGN_IN, SIGN_UP } from "@/lib/routes";
+import { EXPLORE, PRIVACY, SIGN_IN, SIGN_UP, TERMS } from "@/lib/routes";
 
 /**
  * La portada pública.
@@ -138,6 +138,15 @@ export default function LandingClient() {
             CC BY 4.0
           </a>
         </p>
+        {/* Las tiendas piden que la política de privacidad se encuentre sin buscar. */}
+        <nav className="mt-3 flex justify-center gap-4 text-sm font-bold text-ink/70">
+          <Link href={PRIVACY} className="min-h-12 underline underline-offset-2">
+            {t("legalPrivacy")}
+          </Link>
+          <Link href={TERMS} className="min-h-12 underline underline-offset-2">
+            {t("legalTerms")}
+          </Link>
+        </nav>
       </div>
     </main>
   );

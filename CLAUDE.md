@@ -49,8 +49,17 @@ dicen que las cuentas aún no están, sin fingir ningún envío. La de invitado 
 eso sigue siendo la grande y la primera; las dos de cuenta van debajo, agrupadas bajo "Tu
 cuenta". Con sesión abierta, la grande saluda por el nombre y las de cuenta se cambian por
 cerrar sesión. El build de tienda (`NEXT_PUBLIC_BUILD_TARGET=store`, en
-`src/lib/buildTarget.ts`) todavía no las enseña y sus rutas dan 404: Apple exige poder borrar
-la cuenta desde la propia aplicación, y eso aún no existe.
+`src/lib/buildTarget.ts`) todavía no las enseña y sus rutas dan 404. Lo que Apple exigía para
+enseñarlas —poder borrar la cuenta desde la propia aplicación— ya existe (Perfil → Cuenta →
+"Borrar mi cuenta", con `delete_own_account` en la base); falta decidirlo al preparar la
+primera versión de tienda.
+
+**Privacidad y términos** viven en `/privacy` y `/terms`, públicas también en el build de
+tienda, con el texto en `src/data/legal.ts` (responsable: AUM Creative Specialists LLC;
+contacto único: support@aumcrsp.com). Se enlazan desde la portada, el último paso del registro
+y Perfil, y `/privacy#delete` es la dirección que se da a Google Play para explicar cómo borrar
+la cuenta. **Dicen lo que la aplicación hace hoy**: el día que entren anuncios, suscripción o
+cualquier dato nuevo, se cambian con ese mismo commit y se mueve `LEGAL_UPDATED`.
 
 **El panal (`/explore`) es la única superficie de descubrimiento.** Es la pantalla de entrada
 de la aplicación —la pestaña se llama Home (Inicio en español), aunque la ruta sea `/explore`— y todo lo que dentro significa "volver al

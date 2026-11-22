@@ -271,6 +271,20 @@ const messages = {
     profileGuestTitle: "Playing as a guest",
     profileGuestText:
       "Create an account to keep your name and your learning with you.",
+    profileDeleteAccount: "Delete my account",
+    profileDeleting: "Deleting your account…",
+    profileAccountDeleted: "Your account was deleted. Your progress on this device is still here.",
+    deleteDialogAria: "Confirm deleting your account",
+    deleteDialogTitle: "Delete your account?",
+    deleteDialogMessage:
+      "This permanently deletes your account: your email, password, name and date of birth. It cannot be undone. Your progress on this device stays.",
+    deleteDialogConfirm: "Delete forever",
+    authErrorDeleteFailed:
+      "We couldn't delete your account. Try again, or write to support@aumcrsp.com.",
+    legalPrivacy: "Privacy Policy",
+    legalTerms: "Terms of Use",
+    legalUpdated: "Last updated: {date}",
+    legalSignUpConsent: "By creating an account you accept the {terms} and the {privacy}.",
     visualTitle: "Visual Agility",
     visualIntro: "Find the one symbol shared by both cards.",
     visualHowTo: "Look at the reference card, then tap the matching symbol on your card. A wrong tap adds one second.",
@@ -711,6 +725,20 @@ const messages = {
     profileGuestTitle: "Juegas como invitado",
     profileGuestText:
       "Crea una cuenta para llevar contigo tu nombre y lo que aprendes.",
+    profileDeleteAccount: "Borrar mi cuenta",
+    profileDeleting: "Borrando tu cuenta…",
+    profileAccountDeleted: "Tu cuenta se borró. Tu progreso en este dispositivo sigue aquí.",
+    deleteDialogAria: "Confirmar que quieres borrar tu cuenta",
+    deleteDialogTitle: "¿Borrar tu cuenta?",
+    deleteDialogMessage:
+      "Esto borra tu cuenta para siempre: tu correo, tu contraseña, tu nombre y tu fecha de nacimiento. No se puede deshacer. Tu progreso en este dispositivo se queda.",
+    deleteDialogConfirm: "Borrar para siempre",
+    authErrorDeleteFailed:
+      "No pudimos borrar tu cuenta. Inténtalo de nuevo o escribe a support@aumcrsp.com.",
+    legalPrivacy: "Política de privacidad",
+    legalTerms: "Términos de uso",
+    legalUpdated: "Última actualización: {date}",
+    legalSignUpConsent: "Al crear tu cuenta aceptas los {terms} y la {privacy}.",
     visualTitle: "Agilidad visual",
     visualIntro: "Encuentra el único símbolo que comparten las dos cartas.",
     visualHowTo: "Mira la carta de referencia y toca el símbolo igual en tu carta. Cada error suma un segundo.",
