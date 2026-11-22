@@ -511,6 +511,13 @@ src/lib/
     escribe. No hay "repetir contraseña": el campo trae mostrar/ocultar. La fecha son tres
     casillas numéricas en el orden del idioma (mes-día-año en inglés, día-mes-año en español),
     no un `<input type="date">`.
+  - **El alta se confirma con un código de seis cifras, no con un enlace** (`EmailCodeScreen`,
+    `verifyEmailCode`). Un enlace se abre donde quiere el lector de correo —en el teléfono,
+    dentro de su propio navegador— y la sesión se quedaba ahí; el código se escribe en la
+    pantalla que lo pidió. Una sola casilla con `autoComplete="one-time-code"`, que se envía
+    sola al llegar a la sexta cifra. La plantilla "Confirm signup" de Supabase usa `{{ .Token }}`
+    y "Email OTP Length" tiene que valer `EMAIL_CODE_LENGTH` (6). `/auth/callback` se queda para
+    los correos con enlace ya enviados y como bienvenida tras acertar el código.
   - **Los errores se traducen por `code`, nunca por el mensaje** (`describe` en `account.ts`),
     y "recuperar contraseña" contesta igual exista o no la cuenta.
   - **`/auth/callback` y `/reset-password` no van en la lista de `IOS_CHROME_VIEWPORT_RECOVERY`**

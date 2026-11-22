@@ -7,6 +7,7 @@ import AuthAlert from "@/components/AuthAlert";
 import AuthButton from "@/components/AuthButton";
 import AuthField from "@/components/AuthField";
 import AuthShell from "@/components/AuthShell";
+import EmailCodeScreen from "@/components/EmailCodeScreen";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
 import {
   isClean,
@@ -22,9 +23,10 @@ import { EXPLORE, FORGOT_PASSWORD, SIGN_UP } from "@/lib/routes";
  * Iniciar sesión con correo y contraseña.
  *
  * Al entrar se va al panal, que es el principio de la aplicación. Si la
- * cuenta existe pero todavía no se ha activado, el aviso trae el botón de
- * reenviar el correo ahí mismo: es el único arreglo posible y no tiene sentido
- * mandar a nadie a buscarlo a otra pantalla.
+ * cuenta existe pero todavía no se ha activado, el aviso trae ahí mismo las
+ * dos salidas: pedir un código nuevo o escribir el que ya llegó. Las dos
+ * llevan a la pantalla del código (`EmailCodeScreen`), que al acertar abre la
+ * sesión; no hace falta volver a escribir la contraseña.
  */
 export default function SignInClient() {
   const { t } = useLanguage();
@@ -34,8 +36,10 @@ export default function SignInClient() {
   const [errors, setErrors] = useState<Record<string, FieldError>>({});
   const [serverError, setServerError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
   const [comingSoon, setComingSoon] = useState(false);
-  const [resent, setResent] = useState(false);
+  /** `null` mientras se inicia sesión; si no, si el código se acaba de pedir. */
+  const [codeScreen, setCodeScreen] = useState<{ justSent: boolean } | null>(null);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -47,7 +51,6 @@ export default function SignInClient() {
     };
     setErrors(next);
     setServerError(null);
-    setResent(false);
     if (!isClean(next)) return;
 
     if (!IS_SUPABASE_CONFIGURED) {
@@ -66,15 +69,28 @@ export default function SignInClient() {
     }
   };
 
-  const resend = async () => {
+  const sendCode = async () => {
+    setSending(true);
     const result = await resendConfirmation(email);
+    setSending(false);
     if (result.ok) {
       setServerError(null);
-      setResent(true);
+      setCodeScreen({ justSent: true });
     } else {
       setServerError(result.error);
     }
   };
+
+  if (codeScreen) {
+    return (
+      <EmailCodeScreen
+        email={email.trim()}
+        title={t("authActivateTitle")}
+        justSent={codeScreen.justSent}
+        onBack={() => setCodeScreen(null)}
+      />
+    );
+  }
 
   return (
     <AuthShell
@@ -118,14 +134,24 @@ export default function SignInClient() {
         <AuthAlert error={serverError} />
 
         {serverError === "authErrorEmailNotConfirmed" && (
-          <AuthButton type="button" variant="secondary" onClick={resend}>
-            {t("authResend")}
-          </AuthButton>
-        )}
-        {resent && (
-          <p role="status" className="animate-fade-up mt-4 text-center text-base font-extrabold text-[#1f7a4a]">
-            {t("authResent")}
-          </p>
+          <>
+            <AuthButton
+              type="button"
+              variant="secondary"
+              onClick={sendCode}
+              busy={sending}
+              busyLabel={t("authSending")}
+            >
+              {t("authSendCode")}
+            </AuthButton>
+            <button
+              type="button"
+              onClick={() => setCodeScreen({ justSent: false })}
+              className="mt-3 block w-full text-center text-base font-bold text-ink/70 underline"
+            >
+              {t("authHaveCode")}
+            </button>
+          </>
         )}
 
         <AuthButton busy={busy} busyLabel={t("authSigningIn")}>

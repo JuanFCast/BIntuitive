@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthAlert from "@/components/AuthAlert";
@@ -8,6 +8,7 @@ import AuthButton from "@/components/AuthButton";
 import AuthField from "@/components/AuthField";
 import AuthShell from "@/components/AuthShell";
 import BirthdateField from "@/components/BirthdateField";
+import EmailCodeScreen from "@/components/EmailCodeScreen";
 import PasswordStrength from "@/components/PasswordStrength";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
 import {
@@ -20,7 +21,7 @@ import {
   type BirthdateParts,
   type FieldError,
 } from "@/lib/authForm";
-import { resendConfirmation, signUp } from "@/lib/account";
+import { signUp } from "@/lib/account";
 import { IS_SUPABASE_CONFIGURED } from "@/lib/supabase";
 import { EXPLORE, SIGN_IN } from "@/lib/routes";
 
@@ -34,9 +35,6 @@ const QUESTION: Record<Step, { title: MessageKey; hint: MessageKey }> = {
   email: { title: "signUpStepEmail", hint: "signUpStepEmailHint" },
   password: { title: "signUpStepPassword", hint: "signUpStepPasswordHint" },
 };
-
-/** Lo que tarda en dejar volver a pedir el correo: Supabase limita los envíos. */
-const RESEND_COOLDOWN_SECONDS = 60;
 
 /**
  * Crear una cuenta, una pregunta cada vez.
@@ -138,7 +136,15 @@ export default function SignUpClient() {
   };
 
   if (sentTo) {
-    return <CheckYourInbox name={firstName} email={sentTo} />;
+    // La cuenta existe pero falta activarla: el correo trae un código de
+    // seis cifras que se escribe aquí mismo (ver `EmailCodeScreen`).
+    return (
+      <EmailCodeScreen
+        email={sentTo}
+        title={t("signUpDoneTitle", { name: firstName })}
+        justSent
+      />
+    );
   }
 
   return (
@@ -265,85 +271,5 @@ function StepProgress({ current, total }: { current: number; total: number }) {
         );
       })}
     </div>
-  );
-}
-
-/**
- * Después de crear la cuenta: el correo está en camino.
- *
- * Saluda por el nombre, dice a qué dirección se envió —la errata más común es
- * escribir mal el propio correo— y deja reenviarlo pasado un minuto, que es lo
- * que Supabase permite. La puerta de invitado sigue abierta: nadie tiene que
- * quedarse mirando la bandeja de entrada para empezar a jugar.
- */
-function CheckYourInbox({ name, email }: { name: string; email: string }) {
-  const { t } = useLanguage();
-  const [wait, setWait] = useState(RESEND_COOLDOWN_SECONDS);
-  const [busy, setBusy] = useState(false);
-  const [resent, setResent] = useState(false);
-  const [error, setError] = useState<MessageKey | null>(null);
-
-  useEffect(() => {
-    if (wait <= 0) return;
-    const timer = window.setTimeout(() => setWait((seconds) => seconds - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [wait]);
-
-  const resend = async () => {
-    setBusy(true);
-    setError(null);
-    const result = await resendConfirmation(email);
-    setBusy(false);
-    if (result.ok) {
-      setResent(true);
-      setWait(RESEND_COOLDOWN_SECONDS);
-    } else {
-      setError(result.error);
-    }
-  };
-
-  return (
-    <AuthShell
-      title={t("signUpDoneTitle", { name })}
-      subtitle={t("signUpDoneSpam")}
-      stepKey="done"
-    >
-      <div className="text-center" role="status">
-        <div className="animate-pop relative mx-auto flex h-24 w-24 items-center justify-center">
-          <span aria-hidden="true" className="hex-cell absolute inset-0 bg-sunsoft" />
-          <span aria-hidden="true" className="relative text-5xl">
-            ✉️
-          </span>
-        </div>
-        <p className="mx-auto mt-4 max-w-sm break-words text-lg font-semibold leading-snug text-ink/80">
-          {t("signUpDoneText", { email })}
-        </p>
-        {resent && (
-          <p className="animate-fade-up mt-3 text-base font-extrabold text-[#1f7a4a]">
-            {t("authResent")}
-          </p>
-        )}
-      </div>
-
-      <AuthAlert error={error} />
-
-      <Link
-        href={EXPLORE}
-        className="mt-5 flex min-h-14 w-full items-center justify-center break-words rounded-2xl border-b-8 border-[#9b7600] bg-sun px-5 py-3 text-lg font-extrabold leading-snug text-black shadow-lg transition-transform active:scale-95 active:border-b-4"
-      >
-        {t("authPlayMeanwhile")}
-      </Link>
-
-      <AuthButton
-        type="button"
-        variant="secondary"
-        onClick={resend}
-        busy={busy}
-        busyLabel={t("authSending")}
-        disabled={wait > 0}
-      >
-        {wait > 0 ? t("authResendIn", { seconds: wait }) : t("authResend")}
-      </AuthButton>
-    </AuthShell>
   );
 }

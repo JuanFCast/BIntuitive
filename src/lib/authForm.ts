@@ -118,6 +118,22 @@ export function validateBirthdate(parts: BirthdateParts): FieldError {
   return null;
 }
 
+/**
+ * Cifras del código de activación que llega por correo. Tiene que coincidir con
+ * "Email OTP Length" del proyecto de Supabase (Authentication → Sign In /
+ * Providers → Email): si allí se cambia, aquí también.
+ */
+export const EMAIL_CODE_LENGTH = 6;
+
+/** Deja solo las cifras: se pega el código con espacios o guiones y no pasa nada. */
+export function cleanEmailCode(value: string): string {
+  return value.replace(/\D/g, "").slice(0, EMAIL_CODE_LENGTH);
+}
+
+export function validateEmailCode(value: string): FieldError {
+  return cleanEmailCode(value).length === EMAIL_CODE_LENGTH ? null : "authErrorCodeRequired";
+}
+
 /** Si un conjunto de errores deja pasar el formulario. */
 export function isClean(errors: Record<string, FieldError>): boolean {
   return Object.values(errors).every((error) => error === null);

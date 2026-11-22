@@ -130,6 +130,10 @@ function describe(error: AuthError): MessageKey {
       return "authErrorEmailNotConfirmed";
     case "same_password":
       return "authErrorSamePassword";
+    // Supabase no distingue un código mal escrito de uno caducado: los dos
+    // llegan como `otp_expired`, y la salida es la misma, pedir otro.
+    case "otp_expired":
+      return "authErrorCodeInvalid";
     case "over_email_send_rate_limit":
     case "over_request_rate_limit":
       return "authErrorRateLimit";
@@ -165,7 +169,9 @@ export type SignUpInput = {
 
 /**
  * Crea la cuenta. Con la confirmación por correo activada —lo normal— no hay
- * sesión hasta que se abre el enlace, y `needsConfirmation` lo dice. Si el
+ * sesión hasta que se escribe el código del correo (`verifyEmailCode`), y
+ * `needsConfirmation` lo dice. El `emailRedirectTo` se queda para los correos
+ * con enlace que ya se enviaron antes de pasar al código. Si el
  * proyecto la tuviera desactivada, se entra directamente.
  *
  * Con la confirmación activada Supabase no avisa de que el correo ya existe
@@ -205,6 +211,29 @@ export async function resendConfirmation(email: string): Promise<AccountResult> 
     type: "signup",
     email: email.trim(),
     options: { emailRedirectTo: here(AUTH_CALLBACK) },
+  });
+
+  return error ? { ok: false, error: describe(error) } : { ok: true };
+}
+
+/**
+ * Activa la cuenta con el código que llega por correo y abre la sesión.
+ *
+ * Es la forma principal de confirmar el alta, y no el enlace: un enlace se
+ * abre donde quiera el lector de correo —en el teléfono, casi siempre dentro
+ * de su propio navegador— y la sesión se quedaba ahí, así que luego había que
+ * volver a entrar en la aplicación. El código se escribe en la misma pantalla
+ * que lo pidió y la sesión queda donde se está jugando, también dentro de la
+ * aplicación de tienda.
+ */
+export async function verifyEmailCode(email: string, code: string): Promise<AccountResult> {
+  const supabase = getSupabase();
+  if (!supabase) return unavailable();
+
+  const { error } = await supabase.auth.verifyOtp({
+    email: email.trim(),
+    token: code.trim(),
+    type: "email",
   });
 
   return error ? { ok: false, error: describe(error) } : { ok: true };
