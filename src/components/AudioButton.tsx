@@ -4,20 +4,28 @@ import { useEffect, useState } from "react";
 import { isSpeechAvailable, speak, warmUpVoices } from "@/lib/speech";
 import { isMuted } from "@/lib/storage";
 import { useLanguage } from "@/lib/i18n";
+import type { Language } from "@/lib/language";
 
 type AudioButtonProps = {
   text: string;
   autoPlay?: boolean;
   /** Etiqueta accesible alternativa; por defecto "escuchar otra vez". */
   label?: string;
+  /**
+   * En qué idioma se dice. Por defecto, el de la interfaz; Puente de palabras
+   * lo cambia porque lo que se oye es la palabra del idioma que se practica.
+   */
+  speechLanguage?: Language;
 };
 
 export default function AudioButton({
   text,
   autoPlay = false,
   label,
+  speechLanguage,
 }: AudioButtonProps) {
-  const { language, t } = useLanguage();
+  const { language: interfaceLanguage, t } = useLanguage();
+  const language = speechLanguage ?? interfaceLanguage;
   const [available, setAvailable] = useState(false);
   const [speaking, setSpeaking] = useState(false);
 

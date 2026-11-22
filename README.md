@@ -17,7 +17,8 @@ BIntuitive is a touch-friendly educational game for adults. Players listen to or
 - **A public welcome page:** the site root introduces BIntuitive and offers three doors — continue as a guest, sign in, or create an account. Playing as a guest needs nothing, so it stays the big button; once signed in, it greets you by name. Store builds (`NEXT_PUBLIC_BUILD_TARGET=store`) still hide both account doors, and their routes return 404, until in-app account deletion exists.
 - **Accounts with Supabase:** sign-up is a four-step conversation — name, date of birth, email, password — with the BIntuitive bee asking one question at a time, honeycomb progress cells, a password-strength meter and no "repeat password" box. BIntuitive is for adults: anyone under 18 is stopped on screen and again by the database. Email confirmation, sign-in, password recovery and sign-out are all wired. Without a configured Supabase project the app still works fully as a guest, and the forms say accounts are not available yet.
 - **The honeycomb as the single hub:** every hexagon (lessons and games alike) is discovered and opened from the honeycomb, which lives at `/explore` and is where every house button, exit and "back to the start" inside the app leads. There is no separate games section.
-- **10 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, Tracing, and Coloring.
+- **11 learning hexagons:** Places, Numbers, Colors, Visual Agility, Type Rush, Word Scramble, Word Search, Memory, Tracing, Coloring, and Word Bridge.
+- **Word Bridge (BIntuitive Plus):** practice the other language — Spanish when the app is in English, English when it is in Spanish. Levels 1 to 3 match words with their translation (with pictures, then without, adding verbs and adjectives); level 4 plays the word out loud and you choose what it means; level 5 builds whole sentences tile by tile, with two tiles that do not belong. It is marked as a Plus game, but everyone can play it until in-app subscriptions exist.
 - **5-round sessions:** players receive two attempts per question and a helpful hint after the first incorrect answer.
 - **Gentle adaptive difficulty in the question lessons:** the level increases after two consecutive first-try answers and decreases after a missed question, moving from 2 to 3 to 4 options. The seven standalone games work the other way round — see below.
 - **Difficulty is chosen, not assigned:** every standalone game opens on a five-step level picker, the chosen step stays fixed for the whole session, and two stars out of three unlock the next one. What a step changes is the mechanic, never just the size: Visual Agility goes from 4 to 12 symbols and then rotates and rescales them, Word Scramble adds letters that do not belong to the word and finally hides the picture, Word Search fills the same grid with more words and stops naming them in the list, and Type Rush starts with single lowercase words before adding capitals and punctuation.
@@ -128,6 +129,7 @@ src/
       memory/           #   Memory
       tracing/          #   Tracing
       coloring/         #   Coloring
+      word-bridge/      #   Word Bridge (BIntuitive Plus)
   components/           # Brand mark, hexagon cards, answers, feedback, results...
   data/
     categories.ts       # Base category definitions
@@ -151,6 +153,7 @@ src/
     visualGame.ts       # Visual cards, symbols, levels, and matching logic
     wordScramble.ts     # Bilingual word bank, letter tiles, levels, and decoys
     wordSearch.ts       # Bilingual word bank, board generator, levels, and selection
+    wordBridge.ts       # English–Spanish word pairs, sentences, and the five Word Bridge levels
 ```
 
 The Visual Agility and Type Rush hexagons adapt the core game mechanics from

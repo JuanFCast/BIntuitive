@@ -81,6 +81,11 @@ export type BestByGame = {
    * que con `completed` de Trazos.
    */
   coloring: { accuracy: number | null; pictures: number | null };
+  /**
+   * `words` es un acumulador, como `pictures` de Colorear: cuántas parejas,
+   * palabras oídas y frases se han acertado en total.
+   */
+  bridge: { accuracy: number | null; words: number | null };
 };
 
 export type BestFor<Id extends GameId> = BestByGame[Id];
@@ -119,6 +124,7 @@ const BEST_DIRECTION: {
   },
   tracing: { accuracy: "higher", completed: "higher", attempts: "higher" },
   coloring: { accuracy: "higher", pictures: "higher" },
+  bridge: { accuracy: "higher", words: "higher" },
 };
 
 export type GradeProgress = Partial<{

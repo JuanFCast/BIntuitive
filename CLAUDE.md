@@ -66,7 +66,7 @@ Dos tipos de contenido conviven en ese panal, y ambos se abren bajo la ruta sing
 1. **Categorías de preguntas** (`lugares`, `numeros`, `colores`) → todas comparten UNA ruta,
    `/game?hexagon=<slug>`, y el motor genérico `src/lib/gameEngine.ts` + banco `src/data/questions.ts`.
 2. **Juegos independientes** (`visual`, `typing`, `scramble`, `search`, `memory`, `tracing`,
-   `coloring`) → cada uno con su propia ruta
+   `coloring`, `bridge`) → cada uno con su propia ruta
    `/game/<id>`, su propio cliente y su propia lib de lógica pura en `src/lib/`.
 
 Un juego nuevo casi siempre es del tipo 2.
@@ -105,6 +105,7 @@ src/lib/
   memoryGame.ts         Banco, tablero y estadísticas de Parejas
   tracingGame.ts        Caminos, tolerancia, estrellas y banco de Trazos
   coloringGame.ts       Láminas, zonas sacadas de la imagen y colores de verdad de Colorear
+  wordBridge.ts         Parejas de idiomas, frases y escalones de Puente de palabras (Plus)
   typingGame.ts         Lógica pura de Type Rush
   wordScramble.ts       Banco bilingüe, fichas y dificultad de Word Scramble
   wordSearch.ts         Banco bilingüe, generador de tablero y selección de Word Search
@@ -385,6 +386,17 @@ src/lib/
     (`hideWords`), diciendo solo qué es cada una y cuántas letras tiene.
   - **Type Rush**: empieza por palabras sueltas en minúscula y va añadiendo **teclas**
     —mayúsculas y signos— antes que longitud.
+  - **Puente de palabras**: tres mecánicas en un juego. Del 1 al 3 se unen parejas
+    palabra-traducción (4 con dibujo, 6 con dibujo, 6 sin dibujo y con verbos); el 4 deja de
+    enseñar la palabra y hay que **oírla** y elegir qué significa; el 5 pasa a **frases**, que se
+    arman ficha a ficha con dos de sobra. Se practica **el idioma contrario al de la interfaz**
+    (`targetLanguage`), así que sirve a los dos públicos sin un ajuste más. Una ficha que no toca
+    se rechaza al momento, por eso **cada frase del banco admite un solo orden** y va sin
+    puntuación ni mayúscula inicial —la pone la pantalla—; `validate:content` lo comprueba. Es
+    el juego de **BIntuitive Plus** (`plus: true` en `categories.ts`), pero hoy lo juega todo el
+    mundo: sin pagos en las tiendas no hay forma de comprar Plus, y el candado llega con ellos.
+    La voz dice la palabra en el idioma que se practica: `AudioButton` acepta `speechLanguage`
+    y `useSpeakAfterSound` recibe ese idioma, no el de la interfaz.
 
   Subir el tamaño cuando ya no da más es lo que **no** hay que hacer.
   **La duración solo cuenta como dificultad en Type Rush**, y es la única excepción: lo que ahí se
@@ -730,7 +742,8 @@ y la carpeta `~/.impeccable`.
 - **Los bancos siguen separados**, y así deben seguir por ahora: preguntas (`questions.ts` en
   español + `localization.ts` en inglés), Word Scramble y Word Search (bilingües, cada uno el
   suyo, sin correspondencia entre idiomas), frases de Typing, símbolos de Visual, dibujos de
-  Parejas y ejercicios de Trazos. El de Trazos tiene la forma de una fila de base de datos
+  Parejas, ejercicios de Trazos y las parejas de idiomas de Puente de palabras —el único banco
+  donde cada entrada **es** una correspondencia entre los dos idiomas—. El de Trazos tiene la forma de una fila de base de datos
   —id, nivel, categoría, salida, destino y tipo de camino— justamente para que mañana pueda
   venir de una: lo único que habría que cambiar es de dónde sale la tabla, no el juego. No hay banco
   central y no toca unificarlos hasta que estén decididos los niveles del público adulto y

@@ -47,6 +47,10 @@ export const englishHexagons: Record<
     name: "Coloring",
     description: "Paint each area with the colour it needs.",
   },
+  bridge: {
+    name: "Word Bridge",
+    description: "Match each word with its translation.",
+  },
 };
 
 type QuestionCopy = {

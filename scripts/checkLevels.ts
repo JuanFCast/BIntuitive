@@ -19,7 +19,20 @@ import {
   saveWordScrambleResult,
   saveWordSearchResult,
   saveTracingResult,
+  saveWordBridgeResult,
 } from "@/lib/storage";
+import {
+  clampWordBridgeLevel,
+  createListenRounds,
+  createMatchBoards,
+  createSentenceRounds,
+  sameWord,
+  sentenceText,
+  wordBridgeSessionStars,
+  WORD_BRIDGE_LEVELS,
+  WORD_BRIDGE_MAX_LEVEL,
+  type WordBridgeLevel,
+} from "@/lib/wordBridge";
 import {
   buildTypingPassage,
   clampTypingLevel,
@@ -739,6 +752,147 @@ console.log("\nType Rush · desbloqueo");
   );
 }
 
+/* ==========================================================================
+ * Puente de palabras
+ * ======================================================================= */
+
+function bridge() {
+  return getUnassignedGameProgress(getProgress(), "bridge");
+}
+
+console.log("\nPuente de palabras · la tabla de escalones");
+{
+  const modes = LEVELS.map((level) => WORD_BRIDGE_LEVELS[level].mode);
+  check("cinco escalones", WORD_BRIDGE_MAX_LEVEL === 5);
+  check(
+    "parejas, parejas, parejas, escuchar, frases",
+    modes.join(",") === "match,match,match,listen,sentence",
+    modes.join(","),
+  );
+  const one = WORD_BRIDGE_LEVELS[1];
+  const two = WORD_BRIDGE_LEVELS[2];
+  const three = WORD_BRIDGE_LEVELS[3];
+  if (one.mode === "match" && two.mode === "match" && three.mode === "match") {
+    check("los dos primeros llevan dibujo y el tercero no", one.pictures && two.pictures && !three.pictures);
+    check(
+      "nunca más de seis parejas: es lo que cabe en un teléfono",
+      [one, two, three].every((level) => level.pairs <= 6),
+    );
+    check("el tercero no crece en parejas, cambia de ayuda", three.pairs === two.pairs);
+  }
+  check(
+    "el escalón se recorta al rango del juego",
+    clampWordBridgeLevel(9) === 5 && clampWordBridgeLevel(0) === 1,
+  );
+}
+
+console.log("\nPuente de palabras · lo que se reparte");
+{
+  for (const level of [1, 2, 3] as WordBridgeLevel[]) {
+    const config = WORD_BRIDGE_LEVELS[level];
+    if (config.mode !== "match") continue;
+    const boards = createMatchBoards(config);
+    const ids = boards.flat().map((word) => word.id);
+    check(
+      `nivel ${level}: ${config.rounds} tableros de ${config.pairs} parejas`,
+      boards.length === config.rounds && boards.every((board) => board.length === config.pairs),
+    );
+    check(`nivel ${level}: ninguna palabra se repite en la sesión`, new Set(ids).size === ids.length);
+    check(
+      `nivel ${level}: solo palabras de sus tramos`,
+      boards.flat().every((word) => config.tiers.includes(word.tier)),
+    );
+  }
+
+  const listen = WORD_BRIDGE_LEVELS[4];
+  if (listen.mode === "listen") {
+    const rounds = createListenRounds(listen);
+    check(
+      "escuchar: diez palabras distintas",
+      rounds.length === 10 && new Set(rounds.map((round) => round.word.id)).size === 10,
+    );
+    check(
+      "cada ronda trae su respuesta entre las opciones, sin repetir ninguna",
+      rounds.every(
+        (round) =>
+          round.options.length === listen.options &&
+          round.options.some((option) => option.id === round.word.id) &&
+          new Set(round.options.map((option) => option.id)).size === round.options.length,
+      ),
+    );
+    check(
+      "y las falsas son de su mismo tramo, para no delatar la buena",
+      rounds.every((round) => round.options.every((option) => option.tier === round.word.tier)),
+    );
+  }
+
+  const sentences = WORD_BRIDGE_LEVELS[5];
+  if (sentences.mode === "sentence") {
+    for (const target of ["en", "es"] as const) {
+      const rounds = createSentenceRounds(sentences, target);
+      check(
+        `frases ${target}: seis frases distintas`,
+        new Set(rounds.map((round) => round.sentence.id)).size === 6,
+      );
+      check(
+        `frases ${target}: las fichas son la frase más ${sentences.decoys} de sobra`,
+        rounds.every(
+          (round) => round.tiles.length === round.sentence[target].length + sentences.decoys,
+        ),
+      );
+      check(
+        `frases ${target}: ninguna ficha de sobra es una palabra de la frase`,
+        rounds.every((round) => {
+          const own = round.sentence[target];
+          const extras = round.tiles.map((tile) => tile.text);
+          for (const word of own) extras.splice(extras.indexOf(word), 1);
+          return extras.every((extra) => !own.some((word) => sameWord(word, extra, target)));
+        }),
+      );
+    }
+  }
+  check(
+    "la frase armada lleva su mayúscula inicial",
+    sentenceText(["the", "dog", "eats"], "en") === "The dog eats",
+  );
+}
+
+console.log("\nPuente de palabras · estrellas de la sesión");
+{
+  check("sin terminar → 0", wordBridgeSessionStars(100, false) === 0);
+  check("64 % → 1", wordBridgeSessionStars(64, true) === 1);
+  check("65 % justo → 2", wordBridgeSessionStars(65, true) === 2);
+  check("85 % justo → 3", wordBridgeSessionStars(85, true) === 3);
+}
+
+function playBridge(
+  level: WordBridgeLevel,
+  stars: Stars,
+  extra: { accuracy?: number; words?: number } = {},
+): void {
+  saveWordBridgeResult({
+    playedLevel: level,
+    sessionStars: stars,
+    accuracy: extra.accuracy ?? 80,
+    words: extra.words ?? 12,
+    playedAt: "2026-11-22T14:00:00.000Z",
+  });
+}
+
+console.log("\nPuente de palabras · desbloqueo y marcas");
+{
+  store.clear();
+  playBridge(1, 1);
+  check("una estrella no abre nada", bridge().unlocked === 1);
+  playBridge(1, 2, { accuracy: 70, words: 10 });
+  check("dos estrellas abren el siguiente", bridge().unlocked === 2);
+  playBridge(1, 1, { accuracy: 50, words: 5 });
+  check("y una mala racha no vuelve a cerrarlo", bridge().unlocked === 2);
+  check("la precisión se queda con la mejor", bridge().best.accuracy === 80, `${bridge().best.accuracy}`);
+  check("las palabras se suman", bridge().best.words === 27, `${bridge().best.words}`);
+  check("cada sesión cuenta una vez", bridge().sessions === 3);
+}
+
 console.log("\nGuardar un juego no toca el progreso de los demás");
 {
   store.clear();
@@ -761,6 +915,13 @@ console.log("\nGuardar un juego no toca el progreso de los demás");
     getUnassignedGameProgress(getProgress(), "tracing").best.completed === 4,
   );
   check("cada uno cuenta sus propias sesiones", visual().sessions === 1 && scramble().sessions === 1);
+  playBridge(3, 3, { words: 18 });
+  check(
+    "Puente de palabras guarda en lo suyo sin tocar a nadie",
+    bridge().best.words === 18 &&
+      visual().best.fastestMs === 20000 &&
+      scramble().best.perfectWords === 9,
+  );
 }
 
 console.log(

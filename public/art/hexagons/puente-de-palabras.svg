@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384">
+  <!-- Puente de palabras: dos bocadillos, uno por idioma, unidos por un puente.
+       Plano y en los colores de las demás fichas; ninguno es el amarillo de la
+       ficha, que se perdería sobre ella. -->
+  <path d="M16 330c40-14 80-14 120 0s80 14 120 0 80-14 112 0v38H16z" fill="#88c9f9"/>
+  <path d="M40 300c38-96 266-96 304 0" fill="none" stroke="#8a5a2c" stroke-width="22" stroke-linecap="round"/>
+  <path d="M28 300h328" stroke="#5c3b1c" stroke-width="20" stroke-linecap="round"/>
+  <path d="M110 300v-46M192 300v-62M274 300v-46" stroke="#8a5a2c" stroke-width="12" stroke-linecap="round"/>
+  <path d="M30 22h128a26 26 0 0 1 26 26v82a26 26 0 0 1-26 26h-62l-34 32v-32h-32a26 26 0 0 1-26-26V48a26 26 0 0 1 26-26z" fill="#55acee"/>
+  <path d="M226 22h128a26 26 0 0 1 26 26v82a26 26 0 0 1-26 26h-32v32l-34-32h-62a26 26 0 0 1-26-26V48a26 26 0 0 1 26-26z" fill="#dd2e44"/>
+  <path d="M94 50l-34 86h22l7-20h32l7 20h22l-34-86zm-1 48l10-30 10 30z" fill="#fff"/>
+  <path d="M256 136V58h20l34 50V58h20v78h-20l-34-50v50zM262 42c6-8 14-8 20-4s12 4 18-4l8 6c-6 8-14 10-22 6s-10-4-16 2z" fill="#fff"/>
+</svg>

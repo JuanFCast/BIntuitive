@@ -50,6 +50,13 @@ import {
 } from "../src/lib/typingGame";
 import { VISUAL_SYMBOLS, VISUAL_SYMBOLS_PER_CARD } from "../src/lib/visualGame";
 import {
+  WORD_BRIDGE_LEVELS,
+  WORD_BRIDGE_SENTENCES,
+  WORD_BRIDGE_WORDS,
+  wordBridgePool,
+  type WordBridgeLevel,
+} from "../src/lib/wordBridge";
+import {
   WORD_SCRAMBLE_LEVELS,
   WORD_SCRAMBLE_MAX_LEVEL,
   WORD_SCRAMBLE_RECENT_LIMIT,
@@ -1039,6 +1046,104 @@ function validateTracing(): void {
   }
 }
 
+
+/* --------------------------------------------------------------------------
+ * Puente de palabras
+ *
+ * Cada entrada es una pareja de idiomas, así que una palabra repetida en un
+ * idioma con dos traducciones distintas daría un tablero con dos respuestas
+ * buenas. Las frases tienen que admitir un solo orden y no llevar puntuación,
+ * porque la pantalla rechaza al momento la ficha que no toca.
+ * ----------------------------------------------------------------------- */
+
+const BRIDGE_LETTERS: Record<Language, RegExp> = {
+  en: /^[A-Za-z']+$/,
+  es: /^[A-Za-zÁÉÍÓÚÑÜáéíóúñü]+$/,
+};
+
+/** Lo único que va en mayúscula en mitad de una frase. */
+const BRIDGE_CAPITALIZED = new Set(["I", "English", "Spanish"]);
+
+function validateWordBridge(): void {
+  const bank = "bridge";
+
+  for (const id of duplicates(WORD_BRIDGE_WORDS.map((word) => word.id))) {
+    fail(bank, id, "id repetido");
+  }
+  for (const language of LANGUAGES) {
+    for (const text of duplicates(
+      WORD_BRIDGE_WORDS.map((word) => word[language].toLocaleLowerCase(language)),
+    )) {
+      fail(bank, text, "palabra repetida en " + language + ": dos parejas con la misma");
+    }
+  }
+
+  for (const word of WORD_BRIDGE_WORDS) {
+    const at = word.id || "(palabra sin id)";
+    for (const language of LANGUAGES) {
+      const text = word[language];
+      if (isBlank(text)) fail(bank, at, language + " vacío");
+      else if (text !== text.normalize("NFC")) fail(bank, at, language + " no está en NFC");
+      else if (!BRIDGE_LETTERS[language].test(text)) {
+        fail(bank, at, language + " lleva caracteres fuera del alfabeto: " + text);
+      }
+    }
+    // Los dos primeros tramos se juegan con dibujo; el tercero, sin.
+    if (word.tier < 3 && isBlank(word.emoji)) fail(bank, at, "tramo " + word.tier + " sin dibujo");
+    if (word.tier === 3 && word.emoji !== undefined) {
+      fail(bank, at, "el tramo 3 no lleva dibujo: se juega sin él");
+    }
+    if (word.en.toLocaleLowerCase("en") === word.es.toLocaleLowerCase("es")) {
+      fail(bank, at, "se escribe igual en los dos idiomas: la pareja se une sin saber nada");
+    }
+  }
+
+  // Cada escalón tiene que poder armar una sesión entera sin repetir.
+  for (const level of [1, 2, 3, 4, 5] as WordBridgeLevel[]) {
+    const config = WORD_BRIDGE_LEVELS[level];
+    if (config.mode === "match") {
+      const needed = config.pairs * config.rounds;
+      const available = wordBridgePool(config.tiers).length;
+      if (available < needed) {
+        fail(bank, "nivel " + level, available + " palabras para " + needed + " parejas");
+      }
+    } else if (config.mode === "listen") {
+      const pool = wordBridgePool(config.tiers);
+      if (pool.length < config.rounds) {
+        fail(bank, "nivel " + level, pool.length + " palabras para " + config.rounds + " rondas");
+      }
+      for (const tier of config.tiers) {
+        if (pool.filter((word) => word.tier === tier).length < config.options) {
+          fail(bank, "nivel " + level, "el tramo " + tier + " no da para " + config.options + " respuestas");
+        }
+      }
+    } else if (WORD_BRIDGE_SENTENCES.length < config.rounds) {
+      fail(bank, "nivel " + level, WORD_BRIDGE_SENTENCES.length + " frases para " + config.rounds + " rondas");
+    }
+  }
+
+  for (const id of duplicates(WORD_BRIDGE_SENTENCES.map((sentence) => sentence.id))) {
+    fail(bank, id, "frase repetida");
+  }
+  for (const sentence of WORD_BRIDGE_SENTENCES) {
+    for (const language of LANGUAGES) {
+      const words = sentence[language];
+      const at = sentence.id + " (" + language + ")";
+      if (words.length < 2) fail(bank, at, "una frase necesita al menos dos palabras");
+      for (const word of words) {
+        if (word !== word.normalize("NFC")) fail(bank, at, word + " no está en NFC");
+        if (!BRIDGE_LETTERS[language].test(word)) {
+          fail(bank, at, "\"" + word + "\" lleva signos o espacios: las frases van sin puntuación");
+        }
+        const capitalized = word.charAt(0) !== word.charAt(0).toLocaleLowerCase(language);
+        if (capitalized && !BRIDGE_CAPITALIZED.has(word)) {
+          fail(bank, at, "\"" + word + "\" en mayúscula: la mayúscula inicial la pone la pantalla");
+        }
+      }
+    }
+  }
+}
+
 /* ----------------------------------------------------------------------- */
 
 validateQuestions();
@@ -1050,6 +1155,7 @@ validateTyping();
 validateVisual();
 validateMemory();
 validateTracing();
+validateWordBridge();
 
 if (issues.length > 0) {
   console.error("Content validation failed — " + issues.length + " issue(s)\n");
@@ -1085,6 +1191,8 @@ const counts = [
   MEMORY_SYMBOLS.length + " memory symbols",
   TRACING_EXERCISES.length + " tracing exercises",
   COLORING_PICTURES.length + " coloring pictures",
+  WORD_BRIDGE_WORDS.length + " bridge words",
+  WORD_BRIDGE_SENTENCES.length + " bridge sentences",
 ].join(", ");
 
 console.log("Content validation passed — " + counts);

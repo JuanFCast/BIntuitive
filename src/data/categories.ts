@@ -17,18 +17,25 @@ export type GameHexagon = {
     | "search"
     | "memory"
     | "tracing"
-    | "coloring";
+    | "coloring"
+    | "bridge";
   name: string;
   /** Dibujo de la ficha, en `public/art/hexagons/`. */
   image: string;
   description: string;
   href: string;
+  /**
+   * Es de BIntuitive Plus. Hoy es solo una marca: sin pagos en las tiendas
+   * no hay forma de comprar Plus, así que el juego se puede jugar igual. El
+   * candado y la suscripción llegan con la fase de pagos.
+   */
+  plus?: boolean;
 };
 
 export type Hexagon = Category | GameHexagon;
 
 /**
- * Los diez del panal, categorías de preguntas y juegos por igual. Es la clave
+ * Los once del panal, categorías de preguntas y juegos por igual. Es la clave
  * con la que el progreso guarda la dificultad de cada actividad, así que sale
  * de aquí, que es la fuente de verdad de qué existe.
  */
@@ -107,6 +114,14 @@ export const gameHexagons: GameHexagon[] = [
     image: "/art/hexagons/colorear.png",
     description: "Pinta cada zona del color que le toca.",
     href: "/game/coloring",
+  },
+  {
+    id: "bridge",
+    name: "Puente de palabras",
+    image: "/art/hexagons/puente-de-palabras.svg",
+    description: "Une cada palabra con su traducción.",
+    href: "/game/word-bridge",
+    plus: true,
   },
 ];
 

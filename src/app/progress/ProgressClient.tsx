@@ -19,6 +19,7 @@ import { WORD_SCRAMBLE_MAX_LEVEL } from "@/lib/wordScramble";
 import { TRACING_MAX_LEVEL } from "@/lib/tracingGame";
 import { MEMORY_MAX_LEVEL } from "@/lib/memoryGame";
 import { WORD_SEARCH_MAX_LEVEL } from "@/lib/wordSearch";
+import { WORD_BRIDGE_MAX_LEVEL } from "@/lib/wordBridge";
 import { useDocumentTitle } from "@/lib/documentTitle";
 import { useLanguage, type MessageKey } from "@/lib/i18n";
 import type { Language } from "@/lib/language";
@@ -292,6 +293,19 @@ function readActivity(
         stored.stars > 0
           ? t("progressBestMemoryStars", { accuracy, stars: stored.stars })
           : t("progressBestMemory", { accuracy }),
+    };
+  }
+
+  // Puente de palabras: hasta dónde llegó, la mejor precisión y el total de
+  // palabras acertadas, que es lo que crece de verdad sesión a sesión.
+  if (hexagon.id === "bridge") {
+    const stored = getUnassignedGameProgress(progress, "bridge");
+    return {
+      level: t("progressLevel", { level: stored.unlocked, total: WORD_BRIDGE_MAX_LEVEL }),
+      best: t("progressBestBridge", {
+        accuracy: stored.best.accuracy ?? 0,
+        words: stored.best.words ?? 0,
+      }),
     };
   }
 

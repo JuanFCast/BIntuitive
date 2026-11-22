@@ -646,6 +646,28 @@ export function saveColoringResult(
 }
 
 /**
+ * Guarda una sesión terminada de Puente de palabras.
+ *
+ * Solo en el modelo nuevo, como Parejas y Colorear: nació con la escala
+ * compartida y no tiene campos de la versión 1.
+ *
+ * La precisión se queda con la mejor y las palabras se suman: es el total de
+ * lo acertado desde siempre, no una marca que batir.
+ */
+export function saveWordBridgeResult(
+  result: FinishedSession & { accuracy: number; words: number },
+): void {
+  const progress = getProgress();
+
+  recordSession(progress, "bridge", result, (best) => ({
+    accuracy: Math.max(best.accuracy ?? 0, result.accuracy),
+    words: (best.words ?? 0) + result.words,
+  }));
+
+  saveProgress(progress);
+}
+
+/**
  * El progreso de una actividad dentro de un grado.
  *
  * Nunca devuelve `undefined`: quien pregunta es para pintar algo, y "todavía
