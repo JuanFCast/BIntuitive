@@ -1,0 +1,46 @@
+<!--
+  Plantilla "Confirm signup" de Supabase (Authentication → Emails → Templates).
+  Se copia a mano en el panel: Supabase no la lee de aquí. Vive en el
+  repositorio para que no se pierda y se pueda revisar como el resto.
+
+  Asunto:  {{ .Token }} · BIntuitive
+
+  Va en el idioma de quien se registra: la aplicación envía `language` en los
+  metadatos del alta y aquí llega como `.Data.language`. El código va en el
+  asunto y grande en el cuerpo, y no hay enlace: la cuenta se activa
+  escribiéndolo en la aplicación (ver `EmailCodeScreen`).
+-->
+<!doctype html>
+<html lang="{{ if eq .Data.language "es" }}es{{ else }}en{{ end }}">
+  <body style="margin:0;padding:0;background:#f5f4ee;font-family:Arial,Helvetica,sans-serif;color:#18251d;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4ee;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:24px;padding:32px 28px;text-align:center;">
+            <tr>
+              <td>
+                <img src="https://bintuitive.aumcrsp.com/brand-mark.png" width="72" height="72" alt="BIntuitive" style="display:block;margin:0 auto 16px;border-radius:16px;" />
+                {{ if eq .Data.language "es" }}
+                <h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">¡Hola, {{ .Data.full_name }}!</h1>
+                <p style="margin:0 0 24px;font-size:16px;line-height:1.5;color:#3d4a42;">Este es tu código para activar tu cuenta de BIntuitive:</p>
+                {{ else }}
+                <h1 style="margin:0 0 8px;font-size:24px;line-height:1.25;">Hi, {{ .Data.full_name }}!</h1>
+                <p style="margin:0 0 24px;font-size:16px;line-height:1.5;color:#3d4a42;">Here is your code to activate your BIntuitive account:</p>
+                {{ end }}
+                <p style="margin:0 0 24px;padding:16px 8px;background:#fff0a6;border-radius:16px;font-size:36px;font-weight:bold;letter-spacing:10px;">{{ .Token }}</p>
+                {{ if eq .Data.language "es" }}
+                <p style="margin:0 0 8px;font-size:15px;line-height:1.5;color:#3d4a42;">Escríbelo en la pantalla donde te registraste. Caduca en una hora.</p>
+                <p style="margin:0;font-size:13px;line-height:1.5;color:#6b766f;">Si no creaste una cuenta en BIntuitive, puedes ignorar este correo.</p>
+                {{ else }}
+                <p style="margin:0 0 8px;font-size:15px;line-height:1.5;color:#3d4a42;">Type it on the screen where you signed up. It expires in one hour.</p>
+                <p style="margin:0;font-size:13px;line-height:1.5;color:#6b766f;">If you did not create a BIntuitive account, you can ignore this email.</p>
+                {{ end }}
+              </td>
+            </tr>
+          </table>
+          <p style="margin:16px 0 0;font-size:12px;color:#6b766f;">BIntuitive · bintuitive.aumcrsp.com</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
