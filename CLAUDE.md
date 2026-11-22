@@ -500,6 +500,21 @@ src/lib/
 - **Sin dependencias nuevas**: el proyecto depende de Next/React y de `@supabase/supabase-js`, que
   entró el 2026-11-15 con las cuentas y va fijado a una versión exacta. Nada de librerías de
   animación, estado o UI, ni otro SDK de Supabase (`@supabase/ssr` sobra: no hay servidor).
+  **Capacitor** (`@capacitor/core`, `@capacitor/android` y `@capacitor/cli`, fijados a 8.6.0)
+  entró el 2026-11-22 para la app de tienda; cada plugin nativo que se añada después es una
+  dependencia más y se decide como tal.
+- **La app de tienda es el build de tienda dentro de Capacitor**, en el mismo repositorio.
+  `npm run build:store` (`scripts/buildStore.cjs`) pone `NEXT_PUBLIC_BUILD_TARGET=store`, y con
+  esa variable `next.config.ts` exporta estático a `out/`: `output: "export"`, una carpeta por
+  ruta (`trailingSlash`), imágenes sin optimizar y **sin redirects**. La web, sin la variable,
+  no cambia: sigue con servidor y con todos sus redirects. `npm run app:sync` construye y copia
+  `out/` al proyecto `android/`; `npm run app:android` lo abre en Android Studio. Los archivos
+  viajan dentro de la app y no se carga la web de internet: así se juega sin conexión y Apple
+  no la rechaza por ser "una web empaquetada" (regla 4.2). `appId` es
+  `com.aumcrsp.bintuitive` (`capacitor.config.ts`) y no se puede cambiar tras publicar. Todo
+  lo que se añada a la app tiene que exportarse estático: nada de route handlers ni server
+  actions, y una ruta de metadatos nueva lleva `export const dynamic = "force-static"` como
+  `manifest.ts`.
 - **Cuentas con Supabase, desde el navegador**. Todo pasa por `src/lib/account.ts`; nada más
   importa el cliente para la cuenta, así que añadir Google es una función más ahí. Reglas:
   - **Sin las dos variables la aplicación funciona entera como invitado.**

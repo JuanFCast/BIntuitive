@@ -65,6 +65,20 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Android app (Capacitor)
+
+The store app is the same code: the store build exported as static files and wrapped by
+Capacitor, with everything bundled inside the app so it works offline.
+
+1. Install [Android Studio](https://developer.android.com/studio) (it brings Java and the
+   Android SDK).
+2. `npm run app:sync` builds the store version (`out/`) and copies it into `android/`.
+3. `npm run app:android` opens the project in Android Studio; press ▶ to run it on an
+   emulator or on a phone connected by USB with developer mode on.
+
+The web build does not change: without `NEXT_PUBLIC_BUILD_TARGET=store` it keeps its server and
+its redirects.
+
 ### Accounts (Supabase)
 
 The app runs without any configuration, as a guest. To turn accounts on:

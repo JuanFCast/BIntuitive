@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "bintuitive-store",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "3001", "-d", "out"],
+      "port": 3001
     }
   ]
 }

@@ -1,6 +1,26 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+/**
+ * El build de tienda (`NEXT_PUBLIC_BUILD_TARGET=store`, ver
+ * `src/lib/buildTarget.ts`) es el que va dentro de la app de Android y de
+ * iOS con Capacitor. Allí no hay servidor: los archivos viajan dentro de la
+ * app y se juega sin conexión, que es además lo que Apple pide para no tomarla
+ * por "una web dentro de una caja". Por eso se exporta estático (`out/`), sin
+ * optimizar imágenes —eso lo hace un servidor—, con una carpeta por ruta para
+ * que `/explore/` se encuentre como archivo, y sin redirects: no hay enlaces
+ * viejos que rescatar dentro de una app recién instalada.
+ *
+ * La web no cambia: sin esa variable todo sigue igual que siempre.
+ */
+const IS_STORE_BUILD = process.env.NEXT_PUBLIC_BUILD_TARGET === "store";
+
+const storeConfig: NextConfig = {
+  output: "export",
+  trailingSlash: true,
+  images: { unoptimized: true },
+};
+
+const webConfig: NextConfig = {
   async redirects() {
     return [
       {
@@ -65,4 +85,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default IS_STORE_BUILD ? storeConfig : webConfig;

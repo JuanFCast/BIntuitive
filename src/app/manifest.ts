@@ -1,6 +1,10 @@
 import type { MetadataRoute } from "next";
 import { siteDescription, siteName } from "./siteMetadata";
 
+// Estático en los dos builds. En la web ya lo era; el de tienda (export
+// estático para Capacitor) no compila sin que se diga explícitamente.
+export const dynamic = "force-static";
+
 /**
  * Manifest de la aplicación instalable.
  *

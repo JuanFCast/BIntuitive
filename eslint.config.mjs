@@ -31,6 +31,11 @@ const config = [
       ".claude/**",
       "node_modules/**",
       "next-env.d.ts",
+      // El build de tienda exportado y los proyectos nativos de Capacitor:
+      // dentro llevan una copia minificada de la app, que no es código fuente.
+      "out/**",
+      "android/**",
+      "ios/**",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
