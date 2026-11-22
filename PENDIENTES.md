@@ -22,10 +22,11 @@ Se marca `[x]` al terminar cada cosa. Última revisión: 22 de noviembre de 2026
 
 ## 🟡 Limpieza
 
-- [ ] Quitar las dos variables `NEXT_PUBLIC_SUPABASE_*` de la app **aumcrsp** de Amplify
-      (Virginia). Ahí no sirven; las buenas están en **BeeSmart** (Ohio).
-- [ ] Desconectar del repositorio el proyecto **beesmart** de Vercel, que no se usa y pone
-      una marca roja o verde en cada commit.
+- [x] Quitar las dos variables `NEXT_PUBLIC_SUPABASE_*` de la app **aumcrsp** de Amplify
+      (Virginia). Ahí no sirven; las buenas están en **BeeSmart** (Ohio). Comprobado el 22 de
+      noviembre de 2026: ya no estaban, solo queda `SITE_URL`, que es de esa web.
+- [x] Desconectar del repositorio el proyecto **beesmart** de Vercel, que no se usa y pone
+      una marca roja o verde en cada commit. (22 de noviembre de 2026)
 
 ## 🔵 Construir
 
