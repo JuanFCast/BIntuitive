@@ -40,6 +40,65 @@ BIntuitive— y lo generado (`.next/`, `.content-check/`). ESLint es la única d
 desarrollo que no es Next, React o Tailwind; para lo que se envía al navegador, la única excepción
 a "sin dependencias nuevas" es `@supabase/supabase-js` (ver la convención).
 
+## Infraestructura, forma de trabajar y dónde vamos
+
+Esta sección existe para poder seguir desde cualquier computador: lo que sigue no está en el
+código y antes vivía solo en la memoria local de una sesión. **No lleva ninguna clave**; dice
+dónde está cada cosa.
+
+**Dónde vive cada pieza**
+
+- **Producción de la web**: AWS Amplify, cuenta `aumdevel` (se entra por SSO), región
+  **us-east-2 (Ohio)**, app **BeeSmart** (id `d1ve0ak285ek0m`). Construye sola cada push a
+  `main` y lo publica en `bintuitive.aumcrsp.com` (y `beesmart.aumcrsp.com`) en unos 2 minutos.
+  Sus variables de entorno son las dos `NEXT_PUBLIC_SUPABASE_*`; **solo entran en un build que
+  empieza después de guardarlas**. En Virginia (us-east-1) hay otra app, **aumcrsp**, que es la
+  web `www.aumcrsp.com` y no tiene nada que ver con BIntuitive: no confundirlas.
+- **Vercel no se usa.** El proyecto `beesmart` se desconectó del repositorio el 2026-11-22;
+  nunca mandar a nadie a configurar algo ahí.
+- **DNS**: en **GoDaddy** (`aumcrsp.com`), no en AWS. Ahí están `bintuitive` y `beesmart`
+  (CNAME a CloudFront de Amplify) y los tres de Resend (`resend._domainkey.bintuitive`,
+  `send.bintuitive`, `rsend.bintuitive`). El DMARC del dominio raíz ya cubre al subdominio.
+- **Supabase**: proyecto `joczvzstbfsdhpgxeihf`, región Ohio, plan Free (se pausa tras 7 días sin
+  actividad: pasar a Pro antes de lanzar). Lo que hay aplicado en la base está en
+  `supabase/migrations/` (perfiles con permisos y disparador de 18+, y `delete_own_account`), y
+  la plantilla del correo de alta en `supabase/templates/` (se pega a mano en el panel).
+  "Email OTP Length" vale **6**, igual que `EMAIL_CODE_LENGTH`.
+- **Correo**: **Resend**, dominio `bintuitive.aumcrsp.com` verificado, remitente
+  `no-reply@bintuitive.aumcrsp.com`, conectado a Supabase como SMTP propio.
+- **Variables locales**: `.env.local` no está en git a propósito. En un computador nuevo se
+  copia `.env.example` y se rellenan la URL y la clave pública (anon/publishable) desde Supabase
+  → Project Settings → API. Nunca la `service_role` ni la `secret`.
+
+**Forma de trabajar con el dueño del proyecto**
+
+- La conversación es **en español**; el código, los comentarios y CLAUDE.md también, y el README
+  en inglés.
+- **Commit y push solo cuando lo pide.** Los commits van a nombre de **JuanFCast**
+  (`83439579+JuanFCast@users.noreply.github.com`); en un computador nuevo hay que configurarlo
+  con `git config --global` antes del primer commit.
+- **Todo lo que llega a `main` se publica solo.** Los cambios grandes van en una rama y se unen
+  con un pull request cuando están probados.
+- Con su permiso se usa su Chrome para los paneles (Supabase, AWS, GoDaddy, Resend): **solo
+  lectura salvo que pida un cambio**, y nunca escribir una clave secreta en un formulario.
+- **Recordar los pendientes.** Él pidió que no se olvide nada antes de salir a las tiendas: al
+  empezar trabajo de tiendas o de lanzamiento, y siempre que pregunte "¿qué sigue?", leer
+  **`PENDIENTES.md`** y recordarle los 🔴 abiertos, empezando por **crear
+  `support@aumcrsp.com`**. Ninguna versión se envía a una tienda con 🔴 abiertos sin decírselo.
+
+**Dónde vamos (a 2026-11-22)**
+
+- Rama de trabajo: **`app/capacitor`** (la app de Android con Capacitor; ver la convención de la
+  app de tienda). Siguiente paso: **instalar Android Studio** en el computador donde se vaya a
+  seguir, `npm install`, `npm run app:sync` y `npm run app:android` para abrirla en un emulador
+  o en un teléfono por USB. iOS va después y necesita un Mac o un servicio en la nube
+  (Codemagic) para compilar.
+- Plan de pruebas: canales privados de las tiendas (Pruebas internas de Google Play y
+  TestFlight) para instalar la app real sin que la vea el público, y publicación escalonada.
+- Plan de ingresos, decidido: anuncios **AdMob** al terminar cada 2 o 3 partidas, y **Plus a
+  $1,99 al mes con 7 días gratis** (RevenueCat) que quita los anuncios y abre **Puente de
+  palabras**. Privacidad y Términos se actualizan el mismo día que entren.
+
 ## Arquitectura
 
 **La raíz (`/`) es la portada pública.** Presenta BIntuitive y ofrece tres puertas: iniciar

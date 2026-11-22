@@ -32,6 +32,13 @@ Se marca `[x]` al terminar cada cosa. Última revisión: 22 de noviembre de 2026
 
 - [ ] **App de tienda con Capacitor**, en una rama (`app/capacitor`), sin tocar `main` hasta
       que la web siga funcionando igual.
+      - [x] Build de tienda estático, Capacitor 8.6.0 y proyecto `android/` (rama
+            `app/capacitor`).
+      - [ ] **Instalar Android Studio** en el computador donde se siga (trae Java y el SDK), y
+            abrir la app con `npm run app:sync` y `npm run app:android`.
+      - [ ] Icono y pantalla de arranque propios (hoy salen los de Capacitor).
+      - [ ] Recuperar la contraseña con código de 6 dígitos: desde la app, el enlace del correo
+            abriría el navegador y no la app.
       - Apple rechaza las apps que son "una web dentro de una caja" (regla 4.2): los archivos
         van dentro de la app, se juega sin conexión como invitado y se siente nativa
         (vibración, icono y pantalla de arranque propios).
